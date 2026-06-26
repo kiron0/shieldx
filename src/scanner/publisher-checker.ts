@@ -453,10 +453,7 @@ function detectVersionJumps(versions: string[]): string[] {
   return jumps;
 }
 
-function detectPublisherChanges(
-  time: Record<string, string>,
-  pkgName: string,
-): string | null {
+function detectPublisherChanges(time: Record<string, string>): string | null {
   // Check if there's a suspicious time gap or version that was published much later
   // after a long period of inactivity, which could indicate account takeover
   const versions = Object.keys(time)

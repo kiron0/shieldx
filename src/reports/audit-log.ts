@@ -2,7 +2,6 @@
  * Admin audit log for Shieldex policy enforcement.
  * Logs policy violations, allowlist/blocklist changes, and scan events.
  */
-import * as vscode from 'vscode';
 import { info, warn } from '../utils/logger';
 
 export interface AuditEntry {

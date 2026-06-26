@@ -1,10 +1,4 @@
-import {
-  RiskFactor,
-  TrustSignal,
-  DetectedCapabilities,
-  RiskLevel,
-  ExtensionSecurityReport,
-} from '../types';
+import { RiskFactor, TrustSignal, RiskLevel } from '../types';
 
 const MAX_SCORE = 100;
 
@@ -51,7 +45,7 @@ export function calculateRisk(
   score = Math.max(0, Math.min(MAX_SCORE, score));
   score = Math.round(score);
 
-  let riskLevel: RiskLevel = 'low';
+  let riskLevel: RiskLevel;
   if (score <= 25) riskLevel = 'low';
   else if (score <= 50) riskLevel = 'moderate';
   else if (score <= 75) riskLevel = 'high';

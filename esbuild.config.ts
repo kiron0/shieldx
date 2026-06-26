@@ -1,9 +1,8 @@
-const esbuild = require('esbuild');
+import * as esbuild from 'esbuild';
 
 const watch = process.argv.includes('--watch');
 
-/** @type {import('esbuild').BuildOptions} */
-const config = {
+const config: esbuild.BuildOptions = {
   entryPoints: ['src/extension.ts'],
   bundle: true,
   outfile: 'out/extension.js',
@@ -12,15 +11,14 @@ const config = {
   platform: 'node',
   sourcemap: true,
   minify: true,
-  target: 'ES2022',
+  target: 'es2022',
   logLevel: 'info',
 };
 
 if (watch) {
-  esbuild.context(config).then((ctx) => {
-    ctx.watch();
-    console.log('Watching...');
-  });
+  const ctx = await esbuild.context(config);
+  await ctx.watch();
+  console.log('Watching...');
 } else {
-  esbuild.build(config).catch(() => process.exit(1));
+  await esbuild.build(config);
 }

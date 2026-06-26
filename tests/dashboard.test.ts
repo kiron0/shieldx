@@ -16,9 +16,11 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('id="panel-extensions"');
     expect(html).toContain('id="panel-history"');
     expect(html).toContain('id="empty-state"');
-    expect(html).toContain('id="risk-filter"');
     expect(html).toContain('id="rec-actions"');
-    expect(html).toContain('.filter-bar.hidden');
+    expect(html).toContain('id="ext-search"');
+    expect(html).toContain('id="ext-count"');
+    expect(html).toContain('class="history-clear"');
+    expect(html).toContain('.history-header.has-history .history-clear');
     expect(html).toContain('id="history-detail"');
     expect(html).toContain('history-tools');
     expect(html).not.toContain('.ext-icon');

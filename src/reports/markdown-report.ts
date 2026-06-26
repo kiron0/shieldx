@@ -98,13 +98,6 @@ export function generateHtmlReport(summary: {
   vscodeVersion?: string;
 }): string {
   const date = new Date(summary.scannedAt).toLocaleString();
-  const riskColors: Record<string, string> = {
-    low: '#4caf50',
-    moderate: '#ff9800',
-    high: '#f44336',
-    critical: '#9c27b0',
-  };
-
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -277,13 +270,6 @@ export function generateSarifReport(summary: {
   }>;
   scannedAt: string;
 }): SarifReport {
-  const sarifIdToLevel: Record<string, string> = {
-    low: 'note',
-    moderate: 'warning',
-    high: 'error',
-    critical: 'error',
-  };
-
   const sarifSeverityToLevel: Record<string, string> = {
     low: 'note',
     medium: 'warning',
