@@ -58,10 +58,13 @@ export async function queryOsvVulnerabilities(
   return allFactors;
 }
 
-async function querySingleDep(dep: {
-  name: string;
-  version: string;
-}, token?: vscode.CancellationToken): Promise<RiskFactor[]> {
+async function querySingleDep(
+  dep: {
+    name: string;
+    version: string;
+  },
+  token?: vscode.CancellationToken,
+): Promise<RiskFactor[]> {
   const cacheKey = `${dep.name}@${dep.version}`;
   if (cache.has(cacheKey)) return cache.get(cacheKey)!;
 
@@ -70,7 +73,8 @@ async function querySingleDep(dep: {
 
   try {
     throwIfCancelled(token);
-    const vulnerabilities = (await callOsvApi(dep.name, dep.version, token)) || [];
+    const vulnerabilities =
+      (await callOsvApi(dep.name, dep.version, token)) || [];
     const factors = vulnerabilities.map((vuln) => {
       const sev = getSeverity(vuln);
       const points =

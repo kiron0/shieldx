@@ -2,6 +2,10 @@ import { WEBVIEW_DATE_FORMATTERS_SCRIPT } from '../utils/date-format';
 
 export function generateDashboardHtml(cspSource: string): string {
   const nonce = getNonce();
+  const aboutTitle = 'Shieldex';
+  const aboutAuthor = 'Toufiq Hasan Kiron';
+  const aboutDescription =
+    'Scan installed VS Code extensions for security risks, suspicious behavior, and excessive permissions.';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -35,8 +39,11 @@ export function generateDashboardHtml(cspSource: string): string {
     body {
       font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, sans-serif);
       font-size: 13px; background: var(--bg); color: var(--fg);
-      padding: var(--pad); line-height: 1.5; overflow-x: hidden;
+      line-height: 1.5; overflow: hidden; height: 100vh;
     }
+    .app-shell { height: 100%; display: flex; flex-direction: column; padding: var(--pad); gap: 10px; }
+    .app-top, .app-bottom { flex: 0 0 auto; }
+    .app-main { flex: 1 1 auto; min-height: 0; overflow: hidden; }
 
     /* Header */
     .header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
@@ -69,7 +76,7 @@ export function generateDashboardHtml(cspSource: string): string {
     .nav-tab.active { opacity: 1; background: var(--bg); }
 
     /* Panels */
-    .panel { display: none; }
+    .panel { display: none; height: 100%; overflow-y: auto; padding-right: 2px; }
     .panel.visible { display: block; }
 
     /* Summary Cards */
@@ -195,6 +202,12 @@ export function generateDashboardHtml(cspSource: string): string {
     /* Last Scan */
     .last-scan { font-size: 10px; opacity: 0.35; text-align: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
 
+    /* About */
+    .about-box { border-top: 1px solid var(--border); padding-top: 10px; }
+    .about-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
+    .about-author { font-size: 10px; opacity: 0.6; margin-top: 2px; }
+    .about-desc { font-size: 10px; opacity: 0.7; margin-top: 6px; }
+
     /* Scrollbar */
     ::-webkit-scrollbar { width: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
@@ -202,56 +215,70 @@ export function generateDashboardHtml(cspSource: string): string {
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>Shieldex</h1>
-    <span id="header-badge" class="badge-count">0</span>
-  </div>
+  <div class="app-shell">
+    <div class="app-top">
+      <div class="header">
+        <h1>Shieldex</h1>
+        <span id="header-badge" class="badge-count">0</span>
+      </div>
 
-  <div id="progress-section">
-    <div class="progress-row">
-      <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
-      <button class="progress-cancel" data-action="cancel-scan">Cancel</button>
+      <div id="progress-section">
+        <div class="progress-row">
+          <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+          <button class="progress-cancel" data-action="cancel-scan">Cancel</button>
+        </div>
+        <div class="progress-info"><span id="progress-text">Scanning...</span><span id="progress-pct">0%</span></div>
+      </div>
+
+      <div class="quick-actions">
+        <button class="btn-primary" id="btn-scan" data-action="scan">Scan</button>
+        <button class="secondary" data-action="export" title="Export Report">Export</button>
+      </div>
+
+      <div class="nav-tabs">
+        <button class="nav-tab active" data-tab="overview" data-action="tab">Overview</button>
+        <button class="nav-tab" data-tab="extensions" data-action="tab">Extensions</button>
+        <button class="nav-tab" data-tab="history" data-action="tab">History</button>
+      </div>
     </div>
-    <div class="progress-info"><span id="progress-text">Scanning...</span><span id="progress-pct">0%</span></div>
-  </div>
 
-  <div class="quick-actions">
-    <button class="btn-primary" id="btn-scan" data-action="scan">Scan</button>
-    <button class="secondary" data-action="export" title="Export Report">Export</button>
-  </div>
+    <div class="app-main">
+      <div id="panel-overview" class="panel visible">
+        <div id="summary-cards" class="summary-cards"></div>
+        <div id="dist-bar" class="dist-bar"></div>
+        <div id="rec-actions" class="rec-actions hidden">
+          <details><summary>Recommended Actions</summary><ul id="rec-list"></ul></details>
+        </div>
+        <div id="empty-state" class="empty-state">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+          <p>No scan yet.<br>Click <strong>Scan</strong> to begin.</p>
+        </div>
+        <div id="last-scan" class="last-scan"></div>
+      </div>
 
-  <div class="nav-tabs">
-    <button class="nav-tab active" data-tab="overview" data-action="tab">Overview</button>
-    <button class="nav-tab" data-tab="extensions" data-action="tab">Extensions</button>
-    <button class="nav-tab" data-tab="history" data-action="tab">History</button>
-  </div>
+      <div id="panel-extensions" class="panel">
+        <div class="search-bar"><input type="text" id="ext-search" placeholder="Search extensions..." /><span id="ext-count" class="ext-count">0</span></div>
+        <div class="filter-bar">
+        </div>
+        <div id="ext-list" class="ext-list"></div>
+        <div id="ext-empty" class="empty-state"><p>No extensions found.</p></div>
+      </div>
 
-  <div id="panel-overview" class="panel visible">
-    <div id="summary-cards" class="summary-cards"></div>
-    <div id="dist-bar" class="dist-bar"></div>
-    <div id="rec-actions" class="rec-actions hidden">
-      <details><summary>Recommended Actions</summary><ul id="rec-list"></ul></details>
+      <div id="panel-history" class="panel">
+        <div id="history-header" class="history-header"><button class="history-back" data-action="history-back">Back</button><button class="history-clear" data-action="clear-history">Clear</button></div>
+        <div id="history-list" class="history-list"></div>
+        <div id="history-detail" class="history-detail"></div>
+        <div id="history-empty" class="empty-state"><p>No scan history yet.</p></div>
+      </div>
     </div>
-    <div id="empty-state" class="empty-state">
-      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-      <p>No scan yet.<br>Click <strong>Scan</strong> to begin.</p>
-    </div>
-    <div id="last-scan" class="last-scan"></div>
-  </div>
 
-  <div id="panel-extensions" class="panel">
-    <div class="search-bar"><input type="text" id="ext-search" placeholder="Search extensions..." /><span id="ext-count" class="ext-count">0</span></div>
-    <div class="filter-bar">
+    <div class="app-bottom">
+      <div class="about-box">
+        <div class="about-title">${aboutTitle}</div>
+        <div class="about-author">${aboutAuthor}</div>
+        <div class="about-desc">${aboutDescription}</div>
+      </div>
     </div>
-    <div id="ext-list" class="ext-list"></div>
-    <div id="ext-empty" class="empty-state"><p>No extensions found.</p></div>
-  </div>
-
-  <div id="panel-history" class="panel">
-    <div id="history-header" class="history-header"><button class="history-back" data-action="history-back">Back</button><button class="history-clear" data-action="clear-history">Clear</button></div>
-    <div id="history-list" class="history-list"></div>
-    <div id="history-detail" class="history-detail"></div>
-    <div id="history-empty" class="empty-state"><p>No scan history yet.</p></div>
   </div>
 
   <script nonce="${nonce}">

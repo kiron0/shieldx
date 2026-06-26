@@ -20,10 +20,7 @@ import {
   getInstalledExtensions,
   InstalledExtension,
 } from './utils/extension-utils';
-import {
-  formatDateStamp,
-  formatDateTime,
-} from './utils/date-format';
+import { formatDateStamp, formatDateTime } from './utils/date-format';
 import { fileExists, readJsonFile, writeJsonFile } from './utils/file-utils';
 import { info, warn } from './utils/logger';
 
