@@ -180,6 +180,7 @@ export function generateDashboardHtml(cspSource: string): string {
     .history-header.detail .history-back { display: inline-flex; }
     .history-list { display: flex; flex-direction: column; gap: 4px; }
     .history-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; font-size: 11px; }
+    .history-inline-detail { margin-top: 10px; }
     .history-detail { display: none; }
     .history-detail.visible { display: block; }
     .history-tools { display: flex; gap: 6px; align-items: center; margin: 8px 0; }
@@ -207,6 +208,13 @@ export function generateDashboardHtml(cspSource: string): string {
     .about-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
     .about-author { font-size: 10px; opacity: 0.6; margin-top: 2px; }
     .about-desc { font-size: 10px; opacity: 0.7; margin-top: 6px; }
+
+    /* Extensions Panel */
+    #ext-list .ext-item { border-left-width: 1px; }
+    #ext-list .ext-item[data-level="low"],
+    #ext-list .ext-item[data-level="moderate"],
+    #ext-list .ext-item[data-level="high"],
+    #ext-list .ext-item[data-level="critical"] { border-left-color: var(--border); }
 
     /* Scrollbar */
     ::-webkit-scrollbar { width: 3px; }
@@ -412,7 +420,7 @@ export function generateDashboardHtml(cspSource: string): string {
           var expanded = expandedHistoryEntryId === historyId;
           h += '<div class="history-item" data-action="select-history" data-id="' + escAttr(historyId) + '"><div class="history-item-top"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="history-item-actions"><button class="item-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '">' + (expanded ? '▾' : '▸') + '</button><button data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div>';
           if (expanded && s.summary) {
-            h += renderHistoryInlineDetail(s.summary);
+            h += renderHistoryInlineDetail(s.summary, historyId);
           }
           h += '</div>';
         }
@@ -570,8 +578,19 @@ export function generateDashboardHtml(cspSource: string): string {
         switchTab('history');
       }
 
-      function renderHistoryInlineDetail(summary) {
-        return renderHistoryDetailResults(summary, 'all', '');
+      function renderHistoryInlineDetail(summary, historyId) {
+        var safeHistoryId = sanitizeId(historyId);
+        var searchId = 'inline-history-search-' + safeHistoryId;
+        var filterId = 'inline-history-filter-' + safeHistoryId;
+        var searchEl = document.getElementById(searchId);
+        var filterEl = document.getElementById(filterId);
+        var filterValue = filterEl ? filterEl.value : 'all';
+        var searchValue = searchEl ? searchEl.value.toLowerCase() : '';
+        var h = '<div class="history-inline-detail">';
+        h += '<div class="history-tools"><input id="' + searchId + '" data-history-search-id="' + escAttr(historyId) + '" type="text" placeholder="Search this scan..." value="' + escAttr(searchValue) + '"/><select id="' + filterId + '" data-history-filter-id="' + escAttr(historyId) + '"><option value="all"' + (filterValue === 'all' ? ' selected' : '') + '>All levels</option><option value="low"' + (filterValue === 'low' ? ' selected' : '') + '>Low</option><option value="moderate"' + (filterValue === 'moderate' ? ' selected' : '') + '>Moderate</option><option value="high"' + (filterValue === 'high' ? ' selected' : '') + '>High</option><option value="critical"' + (filterValue === 'critical' ? ' selected' : '') + '>Critical</option></select></div>';
+        h += renderHistoryDetailResults(summary, filterValue, searchValue);
+        h += '</div>';
+        return h;
       }
 
       function renderHistoryDetail(summary) {
@@ -634,14 +653,23 @@ export function generateDashboardHtml(cspSource: string): string {
       // ── Utilities ──
       function esc(s) { if (!s) return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
       function escAttr(s) { return esc(String(s)).replace(/'/g, '&#39;'); }
+      function sanitizeId(s) { return String(s).replace(/[^a-zA-Z0-9]/g, '_'); }
 
 ${WEBVIEW_DATE_FORMATTERS_SCRIPT}
 
       document.addEventListener('input', function(e) {
+        if (e.target && e.target.hasAttribute('data-history-search-id')) {
+          renderHistory();
+          return;
+        }
         if (e.target && e.target.id === 'history-search' && false) return;
       });
 
       document.addEventListener('change', function(e) {
+        if (e.target && e.target.hasAttribute('data-history-filter-id')) {
+          renderHistory();
+          return;
+        }
         if (e.target && e.target.id === 'history-risk-filter' && false) return;
       });
 

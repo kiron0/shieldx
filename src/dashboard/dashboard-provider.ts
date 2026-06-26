@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ScanHistoryEntry, SecuritySummary } from '../types';
+import { formatDateTime } from '../utils/date-format';
 import { generateDashboardHtml } from './webview-html';
 
 const HISTORY_KEY = 'shieldex.scanHistory';
@@ -149,8 +150,12 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
   }
 
   private async confirmClearHistoryEntry(id: string): Promise<void> {
+    const entry = this.getHistory().find((item) => (item.id || item.time) === id);
+    const label = entry
+      ? `${formatDateTime(entry.time)} (${entry.total} total, ${entry.high} high, ${entry.critical} critical)`
+      : 'selected history entry';
     const picked = await vscode.window.showWarningMessage(
-      'Clear this history entry?',
+      `Clear history entry for ${label}?`,
       { modal: true },
       'Clear',
     );

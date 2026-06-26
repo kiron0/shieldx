@@ -111,14 +111,20 @@ describe('Markdown Report', () => {
   it('includes high risk extensions section', () => {
     const md = generateMarkdownReport(mockSummary);
     expect(md).toContain('## High & Critical Risk Extensions');
-    expect(md).toContain('### risky-ext');
+    expect(md).toContain(
+      '### [risky-ext](https://marketplace.visualstudio.com/items?itemName=sketchy.risky-ext)',
+    );
     expect(md).toContain('Disable this extension.');
   });
 
   it('includes all extensions table', () => {
     const md = generateMarkdownReport(mockSummary);
-    expect(md).toContain('| safe-ext | trusted | 1.0.0 | 10 | low |');
-    expect(md).toContain('| risky-ext | sketchy | 0.1.0 | 65 | high |');
+    expect(md).toContain(
+      '| [safe-ext](https://marketplace.visualstudio.com/items?itemName=trusted.safe-ext) | trusted | 1.0.0 | 10 | low |',
+    );
+    expect(md).toContain(
+      '| [risky-ext](https://marketplace.visualstudio.com/items?itemName=sketchy.risky-ext) | sketchy | 0.1.0 | 65 | high |',
+    );
   });
 });
 

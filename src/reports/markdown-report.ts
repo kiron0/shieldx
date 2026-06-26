@@ -44,7 +44,7 @@ export function generateMarkdownReport(summary: {
       (r) => r.riskLevel === 'high' || r.riskLevel === 'critical',
     );
     for (const ext of risky) {
-      md += `### ${ext.name}\n\n`;
+      md += `### ${formatMarkdownExtensionLink(ext.name, ext.marketplaceId, ext.publisher)}\n\n`;
       md += `- **Publisher:** ${ext.publisher}\n`;
       md += `- **Version:** ${ext.version}\n`;
       if (ext.marketplaceId)
@@ -65,7 +65,7 @@ export function generateMarkdownReport(summary: {
   md += `| Extension | Publisher | Version | Risk Score | Risk Level |\n`;
   md += `|-----------|-----------|---------|------------|------------|\n`;
   for (const ext of summary.reports) {
-    md += `| ${ext.name} | ${ext.publisher} | ${ext.version} | ${ext.riskScore} | ${ext.riskLevel} |\n`;
+    md += `| ${formatMarkdownExtensionLink(ext.name, ext.marketplaceId, ext.publisher)} | ${ext.publisher} | ${ext.version} | ${ext.riskScore} | ${ext.riskLevel} |\n`;
   }
 
   md += `\n---\n\n`;
@@ -152,7 +152,7 @@ export function generateHtmlReport(summary: {
       ${summary.reports
         .map(
           (r) => `<tr>
-        <td>${r.name}</td><td>${r.publisher}</td><td>${r.version}</td>
+        <td><a href="${getMarketplaceUrl(r.marketplaceId, r.publisher, r.name)}" target="_blank" rel="noopener noreferrer">${escapeHtml(r.name)}</a></td><td>${escapeHtml(r.publisher)}</td><td>${escapeHtml(r.version)}</td>
         <td>${r.riskScore}</td>
         <td><span class="badge ${r.riskLevel}">${r.riskLevel.toUpperCase()}</span></td>
       </tr>`,
@@ -166,10 +166,10 @@ export function generateHtmlReport(summary: {
     .map(
       (r) => `
     <div class="ext-section risky">
-      <h3>${r.name} <span class="badge ${r.riskLevel}">${r.riskLevel.toUpperCase()}</span></h3>
-      <p><strong>Publisher:</strong> ${r.publisher} | <strong>Version:</strong> ${r.version} | <strong>Score:</strong> ${r.riskScore}/100</p>
-      ${r.riskFactors.length > 0 ? `<p><strong>Risk Factors:</strong> ${r.riskFactors.map((f) => f.title).join(', ')}</p>` : ''}
-      <p><strong>Recommendation:</strong> ${r.recommendation}</p>
+      <h3><a href="${getMarketplaceUrl(r.marketplaceId, r.publisher, r.name)}" target="_blank" rel="noopener noreferrer">${escapeHtml(r.name)}</a> <span class="badge ${r.riskLevel}">${r.riskLevel.toUpperCase()}</span></h3>
+      <p><strong>Publisher:</strong> ${escapeHtml(r.publisher)} | <strong>Version:</strong> ${escapeHtml(r.version)} | <strong>Score:</strong> ${r.riskScore}/100</p>
+      ${r.riskFactors.length > 0 ? `<p><strong>Risk Factors:</strong> ${r.riskFactors.map((f) => escapeHtml(f.title)).join(', ')}</p>` : ''}
+      <p><strong>Recommendation:</strong> ${escapeHtml(r.recommendation)}</p>
     </div>
   `,
     )
@@ -229,6 +229,31 @@ function escapeCsv(val: string): string {
     return `"${val.replace(/"/g, '""')}"`;
   }
   return val;
+}
+
+function getMarketplaceUrl(
+  marketplaceId: string | undefined,
+  publisher: string,
+  name: string,
+): string {
+  const itemName = marketplaceId || `${publisher}.${name}`;
+  return `https://marketplace.visualstudio.com/items?itemName=${encodeURIComponent(itemName)}`;
+}
+
+function formatMarkdownExtensionLink(
+  name: string,
+  marketplaceId: string | undefined,
+  publisher: string,
+): string {
+  return `[${name}](${getMarketplaceUrl(marketplaceId, publisher, name)})`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 export interface SarifReport {
