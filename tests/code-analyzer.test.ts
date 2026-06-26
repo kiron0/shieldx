@@ -16,7 +16,9 @@ describe('Code Analyzer Pattern Detection', () => {
     const patterns = getPatterns('network-access');
 
     it('detects fetch()', () => {
-      expect(matchesAny('const data = fetch("https://api.example.com")', patterns)).toBe(true);
+      expect(
+        matchesAny('const data = fetch("https://api.example.com")', patterns),
+      ).toBe(true);
     });
 
     it('does not match innocent code', () => {
@@ -40,7 +42,9 @@ describe('Code Analyzer Pattern Detection', () => {
     });
 
     it('does not detect function setTimeout', () => {
-      expect(matchesAny('setTimeout(() => alert(1), 100)', patterns)).toBe(false);
+      expect(matchesAny('setTimeout(() => alert(1), 100)', patterns)).toBe(
+        false,
+      );
     });
   });
 
@@ -53,7 +57,12 @@ describe('Code Analyzer Pattern Detection', () => {
     });
 
     it('detects repeated hex escapes', () => {
-      expect(matchesAny('\\x48\\x65\\x6c\\x6c\\x6f\\x20\\x77\\x6f\\x72\\x6c\\x64', patterns)).toBe(true);
+      expect(
+        matchesAny(
+          '\\x48\\x65\\x6c\\x6c\\x6f\\x20\\x77\\x6f\\x72\\x6c\\x64',
+          patterns,
+        ),
+      ).toBe(true);
     });
 
     it('does not flag single hex escape', () => {

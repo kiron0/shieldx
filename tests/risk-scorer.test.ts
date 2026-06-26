@@ -34,10 +34,34 @@ describe('Risk Scoring', () => {
 
   it('applies smaller category bonus once', () => {
     const factors: RiskFactor[] = [
-      { id: 'network-access', title: '', description: '', severity: 'low', points: 6 },
-      { id: 'env-access', title: '', description: '', severity: 'low', points: 5 },
-      { id: 'filesystem-access', title: '', description: '', severity: 'low', points: 4 },
-      { id: 'file-mod', title: '', description: '', severity: 'medium', points: 8 },
+      {
+        id: 'network-access',
+        title: '',
+        description: '',
+        severity: 'low',
+        points: 6,
+      },
+      {
+        id: 'env-access',
+        title: '',
+        description: '',
+        severity: 'low',
+        points: 5,
+      },
+      {
+        id: 'filesystem-access',
+        title: '',
+        description: '',
+        severity: 'low',
+        points: 4,
+      },
+      {
+        id: 'file-mod',
+        title: '',
+        description: '',
+        severity: 'medium',
+        points: 8,
+      },
     ];
 
     const result = calculateRisk(factors, []);
@@ -47,10 +71,34 @@ describe('Risk Scoring', () => {
 
   it('applies high-severity bonus once', () => {
     const factors: RiskFactor[] = [
-      { id: 'child-process', title: '', description: '', severity: 'high', points: 20 },
-      { id: 'dynamic-exec', title: '', description: '', severity: 'high', points: 25 },
-      { id: 'packed-js', title: '', description: '', severity: 'high', points: 25 },
-      { id: 'suspicious-domains', title: '', description: '', severity: 'critical', points: 30 },
+      {
+        id: 'child-process',
+        title: '',
+        description: '',
+        severity: 'high',
+        points: 20,
+      },
+      {
+        id: 'dynamic-exec',
+        title: '',
+        description: '',
+        severity: 'high',
+        points: 25,
+      },
+      {
+        id: 'packed-js',
+        title: '',
+        description: '',
+        severity: 'high',
+        points: 25,
+      },
+      {
+        id: 'suspicious-domains',
+        title: '',
+        description: '',
+        severity: 'critical',
+        points: 30,
+      },
     ];
 
     const result = calculateRisk(factors, []);
@@ -60,8 +108,20 @@ describe('Risk Scoring', () => {
 
   it('trust signals reduce score with decay', () => {
     const factors: RiskFactor[] = [
-      { id: 'child-process', title: '', description: '', severity: 'high', points: 20 },
-      { id: 'dynamic-exec', title: '', description: '', severity: 'high', points: 25 },
+      {
+        id: 'child-process',
+        title: '',
+        description: '',
+        severity: 'high',
+        points: 20,
+      },
+      {
+        id: 'dynamic-exec',
+        title: '',
+        description: '',
+        severity: 'high',
+        points: 25,
+      },
     ];
     const signals: TrustSignal[] = [
       { id: 'known-publisher', title: '', description: '', points: -10 },

@@ -9,7 +9,10 @@ vi.mock('vscode', () => ({}));
 const tempDirs: string[] = [];
 let analyzePackage: typeof import('../src/scanner/package-analyzer').analyzePackage;
 
-function makeExtension(packageJSON: any, installPath: string): InstalledExtension {
+function makeExtension(
+  packageJSON: any,
+  installPath: string,
+): InstalledExtension {
   return {
     id: 'test.publisher',
     name: packageJSON.name || 'test-ext',
@@ -55,7 +58,9 @@ describe('Package Analyzer', () => {
     );
 
     const result = analyzePackage(ext);
-    expect(result.riskFactors.some((factor) => factor.id === 'no-license')).toBe(false);
+    expect(
+      result.riskFactors.some((factor) => factor.id === 'no-license'),
+    ).toBe(false);
   });
 
   it('does not flag missing license when LICENSE file exists', () => {
@@ -70,7 +75,9 @@ describe('Package Analyzer', () => {
     );
 
     const result = analyzePackage(ext);
-    expect(result.riskFactors.some((factor) => factor.id === 'no-license')).toBe(false);
+    expect(
+      result.riskFactors.some((factor) => factor.id === 'no-license'),
+    ).toBe(false);
   });
 
   it('still flags missing license when metadata and file both absent', () => {
@@ -85,6 +92,8 @@ describe('Package Analyzer', () => {
     );
 
     const result = analyzePackage(ext);
-    expect(result.riskFactors.some((factor) => factor.id === 'no-license')).toBe(true);
+    expect(
+      result.riskFactors.some((factor) => factor.id === 'no-license'),
+    ).toBe(true);
   });
 });
