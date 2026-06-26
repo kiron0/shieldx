@@ -200,7 +200,9 @@ export function generateDashboardHtml(cspSource: string): string {
     .history-detail { display: none; }
     .history-detail.visible { display: block; }
     .history-tools { display: flex; gap: 6px; align-items: center; margin: 8px 0; }
-    .history-tools input, .history-tools select { background: var(--input-bg); color: var(--input-fg); border: 1px solid var(--input-border); border-radius: 4px; padding: 4px 6px; font-size: 11px; }
+    .history-tools input, .history-tools select { background: var(--input-bg); color: var(--input-fg); border: 1px solid var(--input-border); border-radius: var(--radius); padding: 5px 8px; font-size: 12px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+    .history-tools input:focus, .history-tools select:focus { border-color: var(--accent); }
+    .history-tools input::placeholder { color: var(--input-ph); }
     .history-tools input { flex: 1; }
     .history-inline-detail .history-tools { position: sticky; top: 0; z-index: 2; margin-top: 0; padding-bottom: 8px; background: var(--card-bg); }
     .history-inline-results { overflow-y: auto; min-height: 0; padding-right: 2px; }
