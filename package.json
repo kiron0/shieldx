@@ -135,7 +135,7 @@
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "build": "npx @vscode/vsce package",
-    "lint": "bunx eslint src --ext ts",
+    "lint": "eslint src --ext ts",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest watch"
