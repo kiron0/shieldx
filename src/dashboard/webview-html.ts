@@ -101,9 +101,7 @@ export function generateDashboardHtml(cspSource: string): string {
     .search-bar input { width: 100%; background: var(--input-bg); color: var(--input-fg); border: 1px solid var(--input-border); border-radius: var(--radius); padding: 5px 8px; font-size: 12px; font-family: inherit; outline: none; transition: border-color 0.15s; }
     .search-bar input:focus { border-color: var(--accent); }
     .search-bar input::placeholder { color: var(--input-ph); }
-    .filter-bar { display: flex; gap: 6px; align-items: center; margin-bottom: 8px; }
-    .filter-bar.hidden { display: none; }
-    .filter-bar select { background: var(--card-bg); color: var(--fg); border: 1px solid var(--border); padding: 3px 6px; border-radius: 4px; font-size: 11px; flex: 1; }
+    .filter-bar { display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-bottom: 8px; }
     .ext-count { font-size: 10px; opacity: 0.5; }
 
     /* Extension List */
@@ -114,7 +112,6 @@ export function generateDashboardHtml(cspSource: string): string {
     .ext-item[data-level="moderate"] { border-left-color: var(--moderate); }
     .ext-item[data-level="high"] { border-left-color: var(--high); }
     .ext-item[data-level="critical"] { border-left-color: var(--critical); }
-    .ext-item.compact { border-left-color: var(--border); }
     .ext-item-header { display: flex; align-items: center; gap: 6px; }
     .ext-item-info { flex: 1; min-width: 0; }
     .ext-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
@@ -166,6 +163,8 @@ export function generateDashboardHtml(cspSource: string): string {
     .history-header button { background: none; border: none; color: var(--fg); font-size: 10px; cursor: pointer; opacity: 0.4; }
     .history-header button:hover { opacity: 0.7; }
     .history-header .history-back { display: none; opacity: 0.7; }
+    .history-header .history-clear { display: none; margin-left: auto; }
+    .history-header.has-history .history-clear { display: inline-flex; }
     .history-header.detail .history-back { display: inline-flex; }
     .history-list { display: flex; flex-direction: column; gap: 4px; }
     .history-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; font-size: 11px; }
@@ -236,13 +235,6 @@ export function generateDashboardHtml(cspSource: string): string {
   <div id="panel-extensions" class="panel">
     <div class="search-bar"><input type="text" id="ext-search" placeholder="Search extensions..." /></div>
     <div class="filter-bar">
-      <select id="risk-filter">
-        <option value="all">All levels</option>
-        <option value="low">Low</option>
-        <option value="moderate">Moderate</option>
-        <option value="high">High</option>
-        <option value="critical">Critical</option>
-      </select>
       <span id="ext-count" class="ext-count">0</span>
     </div>
     <div id="ext-list" class="ext-list"></div>
@@ -250,7 +242,7 @@ export function generateDashboardHtml(cspSource: string): string {
   </div>
 
   <div id="panel-history" class="panel">
-    <div id="history-header" class="history-header"><button class="history-back" data-action="history-back">Back</button><button data-action="clear-history">Clear</button></div>
+    <div id="history-header" class="history-header"><button class="history-back" data-action="history-back">Back</button><button class="history-clear" data-action="clear-history">Clear</button></div>
     <div id="history-list" class="history-list"></div>
     <div id="history-detail" class="history-detail"></div>
     <div id="history-empty" class="empty-state"><p>No scan history yet.</p></div>
@@ -261,7 +253,6 @@ export function generateDashboardHtml(cspSource: string): string {
       var vscode = acquireVsCodeApi();
       var scanData = null;
       var scanHistory = [];
-      var extensionViewMode = 'detail';
       var selectedHistoryEntry = null;
       var shouldAutoOpenLatestHistory = false;
 
@@ -317,13 +308,12 @@ export function generateDashboardHtml(cspSource: string): string {
         }
       });
 
-      document.getElementById('risk-filter').addEventListener('change', function() { renderExtensions(); });
       document.getElementById('ext-search').addEventListener('input', function() { renderExtensions(); });
 
       // ── Messaging ──
       window.addEventListener('message', function(event) {
         var msg = event.data;
-        if (msg.type === 'scanResult') { scanData = msg.data; extensionViewMode = 'detail'; renderAll(); }
+        if (msg.type === 'scanResult') { scanData = msg.data; renderAll(); }
         else if (msg.type === 'scanProgress') { updateProgress(msg.percent, msg.text); }
         else if (msg.type === 'scanStart') { shouldAutoOpenLatestHistory = true; showProgress(true); }
         else if (msg.type === 'scanEnd') { showProgress(false); if (shouldAutoOpenLatestHistory) openLatestHistoryEntry(); shouldAutoOpenLatestHistory = false; }
@@ -371,11 +361,12 @@ export function generateDashboardHtml(cspSource: string): string {
         if (!scanHistory || scanHistory.length === 0) {
           c.innerHTML = '';
           if (detail) { detail.innerHTML = ''; detail.classList.remove('visible'); }
-          if (header) header.classList.remove('detail');
+          if (header) header.classList.remove('detail', 'has-history');
           empty.style.display = 'block';
           return;
         }
         empty.style.display = 'none';
+        if (header) header.classList.add('has-history');
 
         if (selectedHistoryEntry && selectedHistoryEntry.summary) {
           c.innerHTML = '';
@@ -497,24 +488,10 @@ export function generateDashboardHtml(cspSource: string): string {
       }
 
       function renderExtensions() {
-        var filter = document.getElementById('risk-filter').value;
         var search = document.getElementById('ext-search').value.toLowerCase();
         var container = document.getElementById('ext-list');
         var empty = document.getElementById('ext-empty');
-        var filterBar = document.querySelector('.filter-bar');
         var reports = (scanData && scanData.reports) || [];
-        var isDetail = extensionViewMode === 'detail';
-
-        if (filterBar) {
-          if (isDetail) filterBar.classList.remove('hidden');
-          else filterBar.classList.add('hidden');
-        }
-
-        if (isDetail && filter !== 'all') {
-          var f = [];
-          for (var i = 0; i < reports.length; i++) { if (reports[i].riskLevel === filter) f.push(reports[i]); }
-          reports = f;
-        }
         if (search) {
           var s = [];
           for (var i = 0; i < reports.length; i++) {
@@ -532,14 +509,6 @@ export function generateDashboardHtml(cspSource: string): string {
           var r = reports[i];
           var cls = r.riskLevel;
           var safeId = r.id.replace(/[^a-zA-Z0-9]/g, '_');
-
-          if (!isDetail) {
-            h += '<div class="ext-item compact">';
-            h += '<div class="ext-item-header">';
-            h += '<div class="ext-item-info"><span class="ext-name">' + esc(r.displayName || r.name) + '</span><span class="ext-pub">' + esc(r.publisher) + '</span></div>';
-            h += '</div></div>';
-            continue;
-          }
 
           h += '<div class="ext-item" data-action="toggle-extension-detail" data-id="' + r.id + '" data-level="' + cls + '">';
           h += '<div class="ext-item-header">';
