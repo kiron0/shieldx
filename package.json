@@ -1,6 +1,6 @@
 {
   "name": "shieldex",
-  "displayName": "Shieldex - Extension Security & Permission Auditor",
+  "displayName": "Shieldex - Extension Auditor",
   "description": "Scan installed VS Code extensions for security risks, suspicious behavior, and excessive permissions.",
   "version": "0.1.0",
   "publisher": "thk",
@@ -37,7 +37,7 @@
       "activitybar": [
         {
           "id": "shieldex",
-          "title": "Shieldex Security",
+          "title": "Shieldex",
           "icon": "assets/icon.svg"
         }
       ]
@@ -131,10 +131,11 @@
     }
   },
   "scripts": {
+    "clean": "node ./scripts/clean-build.mjs",
     "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
+    "compile": "npm run clean && tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "build": "npx @vscode/vsce package",
+    "build": "npm run compile && npx @vscode/vsce package",
     "lint": "eslint src --ext ts",
     "format": "prettier --write .",
     "test": "vitest run",

@@ -5,8 +5,13 @@ eslint.config.ts
 vitest.config.ts
 tests/**
 node_modules/**
+scripts/**
+*.vsix
 out/**/*.map
 out/**/*.d.ts
+out/test/**
+out/**/*.test.js
+out/**/*.spec.js
 esbuild.config.ts
 bun.lock
 node_modules/.cache/**
