@@ -222,7 +222,7 @@ export async function checkPublisherReputation(
 
       // --- Sudden publisher change detection ---
       if (npmData.time) {
-        const publisherChanges = detectPublisherChanges(npmData.time, pkgName);
+        const publisherChanges = detectPublisherChanges(npmData.time);
         if (publisherChanges) {
           riskFactors.push({
             id: 'publisher-change',

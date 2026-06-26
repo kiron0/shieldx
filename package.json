@@ -131,11 +131,9 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run esbuild",
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "esbuild": "bun run esbuild.config.ts",
-    "esbuild:watch": "bun run esbuild.config.ts --watch",
     "build": "npx @vscode/vsce package",
     "lint": "bunx eslint src --ext ts",
     "format": "prettier --write .",
@@ -146,7 +144,6 @@
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.0.1",
     "@types/vscode": "^1.85.0",
-    "esbuild": "^0.28.1",
     "eslint": "^9.39.4",
     "globals": "^17.7.0",
     "jiti": "^2.7.0",
