@@ -332,6 +332,8 @@ export function generateDashboardHtml(cspSource: string): string {
       var scanHistory = [];
       var expandedHistoryEntryId = null;
       var shouldAutoOpenLatestHistory = false;
+      var inlineHistorySearch = {};
+      var inlineHistoryFilter = {};
 
       // ── Event Delegation ──
       document.addEventListener('click', function(e) {
@@ -651,14 +653,22 @@ export function generateDashboardHtml(cspSource: string): string {
         switchTab('history');
       }
 
+      function getHistoryEntry(historyId) {
+        if (!scanHistory) return null;
+        for (var i = 0; i < scanHistory.length; i++) {
+          var entry = scanHistory[i];
+          var entryId = entry.id || entry.time;
+          if (entryId === historyId) return entry;
+        }
+        return null;
+      }
+
       function renderHistoryInlineDetail(summary, historyId) {
         var safeHistoryId = sanitizeId(historyId);
         var searchId = 'inline-history-search-' + safeHistoryId;
         var filterId = 'inline-history-filter-' + safeHistoryId;
-        var searchEl = document.getElementById(searchId);
-        var filterEl = document.getElementById(filterId);
-        var filterValue = filterEl ? filterEl.value : 'all';
-        var searchValue = searchEl ? searchEl.value.toLowerCase() : '';
+        var filterValue = inlineHistoryFilter[historyId] || 'all';
+        var searchValue = inlineHistorySearch[historyId] || '';
         var h = '<div class="history-inline-detail">';
         h += '<div class="history-tools"><input id="' + searchId + '" data-history-search-id="' + escAttr(historyId) + '" type="text" placeholder="Search this scan..." value="' + escAttr(searchValue) + '"/><select id="' + filterId + '" data-history-filter-id="' + escAttr(historyId) + '"><option value="all"' + (filterValue === 'all' ? ' selected' : '') + '>All levels</option><option value="low"' + (filterValue === 'low' ? ' selected' : '') + '>Low</option><option value="moderate"' + (filterValue === 'moderate' ? ' selected' : '') + '>Moderate</option><option value="high"' + (filterValue === 'high' ? ' selected' : '') + '>High</option><option value="critical"' + (filterValue === 'critical' ? ' selected' : '') + '>Critical</option></select></div>';
         h += '<div class="history-inline-results">' + renderHistoryDetailResults(summary, filterValue, searchValue) + '</div>';
@@ -677,11 +687,12 @@ export function generateDashboardHtml(cspSource: string): string {
 
       function renderHistoryDetailResults(summary, filterValue, searchValue) {
         var reports = (summary && summary.reports) || [];
+        var normalizedSearch = (searchValue || '').toLowerCase();
         var h = '<div class="ext-list">';
         for (var i = 0; i < reports.length; i++) {
           var r = reports[i];
           if (filterValue !== 'all' && r.riskLevel !== filterValue) continue;
-          if (searchValue && (r.displayName || r.name).toLowerCase().indexOf(searchValue) === -1 && r.publisher.toLowerCase().indexOf(searchValue) === -1) continue;
+          if (normalizedSearch && (r.displayName || r.name).toLowerCase().indexOf(normalizedSearch) === -1 && r.publisher.toLowerCase().indexOf(normalizedSearch) === -1) continue;
           var cls = r.riskLevel;
           var safeId = 'history_' + r.id.replace(/[^a-zA-Z0-9]/g, '_');
           h += '<div class="ext-item" data-level="' + cls + '">';
@@ -729,11 +740,26 @@ export function generateDashboardHtml(cspSource: string): string {
       function escAttr(s) { return esc(String(s)).replace(/'/g, '&#39;'); }
       function sanitizeId(s) { return String(s).replace(/[^a-zA-Z0-9]/g, '_'); }
 
+      function updateInlineHistoryResults(historyId) {
+        var entry = getHistoryEntry(historyId);
+        if (!entry || !entry.summary) return;
+        var searchValue = inlineHistorySearch[historyId] || '';
+        var filterValue = inlineHistoryFilter[historyId] || 'all';
+        var input = document.getElementById('inline-history-search-' + sanitizeId(historyId));
+        var wrapper = input ? input.closest('.history-inline-detail') : null;
+        var results = wrapper ? wrapper.querySelector('.history-inline-results') : null;
+        if (results) {
+          results.innerHTML = renderHistoryDetailResults(entry.summary, filterValue, searchValue);
+        }
+      }
+
 ${WEBVIEW_DATE_FORMATTERS_SCRIPT}
 
       document.addEventListener('input', function(e) {
         if (e.target && e.target.hasAttribute('data-history-search-id')) {
-          renderHistory();
+          var historyId = e.target.getAttribute('data-history-search-id');
+          inlineHistorySearch[historyId] = e.target.value || '';
+          updateInlineHistoryResults(historyId);
           return;
         }
         if (e.target && e.target.id === 'history-search' && false) return;
@@ -741,7 +767,9 @@ ${WEBVIEW_DATE_FORMATTERS_SCRIPT}
 
       document.addEventListener('change', function(e) {
         if (e.target && e.target.hasAttribute('data-history-filter-id')) {
-          renderHistory();
+          var historyId = e.target.getAttribute('data-history-filter-id');
+          inlineHistoryFilter[historyId] = e.target.value || 'all';
+          updateInlineHistoryResults(historyId);
           return;
         }
         if (e.target && e.target.id === 'history-risk-filter' && false) return;
