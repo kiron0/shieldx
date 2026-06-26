@@ -1,6 +1,14 @@
 .vscode/**
 src/**
 tsconfig.json
+eslint.config.ts
+vitest.config.ts
+tests/**
+node_modules/**
+out/**/*.map
+out/**/*.d.ts
+esbuild.config.ts
+bun.lock
 node_modules/.cache/**
 .gitignore
 plan.md
