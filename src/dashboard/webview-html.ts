@@ -193,9 +193,10 @@ export function generateDashboardHtml(cspSource: string): string {
     .history-header.detail .history-back { display: inline-flex; }
     #panel-history { overflow: hidden; }
     .history-list { display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 2px; }
+    .history-list.history-list-expanded { overflow: hidden; }
     .history-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; font-size: 11px; }
     .history-item.history-item-expanded { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
-    .history-inline-detail { margin-top: 10px; max-height: 360px; display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--border); padding-top: 8px; }
+    .history-inline-detail { margin-top: 10px; display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; border-top: 1px solid var(--border); padding-top: 8px; }
     .history-detail { display: none; }
     .history-detail.visible { display: block; }
     .history-tools { display: flex; gap: 6px; align-items: center; margin: 8px 0; }
@@ -446,6 +447,7 @@ export function generateDashboardHtml(cspSource: string): string {
         var header = document.getElementById('history-header');
         if (!scanHistory || scanHistory.length === 0) {
           c.innerHTML = '';
+          c.classList.remove('history-list-expanded');
           expandedHistoryEntryId = null;
           resetHistoryDetail();
           if (header) header.classList.remove('has-history');
@@ -455,11 +457,14 @@ export function generateDashboardHtml(cspSource: string): string {
         empty.style.display = 'none';
         if (header) header.classList.add('has-history');
         resetHistoryDetail();
+        if (expandedHistoryEntryId) c.classList.add('history-list-expanded');
+        else c.classList.remove('history-list-expanded');
         var h = '';
         for (var i = 0; i < scanHistory.length; i++) {
           var s = scanHistory[i];
           var historyId = s.id || s.time;
           var expanded = expandedHistoryEntryId === historyId;
+          if (expandedHistoryEntryId && !expanded) continue;
           h += '<div class="history-item' + (expanded ? ' history-item-expanded' : '') + '"><div class="history-item-top"><div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div></div><div class="history-item-actions"><button class="item-toggle history-arrow" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button><button class="clear-history-entry" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div>';
           if (expanded && s.summary) {
             h += renderHistoryInlineDetail(s.summary, historyId);
