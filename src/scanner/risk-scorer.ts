@@ -1,6 +1,14 @@
 import { RiskFactor, TrustSignal, RiskLevel } from '../types';
 
 const MAX_SCORE = 100;
+const CATEGORY_BONUS_BY_SIZE: Array<[number, number]> = [
+  [4, 3],
+  [6, 4],
+];
+const HIGH_CRIT_BONUS_BY_COUNT: Array<[number, number]> = [
+  [4, 3],
+  [6, 4],
+];
 
 export function calculateRisk(
   riskFactors: RiskFactor[],
@@ -15,23 +23,13 @@ export function calculateRisk(
 
   // Compound risk bonus: multiple different risk categories together are worse
   const categories = new Set(riskFactors.map((f) => f.id.split('-')[0]));
-  if (categories.size >= 3) {
-    score += 5;
-  }
-  if (categories.size >= 5) {
-    score += 8;
-  }
+  score += highestApplicableBonus(categories.size, CATEGORY_BONUS_BY_SIZE);
 
   // Multiple high/critical severity factors compound
   const highCritCount = riskFactors.filter(
     (f) => f.severity === 'high' || f.severity === 'critical',
   ).length;
-  if (highCritCount >= 3) {
-    score += 5;
-  }
-  if (highCritCount >= 5) {
-    score += 8;
-  }
+  score += highestApplicableBonus(highCritCount, HIGH_CRIT_BONUS_BY_COUNT);
 
   // Trust signals with diminishing returns (first signal most impactful)
   const sortedSignals = [...trustSignals].sort(
@@ -52,6 +50,19 @@ export function calculateRisk(
   else riskLevel = 'critical';
 
   return { riskScore: score, riskLevel };
+}
+
+function highestApplicableBonus(
+  count: number,
+  thresholds: Array<[number, number]>,
+): number {
+  let bonus = 0;
+  for (const [threshold, value] of thresholds) {
+    if (count >= threshold) {
+      bonus = value;
+    }
+  }
+  return bonus;
 }
 
 export function generateRecommendation(

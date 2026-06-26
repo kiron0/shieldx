@@ -1,6 +1,5 @@
 /**
- * Suspicious pattern definitions extracted from code-analyzer.
- * Central registry for all code-level risk detection patterns.
+ * Central registry for code-level risk detection patterns.
  */
 
 export interface SuspiciousPattern {
@@ -11,6 +10,9 @@ export interface SuspiciousPattern {
   points: number;
   patterns: RegExp[];
 }
+
+const QUOTED_BASE64_PATTERN = /['"`][A-Za-z0-9+/]{200,}={0,2}['"`]/;
+const REPEATED_HEX_ESCAPE_PATTERN = /(?:\\x[0-9a-fA-F]{2}){8,}/;
 
 export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
   {
@@ -33,8 +35,8 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     id: 'network-access',
     name: 'Network requests',
     description: 'Makes external network requests.',
-    severity: 'medium',
-    points: 15,
+    severity: 'low',
+    points: 6,
     patterns: [
       /require\s*\(\s*['"](?:https?|net|request|axios|got|node-fetch|undici)['"]\s*\)/,
       /from\s+['"](?:https?|net|request|axios|got|node-fetch|undici)['"]/,
@@ -50,8 +52,8 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     id: 'env-access',
     name: 'Environment variable access',
     description: 'Reads environment variables.',
-    severity: 'medium',
-    points: 15,
+    severity: 'low',
+    points: 5,
     patterns: [/process\.env/],
   },
   {
@@ -59,7 +61,7 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     name: 'File system access',
     description: 'Reads or writes files on disk.',
     severity: 'low',
-    points: 10,
+    points: 4,
     patterns: [
       /require\s*\(\s*['"]fs['"]\s*\)/,
       /from\s+['"]fs['"]/,
@@ -92,11 +94,9 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     severity: 'high',
     points: 25,
     patterns: [
-      /[A-Za-z0-9+/]{500,}={0,2}/,
-      /\\x[0-9a-fA-F]{2}/,
+      QUOTED_BASE64_PATTERN,
+      REPEATED_HEX_ESCAPE_PATTERN,
       /_0x[0-9a-fA-F]+/,
-      /atob\s*\(/,
-      /btoa\s*\(/,
     ],
   },
   {
@@ -159,6 +159,73 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     patterns: [
       /['"]\\x[0-9a-fA-F]{50,}['"]/,
       /String\.fromCharCode\s*\(\s*0x[0-9a-fA-F]{2}/,
+    ],
+  },
+  {
+    id: 'api-key-steal',
+    name: 'API key theft risk',
+    description:
+      'Reads credentials/config files and may exfiltrate via network.',
+    severity: 'critical',
+    points: 35,
+    patterns: [
+      /fs\.readFile(?:Sync)?\s*\([^)]*\.(?:env|config|secret|credential|key|token|pem)/i,
+      /process\.env\b[\s\S]{0,300}?(?:fetch|axios|https?\.request|child_process)/,
+      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*(?:credential|secret|api.?key|token|\.env)/i,
+      /atob\s*\(process\.env/,
+      /JSON\.parse\s*\(\s*fs\.readFile(?:Sync)?\s*\(/,
+    ],
+  },
+  {
+    id: 'code-exfil',
+    name: 'Source code exfiltration',
+    description: 'Reads source files and sends them over network.',
+    severity: 'critical',
+    points: 40,
+    patterns: [
+      /readFile(?:Sync)?\s*\([\s\S]{0,200}?(?:fetch|axios|https?\.request|http\.request)/,
+      /readFile(?:Sync)?\s*[\s\S]{0,100}?\.(?:ts|js|tsx|jsx|py|rb|java|go)[\s\S]{0,200}?(?:fetch|axios|https?)/,
+      /readdir(?:Sync)?\s*[\s\S]{0,200}?(?:fetch|axios|post)/,
+      /glob\s*\([\s\S]{0,200}?(?:fetch|axios|post)/i,
+    ],
+  },
+  {
+    id: 'config-exfil',
+    name: 'Configuration file reading',
+    description: 'Reads sensitive config files like .env, credentials.json.',
+    severity: 'high',
+    points: 20,
+    patterns: [
+      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*\.env/i,
+      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*(?:credential|secret|config)\.(?:json|yaml|yml|ini|toml)/i,
+      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*id_rsa/i,
+      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*\.pem/i,
+      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*token/i,
+    ],
+  },
+  {
+    id: 'file-mod',
+    name: 'File modification without user action',
+    description: 'Modifies project files silently during activation.',
+    severity: 'medium',
+    points: 8,
+    patterns: [
+      /writeFile(?:Sync)?\s*\([^)]*\.[^)]{2,4}\s*,/,
+      /writeFile(?:Sync)?\s*\([^)]*(?:src|dist|build|lib|app)/i,
+      /appendFile\s*\(/,
+      /unlink(?:Sync)?\s*\(/,
+    ],
+  },
+  {
+    id: 'suspicious-version-jump',
+    name: 'Suspicious version pattern',
+    description:
+      'Extension version looks suspicious (e.g., major jump, unexpected patch).',
+    severity: 'medium',
+    points: 12,
+    patterns: [
+      /\b(?:version|ver)\s*[:=]\s*['"`]v?(?:99|666|999)\.\d+\.\d+['"`]/i,
+      /\b(?:version|ver)\s*[:=]\s*['"`]\d{4,}\.\d+\.\d+['"`]/i,
     ],
   },
 ];

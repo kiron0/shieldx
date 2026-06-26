@@ -10,7 +10,7 @@ import {
   isWellKnownCategory,
   getExtensionDependencies,
 } from '../utils/extension-utils';
-import { readFileContent } from '../utils/file-utils';
+import { fileExists, readFileContent } from '../utils/file-utils';
 import * as path from 'path';
 
 export interface PackageAnalysisResult {
@@ -125,11 +125,11 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
   }
 
   // --- License check ---
-  if (!pkg?.license) {
+  if (!hasLicenseMetadataOrFile(pkg, ext.installPath)) {
     riskFactors.push({
       id: 'no-license',
       title: 'No license',
-      description: 'Extension has no license specified.',
+      description: 'Extension has no license metadata or LICENSE file.',
       severity: 'low',
       points: 5,
     });
@@ -233,4 +233,46 @@ function checkMainFileSize(mainPath: string, riskFactors: RiskFactor[]): void {
       evidence: [mainPath],
     });
   }
+}
+
+function hasLicenseMetadataOrFile(pkg: any, installPath?: string): boolean {
+  if (hasDeclaredLicense(pkg)) return true;
+  if (!installPath) return false;
+
+  const licenseFiles = [
+    'LICENSE',
+    'LICENSE.md',
+    'LICENSE.txt',
+    'LICENSE-MIT',
+    'LICENSE-APACHE',
+    'LICENCE',
+    'LICENCE.md',
+    'LICENCE.txt',
+    'COPYING',
+    'UNLICENSE',
+  ];
+
+  return licenseFiles.some((name) => fileExists(path.join(installPath, name)));
+}
+
+function hasDeclaredLicense(pkg: any): boolean {
+  if (typeof pkg?.license === 'string' && pkg.license.trim()) return true;
+  if (pkg?.license && typeof pkg.license.type === 'string') {
+    return pkg.license.type.trim().length > 0;
+  }
+
+  if (!Array.isArray(pkg?.licenses)) return false;
+
+  return pkg.licenses.some((license: unknown) => {
+    if (typeof license === 'string') return license.trim().length > 0;
+    if (
+      license &&
+      typeof license === 'object' &&
+      'type' in license &&
+      typeof (license as { type?: string }).type === 'string'
+    ) {
+      return ((license as { type: string }).type || '').trim().length > 0;
+    }
+    return false;
+  });
 }
