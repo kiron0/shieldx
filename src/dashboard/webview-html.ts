@@ -191,7 +191,8 @@ export function generateDashboardHtml(cspSource: string): string {
     .history-header .history-clear { display: none; margin-left: auto; }
     .history-header.has-history .history-clear { display: inline-flex; }
     .history-header.detail .history-back { display: inline-flex; }
-    .history-list { display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-height: 0; }
+    #panel-history { overflow: hidden; }
+    .history-list { display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding-right: 2px; }
     .history-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; font-size: 11px; }
     .history-item.history-item-expanded { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
     .history-inline-detail { margin-top: 10px; max-height: 360px; display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--border); padding-top: 8px; }
@@ -217,6 +218,7 @@ export function generateDashboardHtml(cspSource: string): string {
 
     /* Empty State */
     .empty-state { text-align: center; padding: 28px 16px; opacity: 0.35; }
+    #history-empty { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; }
     .empty-state svg { width: 36px; height: 36px; margin-bottom: 8px; }
     .empty-state p { font-size: 12px; }
 
