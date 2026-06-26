@@ -25,6 +25,9 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('history-tools');
     expect(html).toContain('.ext-icon');
     expect(html).toContain('.ext-icon-fallback');
+    expect(html).toContain('score-explainer');
+    expect(html).toContain('ext-toolbar');
+    expect(html).toContain('history-inline-results');
   });
 
   it('has scan and export buttons', () => {
@@ -71,8 +74,8 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('data-action="open-extension"');
     expect(html).toContain('data-action="toggle-history-detail"');
     expect(html).toContain('toggleHistoryDetail(');
+    expect(html).toContain('scrollHistoryItemIntoView(');
     expect(html).toContain('renderExtensionIcon(r)');
-    expect(html).toContain("currentTabName === 'history' && tab !== 'history'");
     expect(html).toContain('renderHistoryInlineDetail(s.summary, historyId)');
     expect(html).toContain(
       "renderExpandableList('history-rf-' + safeId, 'Risk Factors', 'factor', r.riskFactors, 5)",
@@ -82,7 +85,9 @@ describe('Dashboard HTML', () => {
     );
     expect(html).toContain("querySelectorAll('.factor-extra, .signal-extra')");
     expect(html).toContain('data-action="select-history"');
-    expect(html).toContain('class="h-stats" data-action="select-history"');
+    expect(html).toContain(
+      'class="history-item-main history-item-header-toggle" data-action="select-history"',
+    );
     expect(html).toContain('class="item-toggle history-arrow"');
     expect(html).toContain('#ext-list .ext-item[data-level="critical"]');
   });

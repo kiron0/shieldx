@@ -104,6 +104,15 @@ export function generateDashboardHtml(cspSource: string): string {
     .rec-actions ul { list-style: none; margin-top: 4px; }
     .rec-actions li { padding: 3px 0; font-size: 11px; display: flex; align-items: center; gap: 6px; }
     .rec-actions li::before { content: '\\2192'; opacity: 0.4; }
+    .score-explainer { margin-bottom: 10px; padding: 8px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--card-bg); }
+    .score-explainer-title { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
+    .score-explainer-copy { font-size: 11px; opacity: 0.72; }
+    .score-explainer-scale { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+    .score-band { font-size: 10px; padding: 2px 6px; border-radius: 999px; background: rgba(255,255,255,0.05); }
+    .score-band.low { color: var(--low); }
+    .score-band.moderate { color: var(--moderate); }
+    .score-band.high { color: var(--high); }
+    .score-band.critical { color: var(--critical); }
 
     /* Search + Filter */
     .search-bar { margin-bottom: 6px; position: relative; }
@@ -112,6 +121,7 @@ export function generateDashboardHtml(cspSource: string): string {
     .search-bar input::placeholder { color: var(--input-ph); }
     .filter-bar { display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-bottom: 8px; }
     .ext-count { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); font-size: 10px; opacity: 0.5; pointer-events: none; }
+    .ext-toolbar { position: sticky; top: 0; z-index: 3; background: var(--bg); padding-bottom: 6px; margin-bottom: 2px; }
 
     /* Extension List */
     .ext-list { display: flex; flex-direction: column; gap: 3px; width: 100%; padding-left: 1px; padding-right: 1px; }
@@ -183,20 +193,23 @@ export function generateDashboardHtml(cspSource: string): string {
     .history-header.detail .history-back { display: inline-flex; }
     .history-list { display: flex; flex-direction: column; gap: 4px; }
     .history-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; font-size: 11px; }
-    .history-inline-detail { margin-top: 10px; }
+    .history-inline-detail { margin-top: 10px; max-height: 360px; display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--border); padding-top: 8px; }
     .history-detail { display: none; }
     .history-detail.visible { display: block; }
     .history-tools { display: flex; gap: 6px; align-items: center; margin: 8px 0; }
     .history-tools input, .history-tools select { background: var(--input-bg); color: var(--input-fg); border: 1px solid var(--input-border); border-radius: 4px; padding: 4px 6px; font-size: 11px; }
     .history-tools input { flex: 1; }
+    .history-inline-detail .history-tools { position: sticky; top: 0; z-index: 2; margin-top: 0; padding-bottom: 8px; background: var(--card-bg); }
+    .history-inline-results { overflow-y: auto; min-height: 0; padding-right: 2px; }
     .history-item-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
     .history-item-main { flex: 1; min-width: 0; }
+    .history-item-header-toggle { cursor: pointer; }
     .history-item-actions { display: flex; gap: 6px; }
     .history-item-actions button { background: none; border: none; color: var(--fg); font-size: 10px; cursor: pointer; opacity: 0.55; }
     .history-item-actions .clear-history-entry { padding: 0; }
     .history-item-actions .history-arrow { padding: 0; font-size: 12px; }
     .h-time { font-size: 10px; opacity: 0.45; }
-    .h-stats { display: flex; gap: 8px; margin-top: 3px; cursor: pointer; width: fit-content; }
+    .h-stats { display: flex; gap: 8px; margin-top: 3px; width: fit-content; }
     .h-stats span { font-size: 10px; }
     .h-stats .h-high { color: var(--high); font-weight: 600; }
     .h-stats .h-crit { color: var(--critical); font-weight: 600; }
@@ -261,6 +274,16 @@ export function generateDashboardHtml(cspSource: string): string {
       <div id="panel-overview" class="panel visible">
         <div id="summary-cards" class="summary-cards"></div>
         <div id="dist-bar" class="dist-bar"></div>
+        <div class="score-explainer">
+          <div class="score-explainer-title">How scores work</div>
+          <div class="score-explainer-copy">Lower score = safer. Higher score = more risky signals found. Treat high and critical first.</div>
+          <div class="score-explainer-scale">
+            <span class="score-band low">0-25 Low</span>
+            <span class="score-band moderate">26-50 Moderate</span>
+            <span class="score-band high">51-75 High</span>
+            <span class="score-band critical">76-100 Critical</span>
+          </div>
+        </div>
         <div id="rec-actions" class="rec-actions hidden">
           <details><summary>Recommended Actions</summary><ul id="rec-list"></ul></details>
         </div>
@@ -272,8 +295,10 @@ export function generateDashboardHtml(cspSource: string): string {
       </div>
 
       <div id="panel-extensions" class="panel">
-        <div class="search-bar"><input type="text" id="ext-search" placeholder="Search extensions..." /><span id="ext-count" class="ext-count">0</span></div>
-        <div class="filter-bar">
+        <div class="ext-toolbar">
+          <div class="search-bar"><input type="text" id="ext-search" placeholder="Search extensions..." /><span id="ext-count" class="ext-count">0</span></div>
+          <div class="filter-bar">
+          </div>
         </div>
         <div id="ext-list" class="ext-list"></div>
         <div id="ext-empty" class="empty-state"><p>No extensions found.</p></div>
@@ -432,7 +457,7 @@ export function generateDashboardHtml(cspSource: string): string {
           var s = scanHistory[i];
           var historyId = s.id || s.time;
           var expanded = expandedHistoryEntryId === historyId;
-          h += '<div class="history-item"><div class="history-item-top"><div class="history-item-main"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="h-stats" data-action="select-history" data-id="' + escAttr(historyId) + '"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div></div><div class="history-item-actions"><button class="item-toggle history-arrow" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button><button class="clear-history-entry" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div>';
+          h += '<div class="history-item"><div class="history-item-top"><div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div></div><div class="history-item-actions"><button class="item-toggle history-arrow" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button><button class="clear-history-entry" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div>';
           if (expanded && s.summary) {
             h += renderHistoryInlineDetail(s.summary, historyId);
           }
@@ -445,6 +470,9 @@ export function generateDashboardHtml(cspSource: string): string {
         if (!id) return;
         expandedHistoryEntryId = expandedHistoryEntryId === id ? null : id;
         renderHistory();
+        if (expandedHistoryEntryId) {
+          scrollHistoryItemIntoView(expandedHistoryEntryId);
+        }
       }
 
       function clearHistoryEntry(id) {
@@ -576,6 +604,18 @@ export function generateDashboardHtml(cspSource: string): string {
         if (el) el.classList.toggle('open');
       }
 
+      function scrollHistoryItemIntoView(id) {
+        var triggers = document.querySelectorAll('[data-action="select-history"]');
+        var item = null;
+        for (var i = 0; i < triggers.length; i++) {
+          if (triggers[i].getAttribute('data-id') === id) {
+            item = triggers[i].closest('.history-item');
+            break;
+          }
+        }
+        if (item && item.scrollIntoView) item.scrollIntoView({ block: 'nearest' });
+      }
+
       function renderExtensionIcon(report) {
         var label = (report.displayName || report.name || '?').trim();
         var fallback = esc(label.slice(0, 2).toUpperCase());
@@ -613,7 +653,7 @@ export function generateDashboardHtml(cspSource: string): string {
         var searchValue = searchEl ? searchEl.value.toLowerCase() : '';
         var h = '<div class="history-inline-detail">';
         h += '<div class="history-tools"><input id="' + searchId + '" data-history-search-id="' + escAttr(historyId) + '" type="text" placeholder="Search this scan..." value="' + escAttr(searchValue) + '"/><select id="' + filterId + '" data-history-filter-id="' + escAttr(historyId) + '"><option value="all"' + (filterValue === 'all' ? ' selected' : '') + '>All levels</option><option value="low"' + (filterValue === 'low' ? ' selected' : '') + '>Low</option><option value="moderate"' + (filterValue === 'moderate' ? ' selected' : '') + '>Moderate</option><option value="high"' + (filterValue === 'high' ? ' selected' : '') + '>High</option><option value="critical"' + (filterValue === 'critical' ? ' selected' : '') + '>Critical</option></select></div>';
-        h += renderHistoryDetailResults(summary, filterValue, searchValue);
+        h += '<div class="history-inline-results">' + renderHistoryDetailResults(summary, filterValue, searchValue) + '</div>';
         h += '</div>';
         return h;
       }
@@ -636,8 +676,9 @@ export function generateDashboardHtml(cspSource: string): string {
           if (searchValue && (r.displayName || r.name).toLowerCase().indexOf(searchValue) === -1 && r.publisher.toLowerCase().indexOf(searchValue) === -1) continue;
           var cls = r.riskLevel;
           var safeId = 'history_' + r.id.replace(/[^a-zA-Z0-9]/g, '_');
-          h += '<div class="ext-item" data-action="toggle-history-detail" data-id="' + safeId + '" data-level="' + cls + '">';
-          h += '<div class="ext-item-header">';
+          h += '<div class="ext-item" data-level="' + cls + '">';
+          h += '<div class="ext-item-header history-item-header-toggle" data-action="toggle-history-detail" data-id="' + safeId + '">';
+          h += renderExtensionIcon(r);
           h += '<div class="ext-item-info"><span class="ext-name">' + esc(r.displayName || r.name) + '</span><span class="ext-pub">' + esc(r.publisher) + '</span></div>';
           h += '<div class="ext-meta"><span class="ext-score" style="color:var(--' + cls + ')">' + r.riskScore + '</span><span class="status-chip ' + cls + '">' + cls.toUpperCase() + '</span></div>';
           h += '</div>';

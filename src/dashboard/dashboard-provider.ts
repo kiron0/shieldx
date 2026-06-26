@@ -53,6 +53,8 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
               type: 'scanResult',
               data: cached,
             });
+          } else if (history.length > 0 && history[0].summary) {
+            this.syncCurrentScanStateFromHistory(history);
           }
           break;
         }
@@ -142,6 +144,19 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  private syncCurrentScanStateFromHistory(history: ScanHistoryEntry[]): void {
+    const nextSummary = history[0]?.summary;
+    if (!nextSummary) {
+      this.clearCurrentScanState();
+      return;
+    }
+    this._lastSummary = nextSummary;
+    void this._context.globalState.update(CACHE_KEY, nextSummary);
+    if (this._view) {
+      this._view.webview.postMessage({ type: 'scanResult', data: nextSummary });
+    }
+  }
+
   private clearCurrentScanState(): void {
     this._lastSummary = undefined;
     void this._context.globalState.update(CACHE_KEY, undefined);
@@ -182,9 +197,7 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
       (entry) => (entry.id || entry.time) !== id,
     );
     this.setHistory(history);
-    if (history.length === 0) {
-      this.clearCurrentScanState();
-    }
+    this.syncCurrentScanStateFromHistory(history);
     if (this._view) {
       this._view.webview.postMessage({ type: 'historyEntryCleared', id });
     }

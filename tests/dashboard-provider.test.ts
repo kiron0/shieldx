@@ -112,4 +112,38 @@ describe('DashboardProvider', () => {
       id: 'scan-1',
     });
   });
+
+  it('falls back overview state to next history entry after removal', async () => {
+    showWarningMessage.mockResolvedValue('Clear');
+    const newer = {
+      id: 'scan-2',
+      time: '2026-06-27T05:03:46.058Z',
+      total: 2,
+      high: 1,
+      critical: 0,
+      moderate: 1,
+      low: 0,
+      summary: { totalExtensions: 2, reports: [{ id: 'b' }] },
+    };
+    const older = {
+      id: 'scan-1',
+      time: '2026-06-26T05:03:46.058Z',
+      total: 1,
+      high: 0,
+      critical: 0,
+      moderate: 0,
+      low: 1,
+      summary: { totalExtensions: 1, reports: [{ id: 'a' }] },
+    };
+    const harness = createHarness([newer, older]);
+
+    await (harness.provider as any).confirmClearHistoryEntry('scan-2');
+
+    expect(harness.state.history).toEqual([older]);
+    expect(harness.state.cache).toEqual(older.summary);
+    expect(harness.postMessage).toHaveBeenCalledWith({
+      type: 'scanResult',
+      data: older.summary,
+    });
+  });
 });
