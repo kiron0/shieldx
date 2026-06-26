@@ -43,7 +43,7 @@ export function generateDashboardHtml(cspSource: string): string {
     }
     .app-shell { height: 100%; display: flex; flex-direction: column; padding: var(--pad); gap: 10px; }
     .app-top, .app-bottom { flex: 0 0 auto; }
-    .app-main { flex: 1 1 auto; min-height: 0; overflow: hidden; }
+    .app-main { flex: 1 1 auto; min-height: 0; overflow: hidden; display: flex; }
 
     /* Header */
     .header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
@@ -76,8 +76,8 @@ export function generateDashboardHtml(cspSource: string): string {
     .nav-tab.active { opacity: 1; background: var(--bg); }
 
     /* Panels */
-    .panel { display: none; height: 100%; overflow-y: auto; padding-right: 2px; }
-    .panel.visible { display: block; }
+    .panel { display: none; height: 100%; overflow-y: auto; padding-right: 2px; min-width: 0; }
+    .panel.visible { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; }
 
     /* Summary Cards */
     .summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 8px; }
@@ -191,8 +191,9 @@ export function generateDashboardHtml(cspSource: string): string {
     .history-header .history-clear { display: none; margin-left: auto; }
     .history-header.has-history .history-clear { display: inline-flex; }
     .history-header.detail .history-back { display: inline-flex; }
-    .history-list { display: flex; flex-direction: column; gap: 4px; }
+    .history-list { display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-height: 0; }
     .history-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; font-size: 11px; }
+    .history-item.history-item-expanded { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
     .history-inline-detail { margin-top: 10px; max-height: 360px; display: flex; flex-direction: column; min-height: 0; border-top: 1px solid var(--border); padding-top: 8px; }
     .history-detail { display: none; }
     .history-detail.visible { display: block; }
@@ -457,7 +458,7 @@ export function generateDashboardHtml(cspSource: string): string {
           var s = scanHistory[i];
           var historyId = s.id || s.time;
           var expanded = expandedHistoryEntryId === historyId;
-          h += '<div class="history-item"><div class="history-item-top"><div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div></div><div class="history-item-actions"><button class="item-toggle history-arrow" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button><button class="clear-history-entry" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div>';
+          h += '<div class="history-item' + (expanded ? ' history-item-expanded' : '') + '"><div class="history-item-top"><div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div></div><div class="history-item-actions"><button class="item-toggle history-arrow" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button><button class="clear-history-entry" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div>';
           if (expanded && s.summary) {
             h += renderHistoryInlineDetail(s.summary, historyId);
           }
