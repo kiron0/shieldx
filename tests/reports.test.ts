@@ -1,0 +1,189 @@
+import { describe, expect, it } from 'vitest';
+import {
+  generateCsvReport,
+  generateMarkdownReport,
+  generateSarifReport,
+} from '../src/reports/markdown-report';
+
+const mockSummary = {
+  totalExtensions: 3,
+  lowRisk: 1,
+  moderateRisk: 1,
+  highRisk: 1,
+  criticalRisk: 0,
+  scannedAt: '2025-01-15T12:00:00Z',
+  vscodeVersion: '1.85.0',
+  reports: [
+    {
+      name: 'safe-ext',
+      publisher: 'trusted',
+      version: '1.0.0',
+      marketplaceId: 'trusted.safe-ext',
+      category: 'linter',
+      riskScore: 10,
+      riskLevel: 'low',
+      riskFactors: [],
+      trustSignals: [
+        {
+          id: 'has-repo',
+          title: 'Public repository',
+          description: 'Has repo',
+          points: -10,
+        },
+      ],
+      extensionDependencies: [{ name: 'lodash', version: '4.17.21' }],
+      recommendation: 'This extension appears safe.',
+    },
+    {
+      name: 'moderate-ext',
+      publisher: 'unknown',
+      version: '2.0.0',
+      marketplaceId: 'unknown.moderate-ext',
+      category: 'other',
+      riskScore: 35,
+      riskLevel: 'moderate',
+      riskFactors: [
+        {
+          id: 'network',
+          title: 'Network requests',
+          description: 'Makes external requests',
+          severity: 'medium',
+          points: 15,
+        },
+      ],
+      trustSignals: [],
+      extensionDependencies: [],
+      recommendation: 'Review before using.',
+    },
+    {
+      name: 'risky-ext',
+      publisher: 'sketchy',
+      version: '0.1.0',
+      marketplaceId: 'sketchy.risky-ext',
+      category: 'other',
+      riskScore: 65,
+      riskLevel: 'high',
+      riskFactors: [
+        {
+          id: 'child-process',
+          title: 'Shell execution',
+          description: 'Uses child_process',
+          severity: 'high',
+          points: 20,
+        },
+        {
+          id: 'install-script',
+          title: 'Has install script',
+          description: 'Runs postinstall',
+          severity: 'high',
+          points: 25,
+        },
+        {
+          id: 'no-repo',
+          title: 'No repository link',
+          description: 'No repo',
+          severity: 'low',
+          points: 10,
+        },
+      ],
+      trustSignals: [],
+      extensionDependencies: [{ name: 'axios', version: '0.18.0' }],
+      recommendation: 'Disable this extension.',
+    },
+  ],
+};
+
+describe('Markdown Report', () => {
+  it('generates valid markdown with header', () => {
+    const md = generateMarkdownReport(mockSummary);
+    expect(md).toContain('# Shieldex Security Report');
+    expect(md).toContain('VS Code Version');
+    expect(md).toContain('1.85.0');
+  });
+
+  it('includes summary table', () => {
+    const md = generateMarkdownReport(mockSummary);
+    expect(md).toContain('Total Extensions Scanned | 3');
+    expect(md).toContain('Low Risk | 1');
+    expect(md).toContain('High Risk | 1');
+  });
+
+  it('includes high risk extensions section', () => {
+    const md = generateMarkdownReport(mockSummary);
+    expect(md).toContain('## High & Critical Risk Extensions');
+    expect(md).toContain('### risky-ext');
+    expect(md).toContain('Disable this extension.');
+  });
+
+  it('includes all extensions table', () => {
+    const md = generateMarkdownReport(mockSummary);
+    expect(md).toContain('| safe-ext | trusted | 1.0.0 | 10 | low |');
+    expect(md).toContain('| risky-ext | sketchy | 0.1.0 | 65 | high |');
+  });
+});
+
+describe('CSV Report', () => {
+  it('generates valid CSV with header', () => {
+    const csv = generateCsvReport(mockSummary as any);
+    const lines = csv.split('\n').filter(Boolean);
+    expect(lines[0]).toBe(
+      'Extension,Publisher,Version,MarketplaceID,Category,RiskScore,RiskLevel,RiskFactors,Recommendation',
+    );
+    expect(lines.length).toBe(4); // header + 3 data rows
+  });
+
+  it('escapes CSV values with commas', () => {
+    const summary = {
+      reports: [
+        {
+          name: 'ext,with,commas',
+          publisher: 'test',
+          version: '1.0.0',
+          riskScore: 10,
+          riskLevel: 'low',
+          riskFactors: [],
+          recommendation: 'Safe',
+        },
+      ],
+    };
+    const csv = generateCsvReport(summary);
+    expect(csv).toContain('"ext,with,commas"');
+  });
+});
+
+describe('SARIF Report', () => {
+  it('generates valid SARIF structure', () => {
+    const sarif = generateSarifReport(mockSummary as any);
+    expect(sarif.$schema).toContain('sarif-schema');
+    expect(sarif.version).toBe('2.1.0');
+    expect(sarif.runs.length).toBe(1);
+  });
+
+  it('has correct tool info', () => {
+    const sarif = generateSarifReport(mockSummary as any);
+    expect(sarif.runs[0].tool.driver.name).toBe('Shieldex');
+    expect(sarif.runs[0].tool.driver.version).toBe('0.1.0');
+  });
+
+  it('maps risk factors to results', () => {
+    const sarif = generateSarifReport(mockSummary as any);
+    const results = sarif.runs[0].results;
+    // moderate-ext: 1 factor (network), risky-ext: 3 factors (child-process, install-script, no-repo)
+    expect(results.length).toBe(4);
+  });
+
+  it('includes extension metadata in properties', () => {
+    const sarif = generateSarifReport(mockSummary as any);
+    const result = sarif.runs[0].results[0];
+    expect(result.properties).toHaveProperty('extensionId');
+    expect(result.properties).toHaveProperty('riskScore');
+    expect(result.properties).toHaveProperty('riskLevel');
+  });
+
+  it('maps severity levels correctly', () => {
+    const sarif = generateSarifReport(mockSummary as any);
+    const levels = sarif.runs[0].results.map((r: any) => r.level);
+    expect(levels).toContain('error'); // high severity
+    expect(levels).toContain('warning'); // medium severity
+  });
+});

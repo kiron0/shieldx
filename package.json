@@ -1,0 +1,153 @@
+{
+  "name": "shieldex",
+  "displayName": "Shieldex - Extension Security & Permission Auditor",
+  "description": "Scan installed VS Code extensions for security risks, suspicious behavior, and excessive permissions.",
+  "version": "0.1.0",
+  "publisher": "thk",
+  "license": "MIT",
+  "icon": "assets/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kiron0/shieldex.git"
+  },
+  "homepage": "https://shieldex.js.org",
+  "bugs": {
+    "url": "https://github.com/kiron0/shieldex/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "security",
+    "extensions",
+    "audit",
+    "risk",
+    "permissions",
+    "firewall"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "shieldex",
+          "title": "Shieldex Security",
+          "icon": "assets/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "shieldex": [
+        {
+          "type": "webview",
+          "id": "shieldex.dashboard",
+          "name": "Security Dashboard"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "shieldex.scanExtensions",
+        "title": "Shieldex: Scan Installed Extensions"
+      },
+      {
+        "command": "shieldex.openDashboard",
+        "title": "Shieldex: Open Security Dashboard"
+      },
+      {
+        "command": "shieldex.exportReport",
+        "title": "Shieldex: Export Security Report"
+      },
+      {
+        "command": "shieldex.rescanExtension",
+        "title": "Shieldex: Rescan Extension"
+      },
+      {
+        "command": "shieldex.addToAllowlist",
+        "title": "Shieldex: Add Extension to Allowlist"
+      },
+      {
+        "command": "shieldex.addToBlocklist",
+        "title": "Shieldex: Block Extension"
+      },
+      {
+        "command": "shieldex.showPolicy",
+        "title": "Shieldex: Show Current Policy"
+      },
+      {
+        "command": "shieldex.scanVulnerabilities",
+        "title": "Shieldex: Scan for OSV Vulnerabilities"
+      }
+    ],
+    "configuration": {
+      "title": "Shieldex",
+      "properties": {
+        "shieldex.autoScanOnStartup": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically scan extensions on VS Code startup"
+        },
+        "shieldex.warnOnHighRisk": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show warning when high-risk extensions are detected"
+        },
+        "shieldex.minimumWarningLevel": {
+          "type": "string",
+          "default": "high",
+          "enum": [
+            "moderate",
+            "high",
+            "critical"
+          ],
+          "description": "Minimum risk level to trigger a warning"
+        },
+        "shieldex.scanNodeModules": {
+          "type": "boolean",
+          "default": false,
+          "description": "Scan node_modules inside extensions (may be slow)"
+        },
+        "shieldex.reportFormat": {
+          "type": "string",
+          "default": "markdown",
+          "enum": [
+            "markdown",
+            "json"
+          ],
+          "description": "Default format for exported reports"
+        },
+        "shieldex.enableOsvScan": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable runtime vulnerability scanning via OSV.dev API (requires network)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run esbuild",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "esbuild": "node esbuild.config.js",
+    "esbuild:watch": "node esbuild.config.js --watch",
+    "build": "npx @vscode/vsce package",
+    "lint": "eslint src --ext ts",
+    "format": "prettier --write .",
+    "test": "vitest run",
+    "test:watch": "vitest watch"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "^26.0.1",
+    "esbuild": "^0.28.1",
+    "prettier": "^3.8.4",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.9"
+  }
+}
