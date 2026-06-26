@@ -11,4 +11,5 @@ esbuild.config.ts
 bun.lock
 node_modules/.cache/**
 .gitignore
+.prettierignore
 plan.md
