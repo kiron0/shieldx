@@ -73,8 +73,17 @@ export function generateMarkdownReport(summary: {
   return md;
 }
 
-export function generateJsonReport(summary: Record<string, unknown>): string {
-  return JSON.stringify(summary, null, 2);
+export function generateJsonReport(summary: {
+  totalExtensions?: number;
+  lowRisk?: number;
+  moderateRisk?: number;
+  highRisk?: number;
+  criticalRisk?: number;
+  scannedAt?: string;
+  vscodeVersion?: string;
+  reports?: Array<Record<string, unknown>>;
+}): string {
+  return JSON.stringify(normalizeExportSummary(summary), null, 2);
 }
 
 export function generateHtmlReport(summary: {
@@ -198,6 +207,7 @@ export function generateCsvReport(summary: {
     'Publisher',
     'Version',
     'MarketplaceID',
+    'MarketplaceUrl',
     'Category',
     'RiskScore',
     'RiskLevel',
@@ -212,6 +222,7 @@ export function generateCsvReport(summary: {
       escapeCsv(r.publisher),
       escapeCsv(r.version),
       escapeCsv(r.marketplaceId || ''),
+      escapeCsv(getMarketplaceUrl(r.marketplaceId, r.publisher, r.name)),
       escapeCsv(r.category || ''),
       r.riskScore.toString(),
       r.riskLevel,
@@ -254,6 +265,36 @@ function escapeHtml(value: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function normalizeExportSummary(summary: {
+  totalExtensions?: number;
+  lowRisk?: number;
+  moderateRisk?: number;
+  highRisk?: number;
+  criticalRisk?: number;
+  scannedAt?: string;
+  vscodeVersion?: string;
+  reports?: Array<Record<string, unknown>>;
+}): Record<string, unknown> {
+  const reports = Array.isArray(summary.reports) ? summary.reports : [];
+  return {
+    totalExtensions: summary.totalExtensions ?? 0,
+    lowRisk: summary.lowRisk ?? 0,
+    moderateRisk: summary.moderateRisk ?? 0,
+    highRisk: summary.highRisk ?? 0,
+    criticalRisk: summary.criticalRisk ?? 0,
+    scannedAt: summary.scannedAt ?? '',
+    vscodeVersion: summary.vscodeVersion ?? '',
+    reports: reports.map((report) => ({
+      ...report,
+      marketplaceUrl: getMarketplaceUrl(
+        report.marketplaceId as string | undefined,
+        String(report.publisher || ''),
+        String(report.name || ''),
+      ),
+    })),
+  };
 }
 
 export interface SarifReport {
@@ -338,6 +379,11 @@ export function generateSarifReport(summary: {
         ],
         properties: {
           extensionId: ext.marketplaceId || `${ext.publisher}.${ext.name}`,
+          marketplaceUrl: getMarketplaceUrl(
+            ext.marketplaceId,
+            ext.publisher,
+            ext.name,
+          ),
           riskScore: ext.riskScore,
           riskLevel: ext.riskLevel,
           evidence: factor.evidence || [],

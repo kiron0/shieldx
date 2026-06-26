@@ -139,7 +139,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest watch",
-    "check-all": "bun run format && bun run test && bun run build"
+    "check-all": "bun run format && bun run lint && bun run test && bun run build"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

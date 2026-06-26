@@ -150,7 +150,9 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
   }
 
   private async confirmClearHistoryEntry(id: string): Promise<void> {
-    const entry = this.getHistory().find((item) => (item.id || item.time) === id);
+    const entry = this.getHistory().find(
+      (item) => (item.id || item.time) === id,
+    );
     const label = entry
       ? `${formatDateTime(entry.time)} (${entry.total} total, ${entry.high} high, ${entry.critical} critical)`
       : 'selected history entry';

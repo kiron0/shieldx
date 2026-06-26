@@ -54,7 +54,7 @@ describe('Dashboard HTML', () => {
     expect(html).toContain("type: 'cancelScan'");
     expect(html).toContain("type: 'export'");
     expect(html).toContain('history-results');
-    expect(html).toContain('renderHistoryInlineDetail(s.summary)');
+    expect(html).toContain('renderHistoryInlineDetail(s.summary, historyId)');
     expect(html).toContain('expandedHistoryEntryId === historyId');
     expect(html).toContain('openLatestHistoryEntry()');
     expect(html).toContain("type: 'requestClearHistory'");

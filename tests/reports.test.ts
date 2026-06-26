@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   generateCsvReport,
+  generateJsonReport,
   generateMarkdownReport,
   generateSarifReport,
 } from '../src/reports/markdown-report';
@@ -128,12 +129,23 @@ describe('Markdown Report', () => {
   });
 });
 
+describe('JSON Report', () => {
+  it('serializes full summary with marketplace urls', () => {
+    const json = JSON.parse(generateJsonReport(mockSummary as any));
+    expect(json.totalExtensions).toBe(3);
+    expect(json.reports).toHaveLength(3);
+    expect(json.reports[0].marketplaceUrl).toBe(
+      'https://marketplace.visualstudio.com/items?itemName=trusted.safe-ext',
+    );
+  });
+});
+
 describe('CSV Report', () => {
   it('generates valid CSV with header', () => {
     const csv = generateCsvReport(mockSummary as any);
     const lines = csv.split('\n').filter(Boolean);
     expect(lines[0]).toBe(
-      'Extension,Publisher,Version,MarketplaceID,Category,RiskScore,RiskLevel,RiskFactors,Recommendation',
+      'Extension,Publisher,Version,MarketplaceID,MarketplaceUrl,Category,RiskScore,RiskLevel,RiskFactors,Recommendation',
     );
     expect(lines.length).toBe(4); // header + 3 data rows
   });
@@ -182,6 +194,7 @@ describe('SARIF Report', () => {
     const sarif = generateSarifReport(mockSummary as any);
     const result = sarif.runs[0].results[0];
     expect(result.properties).toHaveProperty('extensionId');
+    expect(result.properties).toHaveProperty('marketplaceUrl');
     expect(result.properties).toHaveProperty('riskScore');
     expect(result.properties).toHaveProperty('riskLevel');
   });
