@@ -1,3 +1,5 @@
+import { WEBVIEW_DATE_FORMATTERS_SCRIPT } from '../utils/date-format';
+
 export function generateDashboardHtml(cspSource: string): string {
   const nonce = getNonce();
 
@@ -44,10 +46,10 @@ export function generateDashboardHtml(cspSource: string): string {
     /* Progress */
     #progress-section { display: none; margin-bottom: 10px; }
     #progress-section.visible { display: block; }
-    .progress-track { width: 100%; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .progress-row { display: flex; align-items: center; gap: 8px; }
+    .progress-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
     .progress-fill { height: 100%; width: 0%; background: var(--accent); border-radius: 2px; transition: width 0.3s ease; }
     .progress-info { display: flex; justify-content: space-between; font-size: 10px; opacity: 0.6; margin-top: 4px; }
-    .progress-actions { display: flex; justify-content: flex-end; margin-top: 6px; }
     .progress-cancel { display: none; background: var(--sec-bg); color: var(--sec-fg); border: none; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
     #progress-section.visible .progress-cancel { display: inline-flex; }
 
@@ -97,12 +99,12 @@ export function generateDashboardHtml(cspSource: string): string {
     .rec-actions li::before { content: '\\2192'; opacity: 0.4; }
 
     /* Search + Filter */
-    .search-bar { margin-bottom: 6px; }
-    .search-bar input { width: 100%; background: var(--input-bg); color: var(--input-fg); border: 1px solid var(--input-border); border-radius: var(--radius); padding: 5px 8px; font-size: 12px; font-family: inherit; outline: none; transition: border-color 0.15s; }
+    .search-bar { margin-bottom: 6px; position: relative; }
+    .search-bar input { width: 100%; background: var(--input-bg); color: var(--input-fg); border: 1px solid var(--input-border); border-radius: var(--radius); padding: 5px 42px 5px 8px; font-size: 12px; font-family: inherit; outline: none; transition: border-color 0.15s; }
     .search-bar input:focus { border-color: var(--accent); }
     .search-bar input::placeholder { color: var(--input-ph); }
     .filter-bar { display: flex; gap: 6px; align-items: center; justify-content: flex-end; margin-bottom: 8px; }
-    .ext-count { font-size: 10px; opacity: 0.5; }
+    .ext-count { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); font-size: 10px; opacity: 0.5; pointer-events: none; }
 
     /* Extension List */
     .ext-list { display: flex; flex-direction: column; gap: 3px; }
@@ -112,12 +114,15 @@ export function generateDashboardHtml(cspSource: string): string {
     .ext-item[data-level="moderate"] { border-left-color: var(--moderate); }
     .ext-item[data-level="high"] { border-left-color: var(--high); }
     .ext-item[data-level="critical"] { border-left-color: var(--critical); }
-    .ext-item-header { display: flex; align-items: center; gap: 6px; }
+    .ext-item-header { display: flex; align-items: center; gap: 10px; }
     .ext-item-info { flex: 1; min-width: 0; }
     .ext-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
     .ext-pub { font-size: 10px; opacity: 0.45; display: block; }
+    .ext-version { font-size: 11px; font-weight: 600; white-space: nowrap; opacity: 0.7; margin-left: auto; }
     .ext-score { font-size: 12px; font-weight: 700; white-space: nowrap; }
     .ext-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; margin-left: auto; }
+    .item-toggle { background: none; border: none; color: var(--fg); opacity: 0.55; cursor: pointer; font-size: 12px; padding: 0; line-height: 1; }
+    .item-toggle:hover { opacity: 0.85; }
 
     /* Status Chip */
     .status-chip { font-size: 9px; padding: 1px 6px; border-radius: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; white-space: nowrap; }
@@ -203,9 +208,11 @@ export function generateDashboardHtml(cspSource: string): string {
   </div>
 
   <div id="progress-section">
-    <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+    <div class="progress-row">
+      <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+      <button class="progress-cancel" data-action="cancel-scan">Cancel</button>
+    </div>
     <div class="progress-info"><span id="progress-text">Scanning...</span><span id="progress-pct">0%</span></div>
-    <div class="progress-actions"><button class="progress-cancel" data-action="cancel-scan">Cancel</button></div>
   </div>
 
   <div class="quick-actions">
@@ -233,9 +240,8 @@ export function generateDashboardHtml(cspSource: string): string {
   </div>
 
   <div id="panel-extensions" class="panel">
-    <div class="search-bar"><input type="text" id="ext-search" placeholder="Search extensions..." /></div>
+    <div class="search-bar"><input type="text" id="ext-search" placeholder="Search extensions..." /><span id="ext-count" class="ext-count">0</span></div>
     <div class="filter-bar">
-      <span id="ext-count" class="ext-count">0</span>
     </div>
     <div id="ext-list" class="ext-list"></div>
     <div id="ext-empty" class="empty-state"><p>No extensions found.</p></div>
@@ -253,7 +259,7 @@ export function generateDashboardHtml(cspSource: string): string {
       var vscode = acquireVsCodeApi();
       var scanData = null;
       var scanHistory = [];
-      var selectedHistoryEntry = null;
+      var expandedHistoryEntryId = null;
       var shouldAutoOpenLatestHistory = false;
 
       // ── Event Delegation ──
@@ -275,16 +281,19 @@ export function generateDashboardHtml(cspSource: string): string {
           switchTab(el.getAttribute('data-tab'));
         } else if (action === 'select-history') {
           e.stopPropagation();
-          loadHistoryEntry(el.getAttribute('data-id'));
-        } else if (action === 'history-back') {
-          selectedHistoryEntry = null;
-          renderHistory();
+          toggleHistoryEntry(el.getAttribute('data-id'));
         } else if (action === 'clear-history-entry') {
           e.stopPropagation();
           clearHistoryEntry(el.getAttribute('data-id'));
+        } else if (action === 'open-extension') {
+          e.stopPropagation();
+          var openExtId = el.getAttribute('data-id');
+          if (openExtId) vscode.postMessage({ type: 'navigate', extensionId: openExtId });
         } else if (action === 'toggle-extension-detail') {
+          e.stopPropagation();
           toggleDetail(el.getAttribute('data-id'));
         } else if (action === 'toggle-history-detail') {
+          e.stopPropagation();
           toggleHistoryDetail(el.getAttribute('data-id'));
         } else if (action === 'show-more') {
           e.stopPropagation();
@@ -317,11 +326,11 @@ export function generateDashboardHtml(cspSource: string): string {
         else if (msg.type === 'scanProgress') { updateProgress(msg.percent, msg.text); }
         else if (msg.type === 'scanStart') { shouldAutoOpenLatestHistory = true; showProgress(true); }
         else if (msg.type === 'scanEnd') { showProgress(false); if (shouldAutoOpenLatestHistory) openLatestHistoryEntry(); shouldAutoOpenLatestHistory = false; }
-        else if (msg.type === 'history') { scanHistory = msg.history || []; if (selectedHistoryEntry) selectedHistoryEntry = null; renderHistory(); }
+        else if (msg.type === 'history') { scanHistory = msg.history || []; expandedHistoryEntryId = null; renderHistory(); }
         else if (msg.type === 'historyEntryCleared') {
           var clearedId = msg.id;
-          if (selectedHistoryEntry && (selectedHistoryEntry.id || selectedHistoryEntry.time) === clearedId) {
-            selectedHistoryEntry = null;
+          if (expandedHistoryEntryId === clearedId) {
+            expandedHistoryEntryId = null;
           }
         }
       });
@@ -360,47 +369,33 @@ export function generateDashboardHtml(cspSource: string): string {
         var header = document.getElementById('history-header');
         if (!scanHistory || scanHistory.length === 0) {
           c.innerHTML = '';
-          if (detail) { detail.innerHTML = ''; detail.classList.remove('visible'); }
-          if (header) header.classList.remove('detail', 'has-history');
+          expandedHistoryEntryId = null;
+          resetHistoryDetail();
+          if (header) header.classList.remove('has-history');
           empty.style.display = 'block';
           return;
         }
         empty.style.display = 'none';
         if (header) header.classList.add('has-history');
-
-        if (selectedHistoryEntry && selectedHistoryEntry.summary) {
-          c.innerHTML = '';
-          if (header) header.classList.add('detail');
-          if (detail) {
-            detail.innerHTML = renderHistoryDetail(selectedHistoryEntry.summary);
-            detail.classList.add('visible');
-          }
-          return;
-        }
-
-        if (header) header.classList.remove('detail');
-        if (detail) {
-          detail.innerHTML = '';
-          detail.classList.remove('visible');
-        }
+        resetHistoryDetail();
         var h = '';
         for (var i = 0; i < scanHistory.length; i++) {
           var s = scanHistory[i];
-          h += '<div class="history-item" data-action="select-history" data-id="' + escAttr(s.id || s.time) + '"><div class="history-item-top"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="history-item-actions"><button data-action="clear-history-entry" data-id="' + escAttr(s.id || s.time) + '">Clear</button></div></div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div></div>';
+          var historyId = s.id || s.time;
+          var expanded = expandedHistoryEntryId === historyId;
+          h += '<div class="history-item" data-action="select-history" data-id="' + escAttr(historyId) + '"><div class="history-item-top"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="history-item-actions"><button class="item-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '">' + (expanded ? '▾' : '▸') + '</button><button data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div>';
+          if (expanded && s.summary) {
+            h += renderHistoryInlineDetail(s.summary);
+          }
+          h += '</div>';
         }
         c.innerHTML = h;
       }
 
-      function loadHistoryEntry(id) {
+      function toggleHistoryEntry(id) {
         if (!id) return;
-        for (var i = 0; i < scanHistory.length; i++) {
-          var entry = scanHistory[i];
-          if ((entry.id || entry.time) === id && entry.summary) {
-            selectedHistoryEntry = entry;
-            renderHistory();
-            return;
-          }
-        }
+        expandedHistoryEntryId = expandedHistoryEntryId === id ? null : id;
+        renderHistory();
       }
 
       function clearHistoryEntry(id) {
@@ -508,39 +503,11 @@ export function generateDashboardHtml(cspSource: string): string {
         for (var i = 0; i < reports.length; i++) {
           var r = reports[i];
           var cls = r.riskLevel;
-          var safeId = r.id.replace(/[^a-zA-Z0-9]/g, '_');
 
-          h += '<div class="ext-item" data-action="toggle-extension-detail" data-id="' + r.id + '" data-level="' + cls + '">';
+          h += '<div class="ext-item" data-action="open-extension" data-id="' + r.id + '" data-level="' + cls + '">';
           h += '<div class="ext-item-header">';
           h += '<div class="ext-item-info"><span class="ext-name">' + esc(r.displayName || r.name) + '</span><span class="ext-pub">' + esc(r.publisher) + '</span></div>';
-          h += '<div class="ext-meta"><span class="ext-score" style="color:var(--' + cls + ')">' + r.riskScore + '</span><span class="status-chip ' + cls + '">' + cls.toUpperCase() + '</span></div>';
-          h += '</div>';
-
-          h += '<div id="detail-' + safeId + '" class="ext-detail">';
-          h += '<div class="detail-row"><span class="detail-label">Version</span><span>' + esc(r.version) + '</span></div>';
-          if (r.marketplaceId) h += '<div class="detail-row"><span class="detail-label">ID</span><span>' + esc(r.marketplaceId) + '</span></div>';
-          if (r.category) h += '<div class="detail-row"><span class="detail-label">Category</span><span>' + esc(r.category) + '</span></div>';
-
-          // Score bar
-          h += '<div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:' + r.riskScore + '%;background:var(--' + cls + ')"></div></div><span class="score-num" style="color:var(--' + cls + ')">' + r.riskScore + '/100</span></div>';
-
-          // Risk factors (expandable)
-          if (r.riskFactors && r.riskFactors.length) {
-            h += renderExpandableList('rf-' + safeId, 'Risk Factors', 'factor', r.riskFactors, 5);
-          }
-
-          // Trust signals
-          if (r.trustSignals && r.trustSignals.length) {
-            h += renderExpandableList('ts-' + safeId, 'Trust Signals', 'signal', r.trustSignals, 5);
-          }
-
-          // Recommendation
-          var recCls = (cls === 'low' || cls === 'moderate') ? ' safe' : '';
-          h += '<div class="rec-box' + recCls + '">' + esc(r.recommendation) + '</div>';
-
-          // Navigate button
-          h += '<div class="detail-actions"><button data-action="navigate" data-id="' + r.id + '">Open in Extensions</button></div>';
-
+          h += '<span class="ext-version">' + esc(r.version) + '</span>';
           h += '</div></div>';
         }
         container.innerHTML = h;
@@ -558,12 +525,26 @@ export function generateDashboardHtml(cspSource: string): string {
         if (el) el.classList.toggle('open');
       }
 
+      function resetHistoryDetail() {
+        var detail = document.getElementById('history-detail');
+        var header = document.getElementById('history-header');
+        if (detail) {
+          detail.innerHTML = '';
+          detail.classList.remove('visible');
+        }
+        if (header) header.classList.remove('detail');
+      }
+
       function openLatestHistoryEntry() {
         if (!scanHistory || scanHistory.length === 0) return;
         var first = scanHistory[0];
         if (!first) return;
-        selectedHistoryEntry = first;
+        expandedHistoryEntryId = first.id || first.time;
         switchTab('history');
+      }
+
+      function renderHistoryInlineDetail(summary) {
+        return renderHistoryDetailResults(summary, 'all', '');
       }
 
       function renderHistoryDetail(summary) {
@@ -627,44 +608,14 @@ export function generateDashboardHtml(cspSource: string): string {
       function esc(s) { if (!s) return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
       function escAttr(s) { return esc(String(s)).replace(/'/g, '&#39;'); }
 
-      function formatDateTime(iso) {
-        if (!iso) return '';
-        var d = new Date(iso);
-        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-        var h = d.getHours();
-        var ap = h >= 12 ? 'PM' : 'AM';
-        h = h % 12 || 12;
-        var m = String(d.getMinutes());
-        if (m.length < 2) m = '0' + m;
-        return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear() + ' ' + h + ':' + m + ' ' + ap;
-      }
-
-      function formatRelativeTime(iso) {
-        if (!iso) return '';
-        var now = Date.now();
-        var then = new Date(iso).getTime();
-        var diff = Math.floor((now - then) / 1000);
-        if (diff < 60) return 'Just now';
-        if (diff < 3600) return Math.floor(diff / 60) + ' min ago';
-        if (diff < 86400) return Math.floor(diff / 3600) + ' hr ago';
-        return formatDateTime(iso);
-      }
+${WEBVIEW_DATE_FORMATTERS_SCRIPT}
 
       document.addEventListener('input', function(e) {
-        if (e.target && e.target.id === 'history-search' && selectedHistoryEntry && selectedHistoryEntry.summary) {
-          var results = document.getElementById('history-results');
-          var filter = document.getElementById('history-risk-filter');
-          var value = e.target.value.toLowerCase();
-          if (results) results.innerHTML = renderHistoryDetailResults(selectedHistoryEntry.summary, filter ? filter.value : 'all', value);
-        }
+        if (e.target && e.target.id === 'history-search' && false) return;
       });
 
       document.addEventListener('change', function(e) {
-        if (e.target && e.target.id === 'history-risk-filter' && selectedHistoryEntry && selectedHistoryEntry.summary) {
-          var results = document.getElementById('history-results');
-          var search = document.getElementById('history-search');
-          if (results) results.innerHTML = renderHistoryDetailResults(selectedHistoryEntry.summary, e.target.value, search ? search.value.toLowerCase() : '');
-        }
+        if (e.target && e.target.id === 'history-risk-filter' && false) return;
       });
 
       // ── Init ──

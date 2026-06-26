@@ -1,3 +1,5 @@
+import { formatDateOnly } from '../utils/date-format';
+
 /**
  * Team-ready executive summary security report.
  * Shorter, business-focused version of the full report.
@@ -107,7 +109,7 @@ export function generateExecutiveSummary(summary: {
 export function generateExecutiveMarkdown(exec: ExecutiveSummary): string {
   let md = `# Shieldex Executive Security Summary\n\n`;
   md += `**Organization:** ${exec.organization}\n`;
-  md += `**Date:** ${new Date(exec.reportDate).toLocaleDateString()}\n`;
+  md += `**Date:** ${formatDateOnly(exec.reportDate)}\n`;
   md += `**Compliance Status:** ${exec.complianceStatus.toUpperCase()}\n\n`;
   md += `---\n\n`;
   md += `## Overview\n\n`;

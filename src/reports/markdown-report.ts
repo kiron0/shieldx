@@ -1,3 +1,5 @@
+import { formatDateTime } from '../utils/date-format';
+
 export function generateMarkdownReport(summary: {
   totalExtensions: number;
   lowRisk: number;
@@ -20,7 +22,7 @@ export function generateMarkdownReport(summary: {
   scannedAt: string;
   vscodeVersion?: string;
 }): string {
-  const date = new Date(summary.scannedAt).toLocaleString();
+  const date = formatDateTime(summary.scannedAt);
   let md = `# Shieldex Security Report\n\n`;
   md += `**Generated:** ${date}\n`;
   if (summary.vscodeVersion)
@@ -97,7 +99,7 @@ export function generateHtmlReport(summary: {
   scannedAt: string;
   vscodeVersion?: string;
 }): string {
-  const date = new Date(summary.scannedAt).toLocaleString();
+  const date = formatDateTime(summary.scannedAt);
   return `<!DOCTYPE html>
 <html lang="en">
 <head>

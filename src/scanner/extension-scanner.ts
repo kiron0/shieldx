@@ -11,26 +11,32 @@ import { calculateRisk, generateRecommendation } from './risk-scorer';
 
 export async function scanExtension(
   ext: InstalledExtension,
+  token?: vscode.CancellationToken,
 ): Promise<ExtensionSecurityReport> {
   info(`Scanning: ${ext.id}`);
+  throwIfCancelled(token);
 
   // Package analysis
   const packageResult = analyzePackage(ext);
+  throwIfCancelled(token);
 
   // Code analysis
   const codeResult = analyzeCode(
     ext.installPath,
     packageResult.detectedCapabilities,
   );
+  throwIfCancelled(token);
 
   // Dependency analysis
   const depResult = analyzeDependencies(
     ext.installPath,
     packageResult.extensionDependencies,
   );
+  throwIfCancelled(token);
 
   // Publisher reputation check (npm registry)
-  const pubResult = await checkPublisherReputation(ext);
+  const pubResult = await checkPublisherReputation(ext, token);
+  throwIfCancelled(token);
 
   // OSV vulnerability check (optional, network)
   const osvEnabled = vscode.workspace
@@ -41,12 +47,14 @@ export async function scanExtension(
     try {
       const osvResults = await queryOsvVulnerabilities(
         packageResult.extensionDependencies,
+        token,
       );
       osvFactors.push(...osvResults);
     } catch {
       // OSV failure is non-critical
     }
   }
+  throwIfCancelled(token);
 
   // Merge results
   const allRiskFactors = [
@@ -116,7 +124,7 @@ export async function scanAllExtensions(
     if (onProgress) {
       onProgress(i + 1, extensions.length, ext.displayName || ext.name);
     }
-    const report = await scanExtension(ext);
+    const report = await scanExtension(ext, token);
     if (token?.isCancellationRequested) {
       throw new vscode.CancellationError();
     }
@@ -138,4 +146,10 @@ export async function scanAllExtensions(
   };
 
   return summary;
+}
+
+function throwIfCancelled(token?: vscode.CancellationToken): void {
+  if (token?.isCancellationRequested) {
+    throw new vscode.CancellationError();
+  }
 }

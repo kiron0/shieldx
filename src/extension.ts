@@ -20,6 +20,10 @@ import {
   getInstalledExtensions,
   InstalledExtension,
 } from './utils/extension-utils';
+import {
+  formatDateStamp,
+  formatDateTime,
+} from './utils/date-format';
 import { fileExists, readJsonFile, writeJsonFile } from './utils/file-utils';
 import { info, warn } from './utils/logger';
 
@@ -281,6 +285,8 @@ function showWelcomeMessage(): void {
 
 async function runScan(context: vscode.ExtensionContext): Promise<void> {
   const config = vscode.workspace.getConfiguration('shieldex');
+  let shouldOfferSidebar = false;
+  let riskyExtensionCount = 0;
   if (activeScanCancellation) {
     vscode.window.showInformationMessage('Shieldex: Scan already running.');
     return;
@@ -370,13 +376,8 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
                 summary.criticalRisk > 0);
 
             if (shouldWarn) {
-              const action = await vscode.window.showWarningMessage(
-                `Shieldex: ${summary.highRisk + summary.criticalRisk} risky extensions found.`,
-                'Show in Sidebar',
-              );
-              if (action === 'Show in Sidebar') {
-                focusSidebar();
-              }
+              shouldOfferSidebar = true;
+              riskyExtensionCount = summary.highRisk + summary.criticalRisk;
             }
           }
         }
@@ -399,6 +400,16 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
     activeScanCancellation?.dispose();
     activeScanCancellation = undefined;
     dashboardProvider.sendScanEnd();
+  }
+
+  if (shouldOfferSidebar) {
+    const action = await vscode.window.showWarningMessage(
+      `Shieldex: ${riskyExtensionCount} risky extensions found.`,
+      'Show in Sidebar',
+    );
+    if (action === 'Show in Sidebar') {
+      focusSidebar();
+    }
   }
 }
 
@@ -472,7 +483,7 @@ async function exportReport(
   const ext = extMap[fmt] || 'md';
 
   const defaultUri = vscode.Uri.file(
-    `shieldex-report-${new Date().toISOString().split('T')[0]}.${ext}`,
+    `shieldex-report-${formatDateStamp(new Date())}.${ext}`,
   );
 
   const filterMap: Record<string, string[]> = {
@@ -602,8 +613,7 @@ async function pickHistorySummary(
 }
 
 function formatHistoryLabel(entry: ScanHistoryEntry): string {
-  const dt = new Date(entry.time);
-  return dt.toLocaleString();
+  return formatDateTime(entry.time);
 }
 
 function loadPolicy(): ShieldexPolicy | null {

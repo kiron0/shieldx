@@ -1,6 +1,8 @@
 import * as https from 'https';
+import * as vscode from 'vscode';
 import { RiskFactor, TrustSignal } from '../types';
 import { InstalledExtension } from '../utils/extension-utils';
+import { formatDateStamp } from '../utils/date-format';
 import { info } from '../utils/logger';
 
 interface NpmRegistryResponse {
@@ -34,6 +36,7 @@ const githubCache = new Map<string, GithubRepoInfo | null>();
 
 export async function checkPublisherReputation(
   ext: InstalledExtension,
+  token?: vscode.CancellationToken,
 ): Promise<{ trustSignals: TrustSignal[]; riskFactors: RiskFactor[] }> {
   const trustSignals: TrustSignal[] = [];
   const riskFactors: RiskFactor[] = [];
@@ -42,7 +45,8 @@ export async function checkPublisherReputation(
   if (!pkgName) return { trustSignals, riskFactors };
 
   try {
-    const npmData = await fetchNpmRegistry(pkgName);
+    throwIfCancelled(token);
+    const npmData = await fetchNpmRegistry(pkgName, token);
 
     if (npmData) {
       // --- Publisher verification ---
@@ -69,9 +73,7 @@ export async function checkPublisherReputation(
             description: `Last npm update was ${Math.floor(monthsAgo)} months ago. Abandoned extension is a security risk.`,
             severity: 'low',
             points: 5,
-            evidence: [
-              `Last updated: ${lastUpdated.toISOString().split('T')[0]}`,
-            ],
+            evidence: [`Last updated: ${formatDateStamp(lastUpdated)}`],
           });
         } else if (monthsAgo < 1) {
           trustSignals.push({
@@ -110,13 +112,14 @@ export async function checkPublisherReputation(
             description: `Published only ${Math.floor(daysSinceCreation)} days ago. Less established.`,
             severity: 'low',
             points: 5,
-            evidence: [`Created: ${created.toISOString().split('T')[0]}`],
+            evidence: [`Created: ${formatDateStamp(created)}`],
           });
         }
       }
 
       // --- Download count (install count) ---
-      const downloads = await fetchNpmDownloads(pkgName);
+      throwIfCancelled(token);
+      const downloads = await fetchNpmDownloads(pkgName, token);
       if (downloads !== null) {
         if (downloads > 1000000) {
           trustSignals.push({
@@ -140,7 +143,8 @@ export async function checkPublisherReputation(
       // --- GitHub repo enrichment ---
       const repoUrl = extractGithubRepo(npmData);
       if (repoUrl) {
-        const githubData = await fetchGithubRepo(repoUrl);
+        throwIfCancelled(token);
+        const githubData = await fetchGithubRepo(repoUrl, token);
         if (githubData) {
           // Open issues count
           if (githubData.open_issues_count !== undefined) {
@@ -182,9 +186,7 @@ export async function checkPublisherReputation(
                 description: `GitHub repo not pushed to for ${Math.floor(monthsSincePush)} months.`,
                 severity: 'low',
                 points: 5,
-                evidence: [
-                  `Last push: ${lastPush.toISOString().split('T')[0]}`,
-                ],
+                evidence: [`Last push: ${formatDateStamp(lastPush)}`],
               });
             }
           }
@@ -269,87 +271,119 @@ export async function checkPublisherReputation(
 
 function fetchNpmRegistry(
   pkgName: string,
+  token?: vscode.CancellationToken,
 ): Promise<NpmRegistryResponse | null> {
   if (registryCache.has(pkgName)) {
     return Promise.resolve(registryCache.get(pkgName) || null);
   }
 
   return new Promise((resolve) => {
-    const timeout = setTimeout(() => resolve(null), 5000);
+    if (token?.isCancellationRequested) {
+      resolve(null);
+      return;
+    }
 
-    https
-      .get(
-        `https://registry.npmjs.org/${encodeURIComponent(pkgName)}`,
-        { headers: { Accept: 'application/json' } },
-        (res) => {
-          if (res.statusCode !== 200) {
-            clearTimeout(timeout);
+    let settled = false;
+    const finish = (value: NpmRegistryResponse | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      cancelDisposable?.dispose();
+      resolve(value);
+    };
+    const timeout = setTimeout(() => finish(null), 5000);
+    const req = https.get(
+      `https://registry.npmjs.org/${encodeURIComponent(pkgName)}`,
+      { headers: { Accept: 'application/json' } },
+      (res) => {
+        if (res.statusCode !== 200) {
+          registryCache.set(pkgName, null);
+          finish(null);
+          return;
+        }
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data) as NpmRegistryResponse;
+            registryCache.set(pkgName, parsed);
+            finish(parsed);
+          } catch {
             registryCache.set(pkgName, null);
-            resolve(null);
-            return;
+            finish(null);
           }
-          let data = '';
-          res.on('data', (chunk) => (data += chunk));
-          res.on('end', () => {
-            clearTimeout(timeout);
-            try {
-              const parsed = JSON.parse(data) as NpmRegistryResponse;
-              registryCache.set(pkgName, parsed);
-              resolve(parsed);
-            } catch {
-              registryCache.set(pkgName, null);
-              resolve(null);
-            }
-          });
-        },
-      )
-      .on('error', () => {
-        clearTimeout(timeout);
-        registryCache.set(pkgName, null);
-        resolve(null);
-      });
+        });
+      },
+    );
+
+    req.on('error', () => {
+      registryCache.set(pkgName, null);
+      finish(null);
+    });
+
+    const cancelDisposable = token?.onCancellationRequested(() => {
+      req.destroy();
+      finish(null);
+    });
   });
 }
 
-function fetchNpmDownloads(pkgName: string): Promise<number | null> {
+function fetchNpmDownloads(
+  pkgName: string,
+  token?: vscode.CancellationToken,
+): Promise<number | null> {
   if (downloadCache.has(pkgName)) {
     return Promise.resolve(downloadCache.get(pkgName) || null);
   }
 
   return new Promise((resolve) => {
-    const timeout = setTimeout(() => resolve(null), 3000);
+    if (token?.isCancellationRequested) {
+      resolve(null);
+      return;
+    }
 
-    https
-      .get(
-        `https://api.npmjs.org/downloads/point/last-month/${encodeURIComponent(pkgName)}`,
-        (res) => {
-          if (res.statusCode !== 200) {
-            clearTimeout(timeout);
+    let settled = false;
+    const finish = (value: number | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      cancelDisposable?.dispose();
+      resolve(value);
+    };
+    const timeout = setTimeout(() => finish(null), 3000);
+    const req = https.get(
+      `https://api.npmjs.org/downloads/point/last-month/${encodeURIComponent(pkgName)}`,
+      (res) => {
+        if (res.statusCode !== 200) {
+          downloadCache.set(pkgName, null);
+          finish(null);
+          return;
+        }
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data) as NpmDownloadsResponse;
+            const count = parsed.downloads || 0;
+            downloadCache.set(pkgName, count);
+            finish(count);
+          } catch {
             downloadCache.set(pkgName, null);
-            resolve(null);
-            return;
+            finish(null);
           }
-          let data = '';
-          res.on('data', (chunk) => (data += chunk));
-          res.on('end', () => {
-            clearTimeout(timeout);
-            try {
-              const parsed = JSON.parse(data) as NpmDownloadsResponse;
-              const count = parsed.downloads || 0;
-              downloadCache.set(pkgName, count);
-              resolve(count);
-            } catch {
-              downloadCache.set(pkgName, null);
-              resolve(null);
-            }
-          });
-        },
-      )
-      .on('error', () => {
-        clearTimeout(timeout);
-        downloadCache.set(pkgName, null);
-        resolve(null);
-      });
+        });
+      },
+    );
+
+    req.on('error', () => {
+      downloadCache.set(pkgName, null);
+      finish(null);
+    });
+
+    const cancelDisposable = token?.onCancellationRequested(() => {
+      req.destroy();
+      finish(null);
+    });
   });
 }
 
@@ -376,51 +410,74 @@ function extractGithubRepo(npmData: NpmRegistryResponse): string | null {
   return null;
 }
 
-function fetchGithubRepo(repoPath: string): Promise<GithubRepoInfo | null> {
+function fetchGithubRepo(
+  repoPath: string,
+  token?: vscode.CancellationToken,
+): Promise<GithubRepoInfo | null> {
   if (githubCache.has(repoPath)) {
     return Promise.resolve(githubCache.get(repoPath) || null);
   }
 
   return new Promise((resolve) => {
-    const timeout = setTimeout(() => resolve(null), 3000);
+    if (token?.isCancellationRequested) {
+      resolve(null);
+      return;
+    }
 
-    https
-      .get(
-        `https://api.github.com/repos/${repoPath}`,
-        {
-          headers: {
-            'User-Agent': 'Shieldex-VSCode-Extension',
-            Accept: 'application/vnd.github.v3+json',
-          },
+    let settled = false;
+    const finish = (value: GithubRepoInfo | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      cancelDisposable?.dispose();
+      resolve(value);
+    };
+    const timeout = setTimeout(() => finish(null), 3000);
+    const req = https.get(
+      `https://api.github.com/repos/${repoPath}`,
+      {
+        headers: {
+          'User-Agent': 'Shieldex-VSCode-Extension',
+          Accept: 'application/vnd.github.v3+json',
         },
-        (res) => {
-          if (res.statusCode !== 200) {
-            clearTimeout(timeout);
+      },
+      (res) => {
+        if (res.statusCode !== 200) {
+          githubCache.set(repoPath, null);
+          finish(null);
+          return;
+        }
+        let data = '';
+        res.on('data', (chunk) => (data += chunk));
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data) as GithubRepoInfo;
+            githubCache.set(repoPath, parsed);
+            finish(parsed);
+          } catch {
             githubCache.set(repoPath, null);
-            resolve(null);
-            return;
+            finish(null);
           }
-          let data = '';
-          res.on('data', (chunk) => (data += chunk));
-          res.on('end', () => {
-            clearTimeout(timeout);
-            try {
-              const parsed = JSON.parse(data) as GithubRepoInfo;
-              githubCache.set(repoPath, parsed);
-              resolve(parsed);
-            } catch {
-              githubCache.set(repoPath, null);
-              resolve(null);
-            }
-          });
-        },
-      )
-      .on('error', () => {
-        clearTimeout(timeout);
-        githubCache.set(repoPath, null);
-        resolve(null);
-      });
+        });
+      },
+    );
+
+    req.on('error', () => {
+      githubCache.set(repoPath, null);
+      finish(null);
+    });
+
+    const cancelDisposable = token?.onCancellationRequested(() => {
+      req.destroy();
+      finish(null);
+    });
   });
+}
+
+function throwIfCancelled(token?: vscode.CancellationToken): void {
+  if (token?.isCancellationRequested) {
+    throw new vscode.CancellationError();
+  }
 }
 
 function detectVersionJumps(versions: string[]): string[] {

@@ -54,9 +54,8 @@ describe('Dashboard HTML', () => {
     expect(html).toContain("type: 'cancelScan'");
     expect(html).toContain("type: 'export'");
     expect(html).toContain('history-results');
-    expect(html).toContain(
-      'renderHistoryDetailResults(selectedHistoryEntry.summary',
-    );
+    expect(html).toContain('renderHistoryInlineDetail(s.summary)');
+    expect(html).toContain('expandedHistoryEntryId === historyId');
     expect(html).toContain('openLatestHistoryEntry()');
     expect(html).toContain("type: 'requestClearHistory'");
     expect(html).toContain("type: 'requestClearHistoryEntry'");
@@ -65,16 +64,9 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('id="history-search"');
     expect(html).toContain('class="ext-detail"');
     expect(html).toContain('class="ext-meta"');
-    expect(html).toContain('renderHistoryDetail(selectedHistoryEntry.summary)');
-    expect(html).toContain('data-action="toggle-extension-detail"');
+    expect(html).toContain('data-action="open-extension"');
     expect(html).toContain('data-action="toggle-history-detail"');
     expect(html).toContain('toggleHistoryDetail(');
-    expect(html).toContain(
-      "renderExpandableList('rf-' + safeId, 'Risk Factors', 'factor', r.riskFactors, 5)",
-    );
-    expect(html).toContain(
-      "renderExpandableList('ts-' + safeId, 'Trust Signals', 'signal', r.trustSignals, 5)",
-    );
     expect(html).toContain(
       "renderExpandableList('history-rf-' + safeId, 'Risk Factors', 'factor', r.riskFactors, 5)",
     );

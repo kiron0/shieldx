@@ -3,6 +3,7 @@
  * Queries the OSV.dev API for known vulnerabilities in dependencies.
  */
 import * as https from 'https';
+import * as vscode from 'vscode';
 import { info, warn } from '../utils/logger';
 import { RiskFactor } from '../types';
 
@@ -31,6 +32,7 @@ const cache = new Map<string, RiskFactor[]>();
 
 export async function queryOsvVulnerabilities(
   deps: Array<{ name: string; version: string }>,
+  token?: vscode.CancellationToken,
 ): Promise<RiskFactor[]> {
   const allFactors: RiskFactor[] = [];
 
@@ -39,8 +41,11 @@ export async function queryOsvVulnerabilities(
   // Process in parallel with rate limiting
   const batchSize = 5;
   for (let i = 0; i < deps.length; i += batchSize) {
+    throwIfCancelled(token);
     const batch = deps.slice(i, i + batchSize);
-    const results = await Promise.all(batch.map((dep) => querySingleDep(dep)));
+    const results = await Promise.all(
+      batch.map((dep) => querySingleDep(dep, token)),
+    );
     for (const factors of results) {
       allFactors.push(...factors);
     }
@@ -56,7 +61,7 @@ export async function queryOsvVulnerabilities(
 async function querySingleDep(dep: {
   name: string;
   version: string;
-}): Promise<RiskFactor[]> {
+}, token?: vscode.CancellationToken): Promise<RiskFactor[]> {
   const cacheKey = `${dep.name}@${dep.version}`;
   if (cache.has(cacheKey)) return cache.get(cacheKey)!;
 
@@ -64,7 +69,8 @@ async function querySingleDep(dep: {
   if (!/^\d+\.\d+/.test(dep.version)) return [];
 
   try {
-    const vulnerabilities = (await callOsvApi(dep.name, dep.version)) || [];
+    throwIfCancelled(token);
+    const vulnerabilities = (await callOsvApi(dep.name, dep.version, token)) || [];
     const factors = vulnerabilities.map((vuln) => {
       const sev = getSeverity(vuln);
       const points =
@@ -97,11 +103,25 @@ async function querySingleDep(dep: {
 function callOsvApi(
   name: string,
   version: string,
+  token?: vscode.CancellationToken,
 ): Promise<OsvQueryResponse['results']> {
   return new Promise((resolve) => {
+    if (token?.isCancellationRequested) {
+      resolve([]);
+      return;
+    }
+
+    let settled = false;
+    const finish = (value: OsvQueryResponse['results']) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      cancelDisposable?.dispose();
+      resolve(value);
+    };
     const timeout = setTimeout(() => {
       warn(`OSV API timeout for ${name}@${version}`);
-      resolve([]);
+      finish([]);
     }, 3000);
 
     const body = JSON.stringify({
@@ -122,25 +142,34 @@ function callOsvApi(
         let data = '';
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
-          clearTimeout(timeout);
           try {
             const parsed = JSON.parse(data) as OsvQueryResponse;
-            resolve(parsed.results || []);
+            finish(parsed.results || []);
           } catch {
-            resolve([]);
+            finish([]);
           }
         });
       },
     );
 
     req.on('error', () => {
-      clearTimeout(timeout);
-      resolve([]);
+      finish([]);
+    });
+
+    const cancelDisposable = token?.onCancellationRequested(() => {
+      req.destroy();
+      finish([]);
     });
 
     req.write(body);
     req.end();
   });
+}
+
+function throwIfCancelled(token?: vscode.CancellationToken): void {
+  if (token?.isCancellationRequested) {
+    throw new vscode.CancellationError();
+  }
 }
 
 function getSeverity(vuln: {
