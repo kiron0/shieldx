@@ -13,7 +13,10 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
   private _view?: vscode.WebviewView;
   private _lastSummary?: SecuritySummary;
 
-  constructor(private readonly _context: vscode.ExtensionContext) {}
+  constructor(
+    private readonly _context: vscode.ExtensionContext,
+    private readonly _clearPersistedScanState?: () => Thenable<void> | void,
+  ) {}
 
   resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -139,6 +142,14 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
     }
   }
 
+  private clearCurrentScanState(): void {
+    this._lastSummary = undefined;
+    void this._context.globalState.update(CACHE_KEY, undefined);
+    if (this._view) {
+      this._view.webview.postMessage({ type: 'scanCleared' });
+    }
+  }
+
   private async confirmClearHistory(): Promise<void> {
     const picked = await vscode.window.showWarningMessage(
       'Clear all scan history?',
@@ -146,6 +157,10 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
       'Clear',
     );
     if (picked !== 'Clear') return;
+    if (this._clearPersistedScanState) {
+      await this._clearPersistedScanState();
+    }
+    this.clearCurrentScanState();
     this.setHistory([]);
   }
 
@@ -167,6 +182,9 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
       (entry) => (entry.id || entry.time) !== id,
     );
     this.setHistory(history);
+    if (history.length === 0) {
+      this.clearCurrentScanState();
+    }
     if (this._view) {
       this._view.webview.postMessage({ type: 'historyEntryCleared', id });
     }

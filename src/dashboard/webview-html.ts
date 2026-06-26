@@ -114,14 +114,17 @@ export function generateDashboardHtml(cspSource: string): string {
     .ext-count { position: absolute; top: 50%; right: 10px; transform: translateY(-50%); font-size: 10px; opacity: 0.5; pointer-events: none; }
 
     /* Extension List */
-    .ext-list { display: flex; flex-direction: column; gap: 3px; }
-    .ext-item { background: var(--card-bg); border: 1px solid var(--border); border-left: 3px solid var(--border); border-radius: var(--radius); padding: 8px; cursor: pointer; transition: border-color 0.15s; }
+    .ext-list { display: flex; flex-direction: column; gap: 3px; width: 100%; padding-left: 1px; padding-right: 1px; }
+    .ext-item { background: var(--card-bg); border: 1px solid var(--border); border-left: 3px solid var(--border); border-radius: var(--radius); padding: 8px; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; width: 100%; }
     .ext-item:hover { border-color: var(--accent); }
     .ext-item[data-level="low"] { border-left-color: var(--low); }
     .ext-item[data-level="moderate"] { border-left-color: var(--moderate); }
     .ext-item[data-level="high"] { border-left-color: var(--high); }
     .ext-item[data-level="critical"] { border-left-color: var(--critical); }
     .ext-item-header { display: flex; align-items: center; gap: 10px; }
+    .ext-icon-wrap { width: 24px; height: 24px; flex: 0 0 24px; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; }
+    .ext-icon { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .ext-icon-fallback { font-size: 10px; font-weight: 700; opacity: 0.65; text-transform: uppercase; }
     .ext-item-info { flex: 1; min-width: 0; }
     .ext-name { font-weight: 600; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
     .ext-pub { font-size: 10px; opacity: 0.45; display: block; }
@@ -187,10 +190,13 @@ export function generateDashboardHtml(cspSource: string): string {
     .history-tools input, .history-tools select { background: var(--input-bg); color: var(--input-fg); border: 1px solid var(--input-border); border-radius: 4px; padding: 4px 6px; font-size: 11px; }
     .history-tools input { flex: 1; }
     .history-item-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .history-item-main { flex: 1; min-width: 0; }
     .history-item-actions { display: flex; gap: 6px; }
     .history-item-actions button { background: none; border: none; color: var(--fg); font-size: 10px; cursor: pointer; opacity: 0.55; }
+    .history-item-actions .clear-history-entry { padding: 0; }
+    .history-item-actions .history-arrow { padding: 0; font-size: 12px; }
     .h-time { font-size: 10px; opacity: 0.45; }
-    .h-stats { display: flex; gap: 8px; margin-top: 3px; }
+    .h-stats { display: flex; gap: 8px; margin-top: 3px; cursor: pointer; width: fit-content; }
     .h-stats span { font-size: 10px; }
     .h-stats .h-high { color: var(--high); font-weight: 600; }
     .h-stats .h-crit { color: var(--critical); font-weight: 600; }
@@ -215,6 +221,7 @@ export function generateDashboardHtml(cspSource: string): string {
     #ext-list .ext-item[data-level="moderate"],
     #ext-list .ext-item[data-level="high"],
     #ext-list .ext-item[data-level="critical"] { border-left-color: var(--border); }
+    #ext-list .ext-item:hover { box-shadow: 0 0 0 1px var(--accent); }
 
     /* Scrollbar */
     ::-webkit-scrollbar { width: 3px; }
@@ -362,16 +369,24 @@ export function generateDashboardHtml(cspSource: string): string {
         else if (msg.type === 'scanStart') { shouldAutoOpenLatestHistory = true; showProgress(true); }
         else if (msg.type === 'scanEnd') { showProgress(false); if (shouldAutoOpenLatestHistory) openLatestHistoryEntry(); shouldAutoOpenLatestHistory = false; }
         else if (msg.type === 'history') { scanHistory = msg.history || []; expandedHistoryEntryId = null; renderHistory(); }
+        else if (msg.type === 'scanCleared') { scanData = null; expandedHistoryEntryId = null; renderAll(); renderHistory(); }
         else if (msg.type === 'historyEntryCleared') {
           var clearedId = msg.id;
           if (expandedHistoryEntryId === clearedId) {
             expandedHistoryEntryId = null;
           }
+          renderHistory();
         }
       });
 
       // ── Tabs ──
       function switchTab(tab) {
+        var currentTab = document.querySelector('.nav-tab.active');
+        var currentTabName = currentTab ? currentTab.getAttribute('data-tab') : null;
+        if (currentTabName === 'history' && tab !== 'history' && expandedHistoryEntryId) {
+          expandedHistoryEntryId = null;
+          renderHistory();
+        }
         var panels = document.querySelectorAll('.panel');
         for (var i = 0; i < panels.length; i++) panels[i].classList.remove('visible');
         var tabs = document.querySelectorAll('.nav-tab');
@@ -399,7 +414,6 @@ export function generateDashboardHtml(cspSource: string): string {
       // ── History ──
       function renderHistory() {
         var c = document.getElementById('history-list');
-        var detail = document.getElementById('history-detail');
         var empty = document.getElementById('history-empty');
         var header = document.getElementById('history-header');
         if (!scanHistory || scanHistory.length === 0) {
@@ -418,7 +432,7 @@ export function generateDashboardHtml(cspSource: string): string {
           var s = scanHistory[i];
           var historyId = s.id || s.time;
           var expanded = expandedHistoryEntryId === historyId;
-          h += '<div class="history-item" data-action="select-history" data-id="' + escAttr(historyId) + '"><div class="history-item-top"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="history-item-actions"><button class="item-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '">' + (expanded ? '▾' : '▸') + '</button><button data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div>';
+          h += '<div class="history-item"><div class="history-item-top"><div class="history-item-main"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="h-stats" data-action="select-history" data-id="' + escAttr(historyId) + '"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div></div><div class="history-item-actions"><button class="item-toggle history-arrow" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button><button class="clear-history-entry" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div>';
           if (expanded && s.summary) {
             h += renderHistoryInlineDetail(s.summary, historyId);
           }
@@ -446,6 +460,7 @@ export function generateDashboardHtml(cspSource: string): string {
           document.getElementById('dist-bar').innerHTML = '';
           document.getElementById('rec-actions').classList.add('hidden');
           document.getElementById('header-badge').textContent = '0';
+          document.getElementById('last-scan').textContent = '';
           return;
         }
         document.getElementById('empty-state').style.display = 'none';
@@ -541,6 +556,7 @@ export function generateDashboardHtml(cspSource: string): string {
 
           h += '<div class="ext-item" data-action="open-extension" data-id="' + r.id + '" data-level="' + cls + '">';
           h += '<div class="ext-item-header">';
+          h += renderExtensionIcon(r);
           h += '<div class="ext-item-info"><span class="ext-name">' + esc(r.displayName || r.name) + '</span><span class="ext-pub">' + esc(r.publisher) + '</span></div>';
           h += '<span class="ext-version">' + esc(r.version) + '</span>';
           h += '</div></div>';
@@ -558,6 +574,15 @@ export function generateDashboardHtml(cspSource: string): string {
         if (!id) return;
         var el = document.getElementById('detail-' + id);
         if (el) el.classList.toggle('open');
+      }
+
+      function renderExtensionIcon(report) {
+        var label = (report.displayName || report.name || '?').trim();
+        var fallback = esc(label.slice(0, 2).toUpperCase());
+        if (report.iconDataUrl) {
+          return '<div class="ext-icon-wrap"><img class="ext-icon" src="' + escAttr(report.iconDataUrl) + '" alt="" /></div>';
+        }
+        return '<div class="ext-icon-wrap"><span class="ext-icon-fallback">' + fallback + '</span></div>';
       }
 
       function resetHistoryDetail() {

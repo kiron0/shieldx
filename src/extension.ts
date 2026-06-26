@@ -23,6 +23,7 @@ import {
 import { formatDateStamp, formatDateTime } from './utils/date-format';
 import { fileExists, readJsonFile, writeJsonFile } from './utils/file-utils';
 import { info, warn } from './utils/logger';
+import * as fs from 'fs';
 
 let dashboardProvider: DashboardProvider;
 let previousExtensionIds: Set<string> = new Set();
@@ -76,7 +77,9 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   // Register dashboard
-  dashboardProvider = new DashboardProvider(context);
+  dashboardProvider = new DashboardProvider(context, () =>
+    clearPersistedScanState(context),
+  );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       DashboardProvider.viewType,
@@ -781,6 +784,23 @@ function saveToCache(
       'scan-cache.json',
     );
     writeJsonFile(cachePath, stored);
+  } catch {
+    // non-critical
+  }
+}
+
+async function clearPersistedScanState(
+  context: vscode.ExtensionContext,
+): Promise<void> {
+  await context.globalState.update(CACHE_KEY, undefined);
+  try {
+    const cachePath = path.join(
+      context.globalStorageUri.fsPath,
+      'scan-cache.json',
+    );
+    if (fileExists(cachePath)) {
+      fs.unlinkSync(cachePath);
+    }
   } catch {
     // non-critical
   }
