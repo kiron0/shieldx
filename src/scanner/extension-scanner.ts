@@ -3,6 +3,7 @@ import { ExtensionSecurityReport, SecuritySummary } from '../types';
 import { InstalledExtension } from '../utils/extension-utils';
 import { throwIfCancelled } from '../utils/cancellation';
 import { info, warn } from '../utils/logger';
+import { EXT_CONFIG } from '../config';
 import { analyzeCode } from './code-analyzer';
 import { analyzeDependencies } from './dependency-analyzer';
 import { queryOsvVulnerabilities } from './osv-scanner';
@@ -36,7 +37,7 @@ export async function scanExtension(
   throwIfCancelled(token);
 
   const osvEnabled = vscode.workspace
-    .getConfiguration('shieldex')
+    .getConfiguration(EXT_CONFIG.name.toLowerCase())
     .get<boolean>('enableOsvScan', true);
   const osvFactors: import('../types').RiskFactor[] = [];
   if (osvEnabled && packageResult.extensionDependencies.length > 0) {

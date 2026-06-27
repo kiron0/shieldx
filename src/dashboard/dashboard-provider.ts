@@ -2,13 +2,14 @@ import * as vscode from 'vscode';
 import { ScanHistoryEntry, SecuritySummary } from '../types';
 import { formatDateTime } from '../utils/date-format';
 import { generateDashboardHtml } from './webview-html';
+import { EXT_CONFIG } from '../config';
 
-const HISTORY_KEY = 'shieldex.scanHistory';
-const CACHE_KEY = 'shieldex.lastScan';
+const HISTORY_KEY = `${EXT_CONFIG.name.toLowerCase()}.scanHistory`;
+const CACHE_KEY = `${EXT_CONFIG.name.toLowerCase()}.lastScan`;
 const MAX_HISTORY_ITEMS = 30;
 
 export class DashboardProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = 'shieldex.dashboard';
+  public static readonly viewType = `${EXT_CONFIG.name.toLowerCase()}.dashboard`;
 
   private _view?: vscode.WebviewView;
   private _lastSummary?: SecuritySummary;
@@ -57,13 +58,19 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
           break;
         }
         case 'scan':
-          vscode.commands.executeCommand('shieldex.scanExtensions');
+          vscode.commands.executeCommand(
+            `${EXT_CONFIG.name.toLowerCase()}.scanExtensions`,
+          );
           break;
         case 'cancelScan':
-          vscode.commands.executeCommand('shieldex.cancelScan');
+          vscode.commands.executeCommand(
+            `${EXT_CONFIG.name.toLowerCase()}.cancelScan`,
+          );
           break;
         case 'export':
-          vscode.commands.executeCommand('shieldex.pickHistoryExport');
+          vscode.commands.executeCommand(
+            `${EXT_CONFIG.name.toLowerCase()}.pickHistoryExport`,
+          );
           break;
         case 'navigate': {
           const extId = message.extensionId;

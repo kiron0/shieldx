@@ -3,6 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { EXT_CONFIG } from '../config';
 
 const execFileAsync = promisify(execFile);
 
@@ -17,7 +18,7 @@ export function getPdfBrowserCandidates(
 ): string[] {
   const envCandidates = [
     configuredBrowserPath,
-    process.env.SHIELDEX_PDF_BROWSER,
+    process.env[`${EXT_CONFIG.name.toUpperCase()}_PDF_BROWSER`],
     process.env.PUPPETEER_EXECUTABLE_PATH,
     process.env.CHROME_PATH,
   ].filter((value): value is string => !!value);
@@ -99,11 +100,13 @@ export async function renderHtmlToPdf(
 
   if (!browserPath) {
     throw new Error(
-      'No supported Chrome/Chromium browser found for exact PDF export. Configure shieldex.pdfBrowserPath or export HTML.',
+      `No supported Chrome/Chromium browser found for exact PDF export. Configure ${EXT_CONFIG.name.toLowerCase()}.pdfBrowserPath or export HTML.`,
     );
   }
 
-  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'shieldex-pdf-'));
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), `${EXT_CONFIG.name.toLowerCase()}-pdf-`),
+  );
   const htmlPath = path.join(tempDir, 'report.html');
 
   try {

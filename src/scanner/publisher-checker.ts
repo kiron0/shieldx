@@ -5,6 +5,7 @@ import { formatDateStamp } from '../utils/date-format';
 import { info } from '../utils/logger';
 import { throwIfCancelled } from '../utils/cancellation';
 import { fetchJson } from '../utils/http-client';
+import { EXT_CONFIG } from '../config';
 
 interface NpmRegistryResponse {
   name: string;
@@ -166,7 +167,7 @@ export async function checkPublisherReputation(
             timeout: 3000,
             token,
             headers: {
-              'User-Agent': 'Shieldex-VSCode-Extension',
+              'User-Agent': `${EXT_CONFIG.name}-VSCode-Extension`,
               Accept: 'application/vnd.github.v3+json',
             },
           },

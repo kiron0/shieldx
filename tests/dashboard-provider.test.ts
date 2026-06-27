@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { EXT_CONFIG } from '../src/config';
 import { DashboardProvider } from '../src/dashboard/dashboard-provider';
 
 const { showWarningMessage } = vi.hoisted(() => ({
@@ -23,16 +24,18 @@ describe('DashboardProvider', () => {
     };
     const postMessage = vi.fn();
     const update = vi.fn(async (key: string, value: unknown) => {
-      if (key === 'shieldex.scanHistory') {
+      if (key === `${EXT_CONFIG.name.toLowerCase()}.scanHistory`) {
         state.history = (value as any[]) || [];
       }
-      if (key === 'shieldex.lastScan') {
+      if (key === `${EXT_CONFIG.name.toLowerCase()}.lastScan`) {
         state.cache = value as any;
       }
     });
     const get = vi.fn((key: string, fallback?: unknown) => {
-      if (key === 'shieldex.scanHistory') return state.history;
-      if (key === 'shieldex.lastScan') return state.cache;
+      if (key === `${EXT_CONFIG.name.toLowerCase()}.scanHistory`)
+        return state.history;
+      if (key === `${EXT_CONFIG.name.toLowerCase()}.lastScan`)
+        return state.cache;
       return fallback;
     });
     const provider = new DashboardProvider(
@@ -80,7 +83,10 @@ describe('DashboardProvider', () => {
 
     expect(harness.state.history).toEqual([]);
     expect(harness.state.cache).toBeUndefined();
-    expect(harness.update).toHaveBeenCalledWith('shieldex.lastScan', undefined);
+    expect(harness.update).toHaveBeenCalledWith(
+      `${EXT_CONFIG.name.toLowerCase()}.lastScan`,
+      undefined,
+    );
     expect(harness.postMessage).toHaveBeenCalledWith({ type: 'scanCleared' });
     expect(harness.postMessage).toHaveBeenCalledWith({
       type: 'history',

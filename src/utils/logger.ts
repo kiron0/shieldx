@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
+import { EXT_CONFIG } from '../config';
 
-const channel = vscode.window.createOutputChannel('Shieldex', { log: true });
+const channel = vscode.window.createOutputChannel(EXT_CONFIG.name, {
+  log: true,
+});
 
 export function info(message: string): void {
   channel.info(`[INFO] ${message}`);

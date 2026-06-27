@@ -1,11 +1,11 @@
 import { WEBVIEW_DATE_FORMATTERS_SCRIPT } from '../utils/date-format';
+import { EXT_CONFIG } from '../config';
 
 export function generateDashboardHtml(cspSource: string): string {
   const nonce = getNonce();
-  const aboutTitle = 'Shieldex';
-  const aboutAuthor = 'Toufiq Hasan Kiron';
-  const aboutDescription =
-    'Scan installed VS Code extensions for security risks, suspicious behavior, and excessive permissions.';
+  const aboutTitle = EXT_CONFIG.name;
+  const aboutAuthor = EXT_CONFIG.author;
+  const aboutDescription = EXT_CONFIG.description;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -13,14 +13,14 @@ export function generateDashboardHtml(cspSource: string): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src ${cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
-  <title>Shieldex</title>
+  <title>${aboutTitle}</title>
   <style>${getStyles()}</style>
 </head>
 <body>
   <div class="app-shell">
     <div class="app-top">
       <div class="header">
-        <h1>Shieldex</h1>
+        <h1>${aboutTitle}</h1>
         <span id="header-badge" class="badge-count">0</span>
       </div>
 

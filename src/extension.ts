@@ -24,6 +24,7 @@ import {
 import { formatDateStamp, formatDateTime } from './utils/date-format';
 import { fileExists, readJsonFile, writeJsonFile } from './utils/file-utils';
 import { info, warn } from './utils/logger';
+import { EXT_CONFIG } from './config';
 import * as fs from 'fs';
 
 let dashboardProvider: DashboardProvider;
@@ -31,14 +32,16 @@ let previousExtensionIds: Set<string> = new Set();
 let activeScanCancellation: vscode.CancellationTokenSource | undefined;
 
 function focusSidebar(): void {
-  vscode.commands.executeCommand('workbench.view.extension.shieldex');
+  vscode.commands.executeCommand(
+    `workbench.view.extension.${EXT_CONFIG.name.toLowerCase()}`,
+  );
 }
 
-const CACHE_KEY = 'shieldex.lastScan';
-const HISTORY_KEY = 'shieldex.scanHistory';
-const FIRST_RUN_KEY = 'shieldex.firstRun';
-const WELCOME_SHOWN_KEY = 'shieldex.welcomeShown';
-const METRICS_KEY = 'shieldex.metrics';
+const CACHE_KEY = `${EXT_CONFIG.name.toLowerCase()}.lastScan`;
+const HISTORY_KEY = `${EXT_CONFIG.name.toLowerCase()}.scanHistory`;
+const FIRST_RUN_KEY = `${EXT_CONFIG.name.toLowerCase()}.firstRun`;
+const WELCOME_SHOWN_KEY = `${EXT_CONFIG.name.toLowerCase()}.welcomeShown`;
+const METRICS_KEY = `${EXT_CONFIG.name.toLowerCase()}.metrics`;
 const CACHE_VERSION = 1;
 
 interface Metrics {
@@ -65,7 +68,7 @@ function updateMetrics(
 }
 
 export function activate(context: vscode.ExtensionContext): void {
-  info('Shieldex activated');
+  info(`${EXT_CONFIG.name} activated`);
 
   const welcomeShown = context.globalState.get<boolean>(
     WELCOME_SHOWN_KEY,
@@ -87,20 +90,28 @@ export function activate(context: vscode.ExtensionContext): void {
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('shieldex.scanExtensions', async () => {
-      await runScan(context);
-    }),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('shieldex.openDashboard', () => {
-      vscode.commands.executeCommand('shieldex.scanExtensions');
-    }),
+    vscode.commands.registerCommand(
+      `${EXT_CONFIG.name.toLowerCase()}.scanExtensions`,
+      async () => {
+        await runScan(context);
+      },
+    ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'shieldex.exportReport',
+      `${EXT_CONFIG.name.toLowerCase()}.openDashboard`,
+      () => {
+        vscode.commands.executeCommand(
+          `${EXT_CONFIG.name.toLowerCase()}.scanExtensions`,
+        );
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      `${EXT_CONFIG.name.toLowerCase()}.exportReport`,
       async (format?: string) => {
         const summary = loadFromCache(context)?.summary;
         if (!summary) {
@@ -121,101 +132,124 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'shieldex.pickExportReportFormat',
+      `${EXT_CONFIG.name.toLowerCase()}.pickExportReportFormat`,
       async () => {
         const format = await pickExportFormat();
         if (!format) return;
-        await vscode.commands.executeCommand('shieldex.exportReport', format);
+        await vscode.commands.executeCommand(
+          `${EXT_CONFIG.name.toLowerCase()}.exportReport`,
+          format,
+        );
       },
     ),
   );
 
   context.subscriptions.push(
-    vscode.commands.registerCommand('shieldex.pickHistoryExport', async () => {
-      const summary = await pickHistorySummary(context);
-      if (!summary) return;
-      const format = await pickExportFormat();
-      if (!format) return;
-      await exportReport(context, summary, format);
-    }),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('shieldex.rescanExtension', async () => {
-      vscode.commands.executeCommand('shieldex.scanExtensions');
-    }),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('shieldex.cancelScan', () => {
-      activeScanCancellation?.cancel();
-    }),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('shieldex.addToAllowlist', async () => {
-      const ext = await pickExtension();
-      if (!ext) return;
-      const policy = loadPolicy() || { allowedExtensions: [] };
-      if (!policy.allowedExtensions) policy.allowedExtensions = [];
-      if (!policy.allowedExtensions.includes(ext.id)) {
-        policy.allowedExtensions.push(ext.id);
-        writePolicy(policy);
-        vscode.window.showInformationMessage(
-          `Shieldex: Added "${ext.displayName || ext.name}" to allowlist.`,
-        );
-      } else {
-        vscode.window.showInformationMessage(
-          `"${ext.displayName || ext.name}" already in allowlist.`,
-        );
-      }
-    }),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('shieldex.addToBlocklist', async () => {
-      const ext = await pickExtension();
-      if (!ext) return;
-      const policy = loadPolicy() || { blockedExtensions: [] };
-      if (!policy.blockedExtensions) policy.blockedExtensions = [];
-      if (!policy.blockedExtensions.includes(ext.id)) {
-        policy.blockedExtensions.push(ext.id);
-        writePolicy(policy);
-        vscode.window.showWarningMessage(
-          `Shieldex: Added "${ext.displayName || ext.name}" to blocklist.`,
-        );
-      } else {
-        vscode.window.showInformationMessage(
-          `"${ext.displayName || ext.name}" already in blocklist.`,
-        );
-      }
-    }),
-  );
-
-  context.subscriptions.push(
-    vscode.commands.registerCommand('shieldex.showPolicy', () => {
-      const policy = loadPolicy();
-      if (!policy) {
-        vscode.window.showInformationMessage(
-          'Shieldex: No policy file (.shieldex.json) found in workspace.',
-        );
-        return;
-      }
-      const content = JSON.stringify(policy, null, 2);
-      vscode.workspace
-        .openTextDocument({ content, language: 'json' })
-        .then((doc) => {
-          vscode.window.showTextDocument(doc);
-        });
-    }),
+    vscode.commands.registerCommand(
+      `${EXT_CONFIG.name.toLowerCase()}.pickHistoryExport`,
+      async () => {
+        const summary = await pickHistorySummary(context);
+        if (!summary) return;
+        const format = await pickExportFormat();
+        if (!format) return;
+        await exportReport(context, summary, format);
+      },
+    ),
   );
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
-      'shieldex.scanVulnerabilities',
+      `${EXT_CONFIG.name.toLowerCase()}.rescanExtension`,
+      async () => {
+        vscode.commands.executeCommand(
+          `${EXT_CONFIG.name.toLowerCase()}.scanExtensions`,
+        );
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      `${EXT_CONFIG.name.toLowerCase()}.cancelScan`,
+      () => {
+        activeScanCancellation?.cancel();
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      `${EXT_CONFIG.name.toLowerCase()}.addToAllowlist`,
+      async () => {
+        const ext = await pickExtension();
+        if (!ext) return;
+        const policy = loadPolicy() || { allowedExtensions: [] };
+        if (!policy.allowedExtensions) policy.allowedExtensions = [];
+        if (!policy.allowedExtensions.includes(ext.id)) {
+          policy.allowedExtensions.push(ext.id);
+          writePolicy(policy);
+          vscode.window.showInformationMessage(
+            `${EXT_CONFIG.name}: Added "${ext.displayName || ext.name}" to allowlist.`,
+          );
+        } else {
+          vscode.window.showInformationMessage(
+            `"${ext.displayName || ext.name}" already in allowlist.`,
+          );
+        }
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      `${EXT_CONFIG.name.toLowerCase()}.addToBlocklist`,
+      async () => {
+        const ext = await pickExtension();
+        if (!ext) return;
+        const policy = loadPolicy() || { blockedExtensions: [] };
+        if (!policy.blockedExtensions) policy.blockedExtensions = [];
+        if (!policy.blockedExtensions.includes(ext.id)) {
+          policy.blockedExtensions.push(ext.id);
+          writePolicy(policy);
+          vscode.window.showWarningMessage(
+            `${EXT_CONFIG.name}: Added "${ext.displayName || ext.name}" to blocklist.`,
+          );
+        } else {
+          vscode.window.showInformationMessage(
+            `"${ext.displayName || ext.name}" already in blocklist.`,
+          );
+        }
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      `${EXT_CONFIG.name.toLowerCase()}.showPolicy`,
+      () => {
+        const policy = loadPolicy();
+        if (!policy) {
+          vscode.window.showInformationMessage(
+            `${EXT_CONFIG.name}: No policy file (.${EXT_CONFIG.name.toLowerCase()}.json) found in workspace.`,
+          );
+          return;
+        }
+        const content = JSON.stringify(policy, null, 2);
+        vscode.workspace
+          .openTextDocument({ content, language: 'json' })
+          .then((doc) => {
+            vscode.window.showTextDocument(doc);
+          });
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
+      `${EXT_CONFIG.name.toLowerCase()}.scanVulnerabilities`,
       async () => {
         vscode.window.showInformationMessage(
-          'Shieldex: OSV scan will run on next extension scan.',
+          `${EXT_CONFIG.name}: OSV scan will run on next extension scan.`,
         );
 
         await runScan(context);
@@ -229,7 +263,7 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 
   const autoScan = vscode.workspace
-    .getConfiguration('shieldex')
+    .getConfiguration(EXT_CONFIG.name.toLowerCase())
     .get<boolean>('autoScanOnStartup', true);
   if (autoScan) {
     setTimeout(async () => {
@@ -258,13 +292,13 @@ export function activate(context: vscode.ExtensionContext): void {
 }
 
 export function deactivate(): void {
-  info('Shieldex deactivated');
+  info(`${EXT_CONFIG.name} deactivated`);
 }
 
 function showWelcomeMessage(): void {
   vscode.window
     .showInformationMessage(
-      'Shieldex: Welcome! Shieldex helps you understand the security risks of your VS Code extensions.',
+      `${EXT_CONFIG.name}: Welcome! ${EXT_CONFIG.name} helps you understand the security risks of your VS Code extensions.`,
       'Open Sidebar',
     )
     .then((action) => {
@@ -275,11 +309,15 @@ function showWelcomeMessage(): void {
 }
 
 async function runScan(context: vscode.ExtensionContext): Promise<void> {
-  const config = vscode.workspace.getConfiguration('shieldex');
+  const config = vscode.workspace.getConfiguration(
+    EXT_CONFIG.name.toLowerCase(),
+  );
   let shouldOfferSidebar = false;
   let riskyExtensionCount = 0;
   if (activeScanCancellation) {
-    vscode.window.showInformationMessage('Shieldex: Scan already running.');
+    vscode.window.showInformationMessage(
+      `${EXT_CONFIG.name}: Scan already running.`,
+    );
     return;
   }
 
@@ -290,7 +328,7 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
     await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
-        title: 'Shieldex: Scanning extensions...',
+        title: `${EXT_CONFIG.name}: Scanning extensions...`,
         cancellable: true,
       },
       async (_progress, token) => {
@@ -368,14 +406,16 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
         previousExtensionIds = new Set(extensions.map((e) => e.id));
 
         info(
-          'Note: Shieldex is a risk scanner, not a perfect malware detector. Some threats may not be detected.',
+          `Note: ${EXT_CONFIG.name} is a risk scanner, not a perfect malware detector. Some threats may not be detected.`,
         );
       },
     );
   } catch (err) {
     if (err instanceof vscode.CancellationError) {
-      info('Shieldex scan cancelled.');
-      vscode.window.showInformationMessage('Shieldex: Scan cancelled.');
+      info(`${EXT_CONFIG.name} scan cancelled.`);
+      vscode.window.showInformationMessage(
+        `${EXT_CONFIG.name}: Scan cancelled.`,
+      );
     } else {
       throw err;
     }
@@ -387,7 +427,7 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
 
   if (shouldOfferSidebar) {
     const action = await vscode.window.showWarningMessage(
-      `Shieldex: ${riskyExtensionCount} risky extensions found.`,
+      `${EXT_CONFIG.name}: ${riskyExtensionCount} risky extensions found.`,
       'Show in Sidebar',
     );
     if (action === 'Show in Sidebar') {
@@ -411,7 +451,9 @@ async function checkForNewExtensions(
   if (newIds.length > 0) {
     info(`New extensions detected: ${newIds.join(', ')}`);
 
-    const config = vscode.workspace.getConfiguration('shieldex');
+    const config = vscode.workspace.getConfiguration(
+      EXT_CONFIG.name.toLowerCase(),
+    );
     const warnOnHigh = config.get<boolean>('warnOnHighRisk', true);
 
     if (warnOnHigh) {
@@ -425,7 +467,7 @@ async function checkForNewExtensions(
       if (riskyNew.length > 0) {
         for (const ext of riskyNew) {
           const action = await vscode.window.showWarningMessage(
-            `Shieldex: New extension "${ext.displayName || ext.name}" is ${ext.riskLevel.toUpperCase()} risk (score: ${ext.riskScore}). ${ext.recommendation}`,
+            `${EXT_CONFIG.name}: New extension "${ext.displayName || ext.name}" is ${ext.riskLevel.toUpperCase()} risk (score: ${ext.riskScore}). ${ext.recommendation}`,
             'Show in Sidebar',
             'Dismiss',
           );
@@ -450,7 +492,9 @@ async function exportReport(
   summary: SecuritySummary,
   format?: string,
 ): Promise<void> {
-  const config = vscode.workspace.getConfiguration('shieldex');
+  const config = vscode.workspace.getConfiguration(
+    EXT_CONFIG.name.toLowerCase(),
+  );
   const fmt = format || config.get<string>('reportFormat', 'markdown');
   const configuredPdfBrowserPath =
     config.get<string>('pdfBrowserPath')?.trim() || undefined;
@@ -470,7 +514,7 @@ async function exportReport(
   const actualExt = extMap[actualFormat] || 'md';
 
   const defaultUri = vscode.Uri.file(
-    `shieldex-report-${formatDateStamp(new Date())}.${actualExt}`,
+    `${EXT_CONFIG.name.toLowerCase()}-report-${formatDateStamp(new Date())}.${actualExt}`,
   );
 
   const filterMap: Record<string, string[]> = {
@@ -532,7 +576,7 @@ async function exportReport(
     }
     if (fmt === 'pdf' && actualFormat !== 'pdf') {
       vscode.window.showWarningMessage(
-        `PDF export unavailable on this machine. Exported HTML instead to ${uri.fsPath}. Set shieldex.pdfBrowserPath to enable exact PDF export.`,
+        `PDF export unavailable on this machine. Exported HTML instead to ${uri.fsPath}. Set ${EXT_CONFIG.name.toLowerCase()}.pdfBrowserPath to enable exact PDF export.`,
       );
     }
     vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
@@ -547,7 +591,7 @@ async function exportReport(
 async function pickExportFormat(): Promise<string | undefined> {
   const configuredPdfBrowserPath =
     vscode.workspace
-      .getConfiguration('shieldex')
+      .getConfiguration(EXT_CONFIG.name.toLowerCase())
       .get<string>('pdfBrowserPath')
       ?.trim() || undefined;
   const pdfAvailable = isPdfExportAvailable(configuredPdfBrowserPath);
@@ -638,7 +682,10 @@ function loadPolicy(): ShieldexPolicy | null {
   if (!workspaceFolders || workspaceFolders.length === 0) return null;
 
   for (const folder of workspaceFolders) {
-    const policyPath = path.join(folder.uri.fsPath, '.shieldex.json');
+    const policyPath = path.join(
+      folder.uri.fsPath,
+      `.${EXT_CONFIG.name.toLowerCase()}.json`,
+    );
     const policy = readJsonFile<ShieldexPolicy>(policyPath);
     if (policy) return policy;
   }
@@ -672,7 +719,7 @@ function writePolicy(policy: ShieldexPolicy): void {
   }
   const policyPath = path.join(
     workspaceFolders[0].uri.fsPath,
-    '.shieldex.json',
+    `.${EXT_CONFIG.name.toLowerCase()}.json`,
   );
   writeJsonFile(policyPath, policy);
   vscode.window.showInformationMessage(`Policy saved to ${policyPath}`);
@@ -722,7 +769,7 @@ function checkPolicyCompliance(
     }
     vscode.window
       .showWarningMessage(
-        `Shieldex: Policy violations found.`,
+        `${EXT_CONFIG.name}: Policy violations found.`,
         'Show in Sidebar',
       )
       .then((action) => {
@@ -771,7 +818,7 @@ async function checkWorkspaceTrust(
       if (riskyCount > 0) {
         vscode.window
           .showInformationMessage(
-            `Shieldex: This workspace contains sensitive files. ${riskyCount} high-risk extension(s) are active. Consider reviewing them.`,
+            `${EXT_CONFIG.name}: This workspace contains sensitive files. ${riskyCount} high-risk extension(s) are active. Consider reviewing them.`,
             'Show in Sidebar',
           )
           .then((action) => {

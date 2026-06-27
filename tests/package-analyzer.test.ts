@@ -3,6 +3,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { InstalledExtension } from '../src/utils/extension-utils';
+import { EXT_CONFIG } from '../src/config';
 
 vi.mock('vscode', () => ({}));
 
@@ -26,7 +27,9 @@ function makeExtension(
 }
 
 function makeTempExtDir(files: Record<string, string> = {}): string {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shieldex-pkg-test-'));
+  const dir = fs.mkdtempSync(
+    path.join(os.tmpdir(), `${EXT_CONFIG.name.toLowerCase()}-pkg-test-`),
+  );
   tempDirs.push(dir);
   for (const [name, content] of Object.entries(files)) {
     fs.writeFileSync(path.join(dir, name), content, 'utf8');
