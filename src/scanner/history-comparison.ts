@@ -18,9 +18,6 @@ export interface ScanDiff {
   summary: string;
 }
 
-/**
- * Compare two scan summaries and produce a diff.
- */
 export function compareScans(
   previous: SecuritySummary | null,
   current: SecuritySummary,
@@ -50,7 +47,6 @@ export function compareScans(
   const scoreChanges: ScanDiff['scoreChanges'] = [];
   const riskLevelChanges: ScanDiff['riskLevelChanges'] = [];
 
-  // Find new and changed extensions
   for (const [id, curr] of currMap) {
     const prev = prevMap.get(id);
     if (!prev) {
@@ -77,14 +73,12 @@ export function compareScans(
     }
   }
 
-  // Find removed extensions
   for (const [id] of prevMap) {
     if (!currMap.has(id)) {
       removedExtensions.push(id);
     }
   }
 
-  // Build summary
   const parts: string[] = [];
   if (newExtensions.length > 0) {
     parts.push(`${newExtensions.length} new extension(s)`);

@@ -68,7 +68,7 @@ export function findFiles(
         }
       }
     } catch {
-      // skip inaccessible directories
+      void 0;
     }
   }
 

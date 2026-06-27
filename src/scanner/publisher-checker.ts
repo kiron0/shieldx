@@ -1,9 +1,10 @@
-import * as https from 'https';
 import * as vscode from 'vscode';
 import { RiskFactor, TrustSignal } from '../types';
 import { InstalledExtension } from '../utils/extension-utils';
 import { formatDateStamp } from '../utils/date-format';
 import { info } from '../utils/logger';
+import { throwIfCancelled } from '../utils/cancellation';
+import { fetchJson } from '../utils/http-client';
 
 interface NpmRegistryResponse {
   name: string;
@@ -31,8 +32,19 @@ interface GithubRepoInfo {
 }
 
 const registryCache = new Map<string, NpmRegistryResponse | null>();
-const downloadCache = new Map<string, number | null>();
+const downloadCache = new Map<string, NpmDownloadsResponse | null>();
 const githubCache = new Map<string, GithubRepoInfo | null>();
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+const MS_PER_MONTH = MS_PER_DAY * 30;
+
+function monthsAgo(date: Date): number {
+  return (Date.now() - date.getTime()) / MS_PER_MONTH;
+}
+
+function daysAgo(date: Date): number {
+  return (Date.now() - date.getTime()) / MS_PER_DAY;
+}
 
 export async function checkPublisherReputation(
   ext: InstalledExtension,
@@ -46,12 +58,15 @@ export async function checkPublisherReputation(
 
   try {
     throwIfCancelled(token);
-    const npmData = await fetchNpmRegistry(pkgName, token);
+    const npmData = await fetchJson<NpmRegistryResponse>(
+      `https://registry.npmjs.org/${encodeURIComponent(pkgName)}`,
+      registryCache,
+      pkgName,
+      { token },
+    );
 
     if (npmData) {
-      // --- Publisher verification ---
-      const maintainers = npmData.maintainers || [];
-      if (maintainers.length > 0) {
+      if ((npmData.maintainers || []).length > 0) {
         trustSignals.push({
           id: 'npm-publisher-verified',
           title: 'Publisher verified on npm',
@@ -60,32 +75,29 @@ export async function checkPublisherReputation(
         });
       }
 
-      // --- Last updated date ---
       if (npmData.time?.[pkgName]) {
         const lastUpdated = new Date(npmData.time[pkgName]);
-        const monthsAgo =
-          (Date.now() - lastUpdated.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        const months = monthsAgo(lastUpdated);
 
-        if (monthsAgo > 24) {
+        if (months > 24) {
           riskFactors.push({
             id: 'not-updated-for-years',
             title: 'Extension not updated for years',
-            description: `Last npm update was ${Math.floor(monthsAgo)} months ago. Abandoned extension is a security risk.`,
+            description: `Last npm update was ${Math.floor(months)} months ago. Abandoned extension is a security risk.`,
             severity: 'low',
             points: 5,
             evidence: [`Last updated: ${formatDateStamp(lastUpdated)}`],
           });
-        } else if (monthsAgo < 1) {
+        } else if (months < 1) {
           trustSignals.push({
             id: 'recently-updated',
             title: 'Recently updated',
-            description: `Updated within the last ${Math.max(1, Math.floor(monthsAgo * 30))} days.`,
+            description: `Updated within the last ${Math.max(1, Math.floor(months * 30))} days.`,
             points: -5,
           });
         }
       }
 
-      // --- Version count (long-term maintenance) ---
       const versionList = npmData.versions
         ? Object.keys(npmData.versions).sort(semverSort)
         : [];
@@ -99,17 +111,15 @@ export async function checkPublisherReputation(
         });
       }
 
-      // --- Recent publish date ---
       if (npmData.time?.created) {
         const created = new Date(npmData.time.created);
-        const daysSinceCreation =
-          (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24);
+        const days = daysAgo(created);
 
-        if (daysSinceCreation < 30) {
+        if (days < 30) {
           riskFactors.push({
             id: 'recently-published',
             title: 'Recently published',
-            description: `Published only ${Math.floor(daysSinceCreation)} days ago. Less established.`,
+            description: `Published only ${Math.floor(days)} days ago. Less established.`,
             severity: 'low',
             points: 5,
             evidence: [`Created: ${formatDateStamp(created)}`],
@@ -117,9 +127,14 @@ export async function checkPublisherReputation(
         }
       }
 
-      // --- Download count (install count) ---
       throwIfCancelled(token);
-      const downloads = await fetchNpmDownloads(pkgName, token);
+      const dlData = await fetchJson<NpmDownloadsResponse>(
+        `https://api.npmjs.org/downloads/point/last-month/${encodeURIComponent(pkgName)}`,
+        downloadCache,
+        pkgName,
+        { timeout: 3000, token },
+      );
+      const downloads = dlData?.downloads ?? null;
       if (downloads !== null) {
         if (downloads > 1000000) {
           trustSignals.push({
@@ -140,50 +155,58 @@ export async function checkPublisherReputation(
         }
       }
 
-      // --- GitHub repo enrichment ---
       const repoUrl = extractGithubRepo(npmData);
       if (repoUrl) {
         throwIfCancelled(token);
-        const githubData = await fetchGithubRepo(repoUrl, token);
-        if (githubData) {
-          // Open issues count
-          if (githubData.open_issues_count !== undefined) {
-            if (githubData.open_issues_count > 100) {
+        const gh = await fetchJson<GithubRepoInfo>(
+          `https://api.github.com/repos/${repoUrl}`,
+          githubCache,
+          repoUrl,
+          {
+            timeout: 3000,
+            token,
+            headers: {
+              'User-Agent': 'Shieldex-VSCode-Extension',
+              Accept: 'application/vnd.github.v3+json',
+            },
+          },
+        );
+        if (gh) {
+          if (gh.open_issues_count !== undefined) {
+            if (gh.open_issues_count > 100) {
               riskFactors.push({
                 id: 'many-open-issues',
                 title: 'Many open issues',
-                description: `${githubData.open_issues_count} open issues on GitHub. Could indicate maintenance issues.`,
+                description: `${gh.open_issues_count} open issues on GitHub. Could indicate maintenance issues.`,
                 severity: 'low',
                 points: 3,
-                evidence: [`${githubData.open_issues_count} open issues`],
+                evidence: [`${gh.open_issues_count} open issues`],
               });
-            } else if (githubData.open_issues_count < 10) {
+            } else if (gh.open_issues_count < 10) {
               trustSignals.push({
                 id: 'few-open-issues',
                 title: 'Low open issue count',
-                description: `Only ${githubData.open_issues_count} open issues on GitHub. Good maintenance indicator.`,
+                description: `Only ${gh.open_issues_count} open issues on GitHub. Good maintenance indicator.`,
                 points: -3,
               });
             }
           }
 
-          // Repository activity (pushed recently)
-          if (githubData.pushed_at) {
-            const lastPush = new Date(githubData.pushed_at);
-            const monthsSincePush =
-              (Date.now() - lastPush.getTime()) / (1000 * 60 * 60 * 24 * 30);
-            if (monthsSincePush < 3) {
+          if (gh.pushed_at) {
+            const lastPush = new Date(gh.pushed_at);
+            const months = monthsAgo(lastPush);
+            if (months < 3) {
               trustSignals.push({
                 id: 'active-repo',
                 title: 'Active repository',
-                description: `GitHub repo pushed to within the last ${Math.floor(monthsSincePush * 30)} days.`,
+                description: `GitHub repo pushed to within the last ${Math.floor(months * 30)} days.`,
                 points: -5,
               });
-            } else if (monthsSincePush > 18) {
+            } else if (months > 18) {
               riskFactors.push({
                 id: 'inactive-repo',
                 title: 'Inactive repository',
-                description: `GitHub repo not pushed to for ${Math.floor(monthsSincePush)} months.`,
+                description: `GitHub repo not pushed to for ${Math.floor(months)} months.`,
                 severity: 'low',
                 points: 5,
                 evidence: [`Last push: ${formatDateStamp(lastPush)}`],
@@ -191,26 +214,20 @@ export async function checkPublisherReputation(
             }
           }
 
-          // Stars (community interest)
-          if (
-            githubData.stargazers_count !== undefined &&
-            githubData.stargazers_count > 500
-          ) {
+          if (gh.stargazers_count !== undefined && gh.stargazers_count > 500) {
             trustSignals.push({
               id: 'popular-repo',
               title: 'Popular repository',
-              description: `${githubData.stargazers_count} GitHub stars. Strong community interest.`,
+              description: `${gh.stargazers_count} GitHub stars. Strong community interest.`,
               points: -5,
             });
           }
         }
       }
 
-      // --- Suspicious version jump detection ---
       if (npmData.versions) {
-        const versionList = Object.keys(npmData.versions).sort(semverSort);
-        const jumps = detectVersionJumps(versionList);
-        for (const jump of jumps) {
+        const sorted = Object.keys(npmData.versions).sort(semverSort);
+        for (const jump of detectVersionJumps(sorted)) {
           riskFactors.push({
             id: 'suspicious-version-jump',
             title: 'Suspicious version jump',
@@ -222,14 +239,13 @@ export async function checkPublisherReputation(
         }
       }
 
-      // --- Sudden publisher change detection ---
       if (npmData.time) {
-        const publisherChanges = detectPublisherChanges(npmData.time);
-        if (publisherChanges) {
+        const change = detectPublisherChanges(npmData.time);
+        if (change) {
           riskFactors.push({
             id: 'publisher-change',
             title: 'Suspicious publisher change pattern',
-            description: publisherChanges,
+            description: change,
             severity: 'high',
             points: 20,
             evidence: ['Version timing anomaly detected'],
@@ -237,21 +253,15 @@ export async function checkPublisherReputation(
         }
       }
 
-      // --- Known vulnerability reports (check via npm audit metadata) ---
       if (versionCount > 0) {
-        const latestVersion = versionList
-          ? versionList[versionList.length - 1]
-          : '';
-        // Flag if latest version is very new (< 7 days) and has few versions total
+        const latestVersion = versionList[versionList.length - 1] ?? '';
         if (npmData.time?.[latestVersion]) {
-          const latestDate = new Date(npmData.time[latestVersion]);
-          const daysSinceLatest =
-            (Date.now() - latestDate.getTime()) / (1000 * 60 * 60 * 24);
-          if (daysSinceLatest < 7 && versionCount < 5) {
+          const days = daysAgo(new Date(npmData.time[latestVersion]));
+          if (days < 7 && versionCount < 5) {
             riskFactors.push({
               id: 'very-new-package',
               title: 'Very new package with few versions',
-              description: `Published ~${Math.floor(daysSinceLatest)} days ago with only ${versionCount} versions. Limited track record.`,
+              description: `Published ~${Math.floor(days)} days ago with only ${versionCount} versions. Limited track record.`,
               severity: 'medium',
               points: 10,
               evidence: [
@@ -269,257 +279,46 @@ export async function checkPublisherReputation(
   return { trustSignals, riskFactors };
 }
 
-function fetchNpmRegistry(
-  pkgName: string,
-  token?: vscode.CancellationToken,
-): Promise<NpmRegistryResponse | null> {
-  if (registryCache.has(pkgName)) {
-    return Promise.resolve(registryCache.get(pkgName) || null);
-  }
-
-  return new Promise((resolve) => {
-    if (token?.isCancellationRequested) {
-      resolve(null);
-      return;
-    }
-
-    let settled = false;
-    const finish = (value: NpmRegistryResponse | null) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      cancelDisposable?.dispose();
-      resolve(value);
-    };
-    const timeout = setTimeout(() => finish(null), 5000);
-    const req = https.get(
-      `https://registry.npmjs.org/${encodeURIComponent(pkgName)}`,
-      { headers: { Accept: 'application/json' } },
-      (res) => {
-        if (res.statusCode !== 200) {
-          registryCache.set(pkgName, null);
-          finish(null);
-          return;
-        }
-        let data = '';
-        res.on('data', (chunk) => (data += chunk));
-        res.on('end', () => {
-          try {
-            const parsed = JSON.parse(data) as NpmRegistryResponse;
-            registryCache.set(pkgName, parsed);
-            finish(parsed);
-          } catch {
-            registryCache.set(pkgName, null);
-            finish(null);
-          }
-        });
-      },
-    );
-
-    req.on('error', () => {
-      registryCache.set(pkgName, null);
-      finish(null);
-    });
-
-    const cancelDisposable = token?.onCancellationRequested(() => {
-      req.destroy();
-      finish(null);
-    });
-  });
-}
-
-function fetchNpmDownloads(
-  pkgName: string,
-  token?: vscode.CancellationToken,
-): Promise<number | null> {
-  if (downloadCache.has(pkgName)) {
-    return Promise.resolve(downloadCache.get(pkgName) || null);
-  }
-
-  return new Promise((resolve) => {
-    if (token?.isCancellationRequested) {
-      resolve(null);
-      return;
-    }
-
-    let settled = false;
-    const finish = (value: number | null) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      cancelDisposable?.dispose();
-      resolve(value);
-    };
-    const timeout = setTimeout(() => finish(null), 3000);
-    const req = https.get(
-      `https://api.npmjs.org/downloads/point/last-month/${encodeURIComponent(pkgName)}`,
-      (res) => {
-        if (res.statusCode !== 200) {
-          downloadCache.set(pkgName, null);
-          finish(null);
-          return;
-        }
-        let data = '';
-        res.on('data', (chunk) => (data += chunk));
-        res.on('end', () => {
-          try {
-            const parsed = JSON.parse(data) as NpmDownloadsResponse;
-            const count = parsed.downloads || 0;
-            downloadCache.set(pkgName, count);
-            finish(count);
-          } catch {
-            downloadCache.set(pkgName, null);
-            finish(null);
-          }
-        });
-      },
-    );
-
-    req.on('error', () => {
-      downloadCache.set(pkgName, null);
-      finish(null);
-    });
-
-    const cancelDisposable = token?.onCancellationRequested(() => {
-      req.destroy();
-      finish(null);
-    });
-  });
-}
-
 function extractGithubRepo(npmData: NpmRegistryResponse): string | null {
-  // Check repository field
-  if (npmData.repository?.url) {
-    const match = npmData.repository.url.match(
-      /github\.com[/:]([\w-]+\/[\w.-]+?)(?:\.git)?$/,
-    );
-    if (match) return match[1];
-  }
-  // Check bugs URL
-  if (npmData.bugs?.url) {
-    const match = npmData.bugs.url.match(/github\.com\/([\w-]+\/[\w.-]+?)\//);
-    if (match) return match[1];
-  }
-  // Check homepage
-  if (npmData.homepage) {
-    const match = npmData.homepage.match(
-      /github\.com\/([\w-]+\/[\w.-]+?)(?:\/|$)/,
-    );
-    if (match) return match[1];
+  const sources = [
+    npmData.repository?.url?.match(
+      /github\.com[/:]([\\w-]+\/[\\w.-]+?)(?:\.git)?$/,
+    ),
+    npmData.bugs?.url?.match(/github\.com\/([\\w-]+\/[\\w.-]+?)\//),
+    npmData.homepage?.match(/github\.com\/([\\w-]+\/[\\w.-]+?)(?:\/|$)/),
+  ];
+  for (const m of sources) {
+    if (m) return m[1];
   }
   return null;
 }
 
-function fetchGithubRepo(
-  repoPath: string,
-  token?: vscode.CancellationToken,
-): Promise<GithubRepoInfo | null> {
-  if (githubCache.has(repoPath)) {
-    return Promise.resolve(githubCache.get(repoPath) || null);
-  }
-
-  return new Promise((resolve) => {
-    if (token?.isCancellationRequested) {
-      resolve(null);
-      return;
-    }
-
-    let settled = false;
-    const finish = (value: GithubRepoInfo | null) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      cancelDisposable?.dispose();
-      resolve(value);
-    };
-    const timeout = setTimeout(() => finish(null), 3000);
-    const req = https.get(
-      `https://api.github.com/repos/${repoPath}`,
-      {
-        headers: {
-          'User-Agent': 'Shieldex-VSCode-Extension',
-          Accept: 'application/vnd.github.v3+json',
-        },
-      },
-      (res) => {
-        if (res.statusCode !== 200) {
-          githubCache.set(repoPath, null);
-          finish(null);
-          return;
-        }
-        let data = '';
-        res.on('data', (chunk) => (data += chunk));
-        res.on('end', () => {
-          try {
-            const parsed = JSON.parse(data) as GithubRepoInfo;
-            githubCache.set(repoPath, parsed);
-            finish(parsed);
-          } catch {
-            githubCache.set(repoPath, null);
-            finish(null);
-          }
-        });
-      },
-    );
-
-    req.on('error', () => {
-      githubCache.set(repoPath, null);
-      finish(null);
-    });
-
-    const cancelDisposable = token?.onCancellationRequested(() => {
-      req.destroy();
-      finish(null);
-    });
-  });
-}
-
-function throwIfCancelled(token?: vscode.CancellationToken): void {
-  if (token?.isCancellationRequested) {
-    throw new vscode.CancellationError();
-  }
-}
-
 function detectVersionJumps(versions: string[]): string[] {
   const jumps: string[] = [];
-
-  // Need at least 2 versions to detect jumps
   if (versions.length < 2) return jumps;
 
   for (let i = 1; i < versions.length; i++) {
     const prev = versions[i - 1];
     const curr = versions[i];
-
     if (prev && curr) {
-      const prevParts = prev.split('.').map(Number);
-      const currParts = curr.split('.').map(Number);
-
-      if (prevParts.length >= 2 && currParts.length >= 2) {
-        // Detect major version jump of more than 5
-        if (currParts[0] - prevParts[0] >= 5) {
-          jumps.push(`Major jump: ${prev} → ${curr}`);
-        }
-        // Detect version going backwards
-        if (currParts[0] < prevParts[0]) {
-          jumps.push(`Version rollback: ${prev} → ${curr}`);
-        }
+      const p = prev.split('.').map(Number);
+      const c = curr.split('.').map(Number);
+      if (p.length >= 2 && c.length >= 2) {
+        if (c[0] - p[0] >= 5) jumps.push(`Major jump: ${prev} → ${curr}`);
+        if (c[0] < p[0]) jumps.push(`Version rollback: ${prev} → ${curr}`);
       }
     }
   }
-
   return jumps;
 }
 
 function detectPublisherChanges(time: Record<string, string>): string | null {
-  // Check if there's a suspicious time gap or version that was published much later
-  // after a long period of inactivity, which could indicate account takeover
   const versions = Object.keys(time)
     .filter((k) => k !== 'created' && k !== 'modified')
     .sort((a, b) => new Date(time[a]).getTime() - new Date(time[b]).getTime());
 
   if (versions.length < 3) return null;
 
-  // Find largest gap between consecutive versions
   let maxGapMonths = 0;
   let gapIndex = 0;
 
@@ -527,14 +326,13 @@ function detectPublisherChanges(time: Record<string, string>): string | null {
     const gap =
       (new Date(time[versions[i]]).getTime() -
         new Date(time[versions[i - 1]]).getTime()) /
-      (1000 * 60 * 60 * 24 * 30);
+      MS_PER_MONTH;
     if (gap > maxGapMonths) {
       maxGapMonths = gap;
       gapIndex = i;
     }
   }
 
-  // A gap of more than 24 months followed by a new version is suspicious
   if (maxGapMonths > 24 && gapIndex === versions.length - 1) {
     return `Version ${versions[gapIndex]} published after ${Math.floor(maxGapMonths)} month gap. Possible account takeover.`;
   }
@@ -546,9 +344,8 @@ function semverSort(a: string, b: string): number {
   const aParts = a.split('.').map(Number);
   const bParts = b.split('.').map(Number);
   for (let i = 0; i < 3; i++) {
-    const aNum = aParts[i] || 0;
-    const bNum = bParts[i] || 0;
-    if (aNum !== bNum) return aNum - bNum;
+    const diff = (aParts[i] || 0) - (bParts[i] || 0);
+    if (diff !== 0) return diff;
   }
   return 0;
 }

@@ -1,10 +1,5 @@
 import { formatDateOnly } from '../utils/date-format';
 
-/**
- * Team-ready executive summary security report.
- * Shorter, business-focused version of the full report.
- */
-
 export interface ExecutiveSummary {
   organization: string;
   reportDate: string;

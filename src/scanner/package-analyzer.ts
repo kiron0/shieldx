@@ -10,8 +10,9 @@ import {
   isWellKnownCategory,
   getExtensionDependencies,
 } from '../utils/extension-utils';
-import { fileExists, readFileContent } from '../utils/file-utils';
+import { readFileContent } from '../utils/file-utils';
 import * as path from 'path';
+import * as fs from 'fs';
 
 export interface PackageAnalysisResult {
   riskFactors: RiskFactor[];
@@ -38,10 +39,8 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     usesSuspiciousDomains: false,
   };
 
-  // --- Dependencies ---
   const extensionDeps = getExtensionDependencies(pkg);
 
-  // --- Install scripts ---
   const scripts = pkg?.scripts || {};
   const riskyScripts = ['postinstall', 'preinstall', 'install'];
   for (const key of riskyScripts) {
@@ -59,7 +58,6 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     }
   }
 
-  // --- Activation events ---
   const activationEvents: string[] = pkg?.activationEvents || [];
   const broadEvents = ['*', 'onStartupFinished'];
   for (const event of activationEvents) {
@@ -77,36 +75,23 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     }
   }
 
-  // --- Risky command names ---
-  const commands: any[] = pkg?.contributes?.commands || [];
-  const suspiciousNames = [
-    'upload',
-    'download',
-    'execute',
-    'shell',
-    'remote',
-    'token',
-    'secret',
-    'env',
-  ];
+  const commands = pkg?.contributes?.commands || [];
+  const suspicious = /upload|download|execute|shell|remote|token|secret|env/;
   for (const cmd of commands) {
-    const cmdTitle = (cmd.title || cmd.command || '').toLowerCase();
-    for (const name of suspiciousNames) {
-      if (cmdTitle.includes(name)) {
-        riskFactors.push({
-          id: 'suspicious-command',
-          title: 'Suspicious command name',
-          description: `Command "${cmd.title || cmd.command}" contains suspicious keyword "${name}".`,
-          severity: 'medium',
-          points: 14,
-          evidence: [cmd.command || cmd.title],
-        });
-        break;
-      }
+    const title = ((cmd.title || cmd.command || '') as string).toLowerCase();
+    const match = title.match(suspicious);
+    if (match) {
+      riskFactors.push({
+        id: 'suspicious-command',
+        title: 'Suspicious command name',
+        description: `Command "${cmd.title || cmd.command}" contains suspicious keyword "${match[0]}".`,
+        severity: 'medium',
+        points: 14,
+        evidence: [cmd.command || cmd.title],
+      });
     }
   }
 
-  // --- Repository check ---
   if (!pkg?.repository) {
     riskFactors.push({
       id: 'no-repo',
@@ -124,7 +109,6 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     });
   }
 
-  // --- License check ---
   if (!hasLicenseMetadataOrFile(pkg, ext.installPath)) {
     riskFactors.push({
       id: 'no-license',
@@ -135,7 +119,6 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     });
   }
 
-  // --- Publisher checks ---
   const publisher = ext.publisher.toLowerCase();
   if (publisher === 'unknown' || publisher === '') {
     riskFactors.push({
@@ -154,7 +137,6 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     });
   }
 
-  // --- Well-known category trust signal ---
   if (ext.category && isWellKnownCategory(ext.category)) {
     trustSignals.push({
       id: 'known-category',
@@ -164,7 +146,6 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     });
   }
 
-  // --- VS Code capabilities requested ---
   const contributes = pkg?.contributes || {};
   const capabilityKeys = Object.keys(contributes).filter(
     (k) => k !== 'commands',
@@ -180,7 +161,6 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     });
   }
 
-  // --- Dependencies check ---
   const deps = pkg?.dependencies || {};
   if (Object.keys(deps).length > 20) {
     riskFactors.push({
@@ -192,7 +172,6 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     });
   }
 
-  // --- Main file check ---
   const mainFile = pkg?.main;
   if (mainFile && ext.installPath) {
     const mainPath = path.join(ext.installPath, mainFile);
@@ -238,41 +217,27 @@ function checkMainFileSize(mainPath: string, riskFactors: RiskFactor[]): void {
 function hasLicenseMetadataOrFile(pkg: any, installPath?: string): boolean {
   if (hasDeclaredLicense(pkg)) return true;
   if (!installPath) return false;
-
-  const licenseFiles = [
-    'LICENSE',
-    'LICENSE.md',
-    'LICENSE.txt',
-    'LICENSE-MIT',
-    'LICENSE-APACHE',
-    'LICENCE',
-    'LICENCE.md',
-    'LICENCE.txt',
-    'COPYING',
-    'UNLICENSE',
-  ];
-
-  return licenseFiles.some((name) => fileExists(path.join(installPath, name)));
+  try {
+    return fs.readdirSync(installPath).some((f) => {
+      const u = f.toUpperCase();
+      return (
+        u.startsWith('LICENSE') ||
+        u.startsWith('LICENCE') ||
+        u.startsWith('COPYING') ||
+        u === 'UNLICENSE'
+      );
+    });
+  } catch {
+    return false;
+  }
 }
 
 function hasDeclaredLicense(pkg: any): boolean {
-  if (typeof pkg?.license === 'string' && pkg.license.trim()) return true;
-  if (pkg?.license && typeof pkg.license.type === 'string') {
-    return pkg.license.type.trim().length > 0;
-  }
-
-  if (!Array.isArray(pkg?.licenses)) return false;
-
-  return pkg.licenses.some((license: unknown) => {
-    if (typeof license === 'string') return license.trim().length > 0;
-    if (
-      license &&
-      typeof license === 'object' &&
-      'type' in license &&
-      typeof (license as { type?: string }).type === 'string'
-    ) {
-      return ((license as { type: string }).type || '').trim().length > 0;
-    }
-    return false;
-  });
+  const lic = pkg?.license || pkg?.licenses;
+  if (!lic) return false;
+  const check = (l: any) =>
+    typeof l === 'string'
+      ? !!l.trim()
+      : typeof l?.type === 'string' && !!l.type.trim();
+  return Array.isArray(lic) ? lic.some(check) : check(lic);
 }

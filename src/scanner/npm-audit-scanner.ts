@@ -1,7 +1,3 @@
-/**
- * npm audit integration.
- * Runs `npm audit --json` on extensions with package-lock.json.
- */
 import * as cp from 'child_process';
 import * as path from 'path';
 import { RiskFactor } from '../types';
@@ -40,13 +36,12 @@ export function runNpmAudit(extDir: string): RiskFactor[] {
     const audit: NpmAuditResult = JSON.parse(result);
     return parseAuditResult(audit);
   } catch (err: any) {
-    // npm audit exits with non-zero when vulnerabilities found
     if (err.stdout) {
       try {
         const audit: NpmAuditResult = JSON.parse(err.stdout);
         return parseAuditResult(audit);
       } catch {
-        // If we can't parse, try stderr
+        void 0;
       }
     }
     if (err.stderr && err.stderr.includes('No lockfile')) {
@@ -64,7 +59,6 @@ function parseAuditResult(audit: NpmAuditResult): RiskFactor[] {
   for (const [name, vuln] of Object.entries(vulns)) {
     if (!vuln.severity) continue;
 
-    // Map npm severity to our severity
     const severity: 'low' | 'medium' | 'high' | 'critical' =
       vuln.severity === 'moderate' ? 'medium' : vuln.severity;
 

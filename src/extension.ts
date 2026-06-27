@@ -67,7 +67,6 @@ function updateMetrics(
 export function activate(context: vscode.ExtensionContext): void {
   info('Shieldex activated');
 
-  // Show welcome on first install
   const welcomeShown = context.globalState.get<boolean>(
     WELCOME_SHOWN_KEY,
     false,
@@ -77,7 +76,6 @@ export function activate(context: vscode.ExtensionContext): void {
     context.globalState.update(WELCOME_SHOWN_KEY, true);
   }
 
-  // Register dashboard
   dashboardProvider = new DashboardProvider(context, () =>
     clearPersistedScanState(context),
   );
@@ -88,7 +86,6 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
   );
 
-  // Commands
   context.subscriptions.push(
     vscode.commands.registerCommand('shieldex.scanExtensions', async () => {
       await runScan(context);
@@ -155,7 +152,6 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
-  // Allowlist/blocklist policy commands
   context.subscriptions.push(
     vscode.commands.registerCommand('shieldex.addToAllowlist', async () => {
       const ext = await pickExtension();
@@ -214,7 +210,6 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
-  // OSV vulnerability scan command
   context.subscriptions.push(
     vscode.commands.registerCommand(
       'shieldex.scanVulnerabilities',
@@ -222,19 +217,17 @@ export function activate(context: vscode.ExtensionContext): void {
         vscode.window.showInformationMessage(
           'Shieldex: OSV scan will run on next extension scan.',
         );
-        // OSV scan is integrated into the scan pipeline via dependency-analyzer
+
         await runScan(context);
       },
     ),
   );
 
-  // Load cached scan if available
   const cached = loadFromCache(context);
   if (cached) {
     previousExtensionIds = new Set(cached.previousIds);
   }
 
-  // Auto-scan on startup
   const autoScan = vscode.workspace
     .getConfiguration('shieldex')
     .get<boolean>('autoScanOnStartup', true);
@@ -247,17 +240,14 @@ export function activate(context: vscode.ExtensionContext): void {
     }, 2000);
   }
 
-  // Track extensions
   previousExtensionIds = new Set(getInstalledExtensions().map((e) => e.id));
 
-  // Watch for extension changes
   context.subscriptions.push(
     vscode.extensions.onDidChange(() => {
       checkForNewExtensions(context);
     }),
   );
 
-  // Workspace trust
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
       checkWorkspaceTrust(context);
@@ -309,10 +299,8 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
         const extensions = getInstalledExtensions();
         info(`Found ${extensions.length} installed extensions`);
 
-        // Load previous scan for comparison
         const prevSummary = loadFromCache(context)?.summary || null;
 
-        // Check workspace policy
         const policy = loadPolicy();
 
         const summary = await scanAllExtensions(
@@ -324,7 +312,6 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
           scanToken,
         );
 
-        // Historical comparison
         const diff = compareScans(prevSummary, summary);
         info(`Scan diff: ${diff.summary}`);
         if (diff.riskLevelChanges.length > 0) {
@@ -335,20 +322,16 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
           }
         }
 
-        // Apply policy checks
         if (policy) {
           checkPolicyCompliance(summary, policy);
         }
 
-        // Store scan
         saveToCache(context, summary);
         context.globalState.update(CACHE_KEY, summary);
         dashboardProvider.addHistoryEntry(summary);
 
-        // Update dashboard with diff info
         dashboardProvider.updateResult(summary);
 
-        // Update metrics
         const metrics = getMetrics(context);
         updateMetrics(context, {
           scansRun: metrics.scansRun + 1,
@@ -357,7 +340,6 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
           lastScanTime: new Date().toISOString(),
         });
 
-        // Show summary
         const msg = `Scanned ${summary.totalExtensions} extensions: ${summary.lowRisk} low, ${summary.moderateRisk} moderate, ${summary.highRisk} high, ${summary.criticalRisk} critical`;
         info(msg);
 
@@ -555,7 +537,6 @@ async function exportReport(
     }
     vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
 
-    // Track export metric
     const metrics = getMetrics(context);
     updateMetrics(context, { reportsExported: metrics.reportsExported + 1 });
   } catch (err) {
@@ -821,7 +802,7 @@ function saveToCache(
     );
     writeJsonFile(cachePath, stored);
   } catch {
-    // non-critical
+    void 0;
   }
 }
 
@@ -838,7 +819,7 @@ async function clearPersistedScanState(
       fs.unlinkSync(cachePath);
     }
   } catch {
-    // non-critical
+    void 0;
   }
 }
 
@@ -855,7 +836,7 @@ function loadFromCache(context: vscode.ExtensionContext): StoredScan | null {
       }
     }
   } catch {
-    // non-critical
+    void 0;
   }
 
   const summary = context.globalState.get<SecuritySummary>(CACHE_KEY);

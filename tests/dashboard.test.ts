@@ -57,7 +57,7 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('data-action="history-back"');
     expect(html).toContain("type: 'cancelScan'");
     expect(html).toContain("type: 'export'");
-    expect(html).toContain('history-results');
+    expect(html).toContain('history-inline-results');
     expect(html).toContain('renderHistoryInlineDetail(s.summary, historyId)');
     expect(html).toContain('expandedHistoryEntryId === historyId');
     expect(html).toContain('openLatestHistoryEntry()');
@@ -65,14 +65,14 @@ describe('Dashboard HTML', () => {
     expect(html).toContain("type: 'requestClearHistoryEntry'");
     expect(html).toContain("msg.type === 'historyEntryCleared'");
     expect(html).toContain("msg.type === 'scanCleared'");
-    expect(html).toContain('id="history-risk-filter"');
-    expect(html).toContain('id="history-search"');
+    expect(html).toContain("'history-risk-filter'");
+    expect(html).toContain("'history-search'");
     expect(html).toContain('data-history-search-id');
     expect(html).toContain('data-history-filter-id');
     expect(html).toContain('class="ext-detail"');
     expect(html).toContain('class="ext-meta"');
-    expect(html).toContain('data-action="open-extension"');
-    expect(html).toContain('data-action="toggle-history-detail"');
+    expect(html).toContain("clickAction: 'open-extension'");
+    expect(html).toContain("toggleAction: 'toggle-history-detail'");
     expect(html).toContain('toggleHistoryDetail(');
     expect(html).toContain('scrollHistoryItemIntoView(');
     expect(html).toContain('renderExtensionIcon(r)');

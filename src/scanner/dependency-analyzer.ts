@@ -10,69 +10,74 @@ interface KnownVulnerability {
   description: string;
 }
 
-const KNOWN_VULNERABLE_DEPS: KnownVulnerability[] = [
-  {
-    name: 'lodash',
-    versionRange: '<4.17.21',
-    severity: 'high',
-    description:
-      'Prototype pollution vulnerability in lodash versions before 4.17.21.',
-  },
-  {
-    name: 'minimist',
-    versionRange: '<1.2.6',
-    severity: 'high',
-    description: 'Prototype pollution in minimist versions before 1.2.6.',
-  },
-  {
-    name: 'node-fetch',
-    versionRange: '<2.6.7',
-    severity: 'high',
-    description: 'SSRF vulnerability in node-fetch versions before 2.6.7.',
-  },
-  {
-    name: 'axios',
-    versionRange: '<0.21.2',
-    severity: 'high',
-    description: 'SSRF vulnerability in axios versions before 0.21.2.',
-  },
-  {
-    name: 'glob-parent',
-    versionRange: '<5.1.2',
-    severity: 'high',
-    description: 'Regular expression denial of service in glob-parent.',
-  },
-  {
-    name: 'semver',
-    versionRange: '<7.5.2',
-    severity: 'medium',
-    description: 'Regular expression denial of service in semver.',
-  },
-  {
-    name: 'tar',
-    versionRange: '<6.1.9',
-    severity: 'high',
-    description: 'Arbitrary file creation/overwrite in tar.',
-  },
-  {
-    name: 'json5',
-    versionRange: '<2.2.2',
-    severity: 'high',
-    description: 'Prototype pollution in JSON5 before 2.2.2.',
-  },
-  {
-    name: 'tough-cookie',
-    versionRange: '<4.1.3',
-    severity: 'high',
-    description: 'Prototype pollution in tough-cookie before 4.1.3.',
-  },
-  {
-    name: 'word-wrap',
-    versionRange: '<1.2.4',
-    severity: 'medium',
-    description: 'ReDoS vulnerability in word-wrap before 1.2.4.',
-  },
+type VulnTuple = [
+  string,
+  string,
+  'low' | 'medium' | 'high' | 'critical',
+  string,
 ];
+
+const VULN_DATA: VulnTuple[] = [
+  [
+    'lodash',
+    '<4.17.21',
+    'high',
+    'Prototype pollution vulnerability in lodash versions before 4.17.21.',
+  ],
+  [
+    'minimist',
+    '<1.2.6',
+    'high',
+    'Prototype pollution in minimist versions before 1.2.6.',
+  ],
+  [
+    'node-fetch',
+    '<2.6.7',
+    'high',
+    'SSRF vulnerability in node-fetch versions before 2.6.7.',
+  ],
+  [
+    'axios',
+    '<0.21.2',
+    'high',
+    'SSRF vulnerability in axios versions before 0.21.2.',
+  ],
+  [
+    'glob-parent',
+    '<5.1.2',
+    'high',
+    'Regular expression denial of service in glob-parent.',
+  ],
+  [
+    'semver',
+    '<7.5.2',
+    'medium',
+    'Regular expression denial of service in semver.',
+  ],
+  ['tar', '<6.1.9', 'high', 'Arbitrary file creation/overwrite in tar.'],
+  ['json5', '<2.2.2', 'high', 'Prototype pollution in JSON5 before 2.2.2.'],
+  [
+    'tough-cookie',
+    '<4.1.3',
+    'high',
+    'Prototype pollution in tough-cookie before 4.1.3.',
+  ],
+  [
+    'word-wrap',
+    '<1.2.4',
+    'medium',
+    'ReDoS vulnerability in word-wrap before 1.2.4.',
+  ],
+];
+
+const KNOWN_VULNERABLE_DEPS: KnownVulnerability[] = VULN_DATA.map(
+  ([name, versionRange, severity, description]) => ({
+    name,
+    versionRange,
+    severity,
+    description,
+  }),
+);
 
 export function analyzeDependencies(
   extDir: string,
@@ -81,7 +86,6 @@ export function analyzeDependencies(
   const riskFactors: RiskFactor[] = [];
   const trustSignals: TrustSignal[] = [];
 
-  // Check for vulnerable dependencies
   for (const dep of deps) {
     for (const vuln of KNOWN_VULNERABLE_DEPS) {
       if (dep.name === vuln.name) {
@@ -105,7 +109,6 @@ export function analyzeDependencies(
     }
   }
 
-  // Check for lock file presence
   const lockFiles = ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml'];
   let lockFileType: string | null = null;
   let hasLockFile = false;
@@ -126,7 +129,6 @@ export function analyzeDependencies(
     });
   }
 
-  // Parse yarn.lock for transitive dependencies
   const yarnLockPath = path.join(extDir, 'yarn.lock');
   if (fileExists(yarnLockPath)) {
     const yarnDeps = parseYarnLock(yarnLockPath);
@@ -140,7 +142,6 @@ export function analyzeDependencies(
     }
   }
 
-  // Parse pnpm-lock.yaml for transitive dependencies
   const pnpmLockPath = path.join(extDir, 'pnpm-lock.yaml');
   if (fileExists(pnpmLockPath)) {
     const pnpmDeps = parsePnpmLock(pnpmLockPath);
@@ -154,7 +155,6 @@ export function analyzeDependencies(
     }
   }
 
-  // Check for native modules (node-gyp, .node files)
   const hasNativeModules = checkForNativeModules(extDir);
   if (hasNativeModules) {
     riskFactors.push({
@@ -187,15 +187,11 @@ function isVersionVulnerable(version: string, range: string): boolean {
   return false;
 }
 
-/**
- * Parse yarn.lock v1 format to count resolved packages.
- */
 function parseYarnLock(lockPath: string): number {
   try {
     const content = readFileContent(lockPath);
     if (!content) return 0;
 
-    // Yarn v1 entries end with a newline and contain version: "x.y.z"
     const matches = content.match(/^"(.+?)@[^"]+",?\s*$/gm);
     return matches ? matches.length : 0;
   } catch {
@@ -203,16 +199,11 @@ function parseYarnLock(lockPath: string): number {
   }
 }
 
-/**
- * Parse pnpm-lock.yaml to count resolved packages.
- * Looks for "specifier:" patterns in the importers section.
- */
 function parsePnpmLock(lockPath: string): number {
   try {
     const content = readFileContent(lockPath);
     if (!content) return 0;
 
-    // pnpm-lock has "resolution:" entries for each resolved package
     const matches = content.match(/^\s{2,4}\S.*?:\n\s+resolution:\s+\{.+\}/gm);
     return matches ? matches.length : 0;
   } catch {
@@ -220,9 +211,6 @@ function parsePnpmLock(lockPath: string): number {
   }
 }
 
-/**
- * Check for native .node binaries in the extension directory.
- */
 function checkForNativeModules(extDir: string): boolean {
   try {
     return walkForExtension(extDir, '.node', 0);
@@ -250,7 +238,7 @@ function walkForExtension(
       }
     }
   } catch {
-    // skip
+    void 0;
   }
   return false;
 }

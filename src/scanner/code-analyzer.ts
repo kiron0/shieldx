@@ -18,7 +18,7 @@ export function analyzeCode(
     extDir,
     ['.js', '.ts', '.mjs', '.cjs'],
     1024 * 1024,
-  ); // max 1MB per file
+  );
 
   if (jsFiles.length === 0) {
     trustSignals.push({
@@ -62,7 +62,6 @@ export function analyzeCode(
         evidence: evidence.get(pattern.id),
       });
 
-      // Update capabilities
       switch (pattern.id) {
         case 'child-process':
           detectedCapabilities.usesChildProcess = true;

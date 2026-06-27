@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ExtensionSecurityReport, SecuritySummary } from '../types';
 import { InstalledExtension } from '../utils/extension-utils';
+import { throwIfCancelled } from '../utils/cancellation';
 import { info, warn } from '../utils/logger';
 import { analyzeCode } from './code-analyzer';
 import { analyzeDependencies } from './dependency-analyzer';
@@ -16,29 +17,24 @@ export async function scanExtension(
   info(`Scanning: ${ext.id}`);
   throwIfCancelled(token);
 
-  // Package analysis
   const packageResult = analyzePackage(ext);
   throwIfCancelled(token);
 
-  // Code analysis
   const codeResult = analyzeCode(
     ext.installPath,
     packageResult.detectedCapabilities,
   );
   throwIfCancelled(token);
 
-  // Dependency analysis
   const depResult = analyzeDependencies(
     ext.installPath,
     packageResult.extensionDependencies,
   );
   throwIfCancelled(token);
 
-  // Publisher reputation check (npm registry)
   const pubResult = await checkPublisherReputation(ext, token);
   throwIfCancelled(token);
 
-  // OSV vulnerability check (optional, network)
   const osvEnabled = vscode.workspace
     .getConfiguration('shieldex')
     .get<boolean>('enableOsvScan', true);
@@ -51,12 +47,11 @@ export async function scanExtension(
       );
       osvFactors.push(...osvResults);
     } catch {
-      // OSV failure is non-critical
+      void 0;
     }
   }
   throwIfCancelled(token);
 
-  // Merge results
   const allRiskFactors = [
     ...packageResult.riskFactors,
     ...codeResult.riskFactors,
@@ -72,13 +67,11 @@ export async function scanExtension(
   ];
   const capabilities = codeResult.detectedCapabilities;
 
-  // Risk scoring
   const { riskScore, riskLevel } = calculateRisk(
     allRiskFactors,
     allTrustSignals,
   );
 
-  // Recommendation
   const recommendation = generateRecommendation(riskLevel, allRiskFactors);
 
   const report: ExtensionSecurityReport = {
@@ -131,7 +124,6 @@ export async function scanAllExtensions(
     reports.push(report);
   }
 
-  // Sort by risk score descending
   reports.sort((a, b) => b.riskScore - a.riskScore);
 
   const summary: SecuritySummary = {
@@ -146,10 +138,4 @@ export async function scanAllExtensions(
   };
 
   return summary;
-}
-
-function throwIfCancelled(token?: vscode.CancellationToken): void {
-  if (token?.isCancellationRequested) {
-    throw new vscode.CancellationError();
-  }
 }

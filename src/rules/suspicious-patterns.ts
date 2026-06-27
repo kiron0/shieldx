@@ -1,7 +1,3 @@
-/**
- * Central registry for code-level risk detection patterns.
- */
-
 export interface SuspiciousPattern {
   id: string;
   name: string;

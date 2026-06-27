@@ -16,27 +16,23 @@ export function calculateRisk(
 ): { riskScore: number; riskLevel: RiskLevel } {
   let score = 0;
 
-  // Sum risk factor points
   for (const factor of riskFactors) {
     score += factor.points;
   }
 
-  // Compound risk bonus: multiple different risk categories together are worse
   const categories = new Set(riskFactors.map((f) => f.id.split('-')[0]));
   score += highestApplicableBonus(categories.size, CATEGORY_BONUS_BY_SIZE);
 
-  // Multiple high/critical severity factors compound
   const highCritCount = riskFactors.filter(
     (f) => f.severity === 'high' || f.severity === 'critical',
   ).length;
   score += highestApplicableBonus(highCritCount, HIGH_CRIT_BONUS_BY_COUNT);
 
-  // Trust signals with diminishing returns (first signal most impactful)
   const sortedSignals = [...trustSignals].sort(
     (a, b) => Math.abs(b.points) - Math.abs(a.points),
   );
   for (let i = 0; i < sortedSignals.length; i++) {
-    const decay = Math.pow(0.8, i); // 100%, 80%, 64%, 51%, 41%...
+    const decay = Math.pow(0.8, i);
     score += sortedSignals[i].points * decay;
   }
 

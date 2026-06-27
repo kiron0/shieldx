@@ -37,14 +37,12 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
     webviewView.webview.onDidReceiveMessage((message) => {
       switch (message.type) {
         case 'ready': {
-          // Webview loaded, send persisted state
           const history = this.getHistory();
           this._view?.webview.postMessage({
             type: 'history',
             history,
           });
 
-          // Send cached scan result if available
           const cached =
             this._lastSummary ||
             this._context.globalState.get<SecuritySummary>(CACHE_KEY);

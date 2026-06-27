@@ -1,7 +1,3 @@
-/**
- * Admin audit log for Shieldex policy enforcement.
- * Logs policy violations, allowlist/blocklist changes, and scan events.
- */
 import { info, warn } from '../utils/logger';
 
 export interface AuditEntry {
@@ -69,7 +65,6 @@ export class AuditLog {
   }
 }
 
-// Singleton instance
 let _instance: AuditLog | null = null;
 
 export function getAuditLog(): AuditLog {
