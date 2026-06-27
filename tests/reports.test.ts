@@ -1,10 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import {
   generateCsvReport,
+  generateHtmlReport,
   generateJsonReport,
   generateMarkdownReport,
   generateSarifReport,
 } from '../src/reports/markdown-report';
+import {
+  buildPdfBrowserArgs,
+  getPdfBrowserCandidates,
+  isPdfExportAvailable,
+  resolvePdfBrowser,
+} from '../src/reports/pdf-report';
 
 const mockSummary = {
   totalExtensions: 3,
@@ -21,6 +28,7 @@ const mockSummary = {
       version: '1.0.0',
       marketplaceId: 'trusted.safe-ext',
       category: 'linter',
+      iconDataUrl: 'data:image/png;base64,AAA',
       riskScore: 10,
       riskLevel: 'low',
       riskFactors: [],
@@ -62,6 +70,7 @@ const mockSummary = {
       version: '0.1.0',
       marketplaceId: 'sketchy.risky-ext',
       category: 'other',
+      iconDataUrl: 'data:image/png;base64,BBB',
       riskScore: 65,
       riskLevel: 'high',
       riskFactors: [
@@ -137,6 +146,52 @@ describe('JSON Report', () => {
     expect(json.reports[0].marketplaceUrl).toBe(
       'https://marketplace.visualstudio.com/items?itemName=trusted.safe-ext',
     );
+  });
+});
+
+describe('HTML Report', () => {
+  it('renders extension icons when iconDataUrl exists', () => {
+    const html = generateHtmlReport(mockSummary as any);
+    expect(html).toContain('class="ext-icon"');
+    expect(html).toContain('src="data:image/png;base64,AAA"');
+    expect(html).toContain('src="data:image/png;base64,BBB"');
+  });
+
+  it('renders fallback icon when iconDataUrl missing', () => {
+    const html = generateHtmlReport(mockSummary as any);
+    expect(html).toContain('class="ext-icon-fallback"');
+  });
+});
+
+describe('PDF Report', () => {
+  it('builds browser print args for exact html rendering', () => {
+    const args = buildPdfBrowserArgs('/tmp/report.html', '/tmp/report.pdf');
+    expect(args).toContain('--headless=new');
+    expect(args).toContain('--print-to-pdf=/tmp/report.pdf');
+    expect(args[args.length - 1]).toBe('file:///tmp/report.html');
+  });
+
+  it('has browser candidates for current platform', () => {
+    const candidates = getPdfBrowserCandidates('darwin');
+    expect(candidates[0] || candidates[1]).toBeDefined();
+    expect(
+      candidates.some((candidate) => candidate.includes('Google Chrome')),
+    ).toBe(true);
+  });
+
+  it('prefers configured browser path', () => {
+    const candidates = getPdfBrowserCandidates('darwin', '/custom/chrome');
+    expect(candidates[0]).toBe('/custom/chrome');
+  });
+
+  it('reports unavailable when candidate paths do not exist', () => {
+    expect(
+      isPdfExportAvailable('/definitely/missing/browser', 'linux', () => false),
+    ).toBe(false);
+    expect(
+      resolvePdfBrowser('/definitely/missing/browser', 'linux', () => false)
+        .browserPath,
+    ).toBeUndefined();
   });
 });
 

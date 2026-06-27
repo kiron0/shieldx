@@ -8,6 +8,7 @@ import {
   generateMarkdownReport,
   generateSarifReport,
 } from './reports/markdown-report';
+import { isPdfExportAvailable, renderHtmlToPdf } from './reports/pdf-report';
 import { scanAllExtensions } from './scanner/extension-scanner';
 import { compareScans } from './scanner/history-comparison';
 import {
@@ -467,29 +468,34 @@ async function exportReport(
   summary: SecuritySummary,
   format?: string,
 ): Promise<void> {
-  const fmt =
-    format ||
-    vscode.workspace
-      .getConfiguration('shieldex')
-      .get<string>('reportFormat', 'markdown');
+  const config = vscode.workspace.getConfiguration('shieldex');
+  const fmt = format || config.get<string>('reportFormat', 'markdown');
+  const configuredPdfBrowserPath =
+    config.get<string>('pdfBrowserPath')?.trim() || undefined;
 
   const extMap: Record<string, string> = {
     markdown: 'md',
     json: 'json',
     html: 'html',
+    pdf: 'pdf',
     csv: 'csv',
     sarif: 'sarif.json',
   };
-  const ext = extMap[fmt] || 'md';
+  const actualFormat =
+    fmt === 'pdf' && !isPdfExportAvailable(configuredPdfBrowserPath)
+      ? 'html'
+      : fmt;
+  const actualExt = extMap[actualFormat] || 'md';
 
   const defaultUri = vscode.Uri.file(
-    `shieldex-report-${formatDateStamp(new Date())}.${ext}`,
+    `shieldex-report-${formatDateStamp(new Date())}.${actualExt}`,
   );
 
   const filterMap: Record<string, string[]> = {
     md: ['md'],
     json: ['json'],
     html: ['html'],
+    pdf: ['pdf'],
     csv: ['csv'],
     'sarif.json': ['json'],
   };
@@ -497,7 +503,7 @@ async function exportReport(
   const uri = await vscode.window.showSaveDialog({
     defaultUri,
     filters: {
-      [ext.toUpperCase()]: filterMap[ext] || [ext],
+      [actualExt.toUpperCase()]: filterMap[actualExt] || [actualExt],
       'All Files': ['*'],
     },
   });
@@ -506,7 +512,7 @@ async function exportReport(
 
   try {
     let content: string;
-    switch (fmt) {
+    switch (actualFormat) {
       case 'json':
         content = generateJsonReport(
           summary as unknown as Record<string, unknown>,
@@ -514,6 +520,14 @@ async function exportReport(
         break;
       case 'html':
         content = generateHtmlReport(summary);
+        break;
+      case 'pdf':
+        await renderHtmlToPdf(
+          generateHtmlReport(summary),
+          uri.fsPath,
+          configuredPdfBrowserPath,
+        );
+        content = '';
         break;
       case 'csv':
         content = generateCsvReport(summary);
@@ -531,7 +545,14 @@ async function exportReport(
         content = generateMarkdownReport(summary);
     }
 
-    await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf-8'));
+    if (actualFormat !== 'pdf') {
+      await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf-8'));
+    }
+    if (fmt === 'pdf' && actualFormat !== 'pdf') {
+      vscode.window.showWarningMessage(
+        `PDF export unavailable on this machine. Exported HTML instead to ${uri.fsPath}. Set shieldex.pdfBrowserPath to enable exact PDF export.`,
+      );
+    }
     vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
 
     // Track export metric
@@ -543,6 +564,12 @@ async function exportReport(
 }
 
 async function pickExportFormat(): Promise<string | undefined> {
+  const configuredPdfBrowserPath =
+    vscode.workspace
+      .getConfiguration('shieldex')
+      .get<string>('pdfBrowserPath')
+      ?.trim() || undefined;
+  const pdfAvailable = isPdfExportAvailable(configuredPdfBrowserPath);
   const items: Array<vscode.QuickPickItem & { format: string }> = [
     {
       label: 'Markdown',
@@ -575,6 +602,15 @@ async function pickExportFormat(): Promise<string | undefined> {
       format: 'sarif',
     },
   ];
+
+  if (pdfAvailable) {
+    items.splice(3, 0, {
+      label: 'PDF',
+      description: '.pdf',
+      detail: 'Exact HTML-to-PDF via installed Chrome/Chromium browser',
+      format: 'pdf',
+    });
+  }
 
   const picked = await vscode.window.showQuickPick(items, {
     placeHolder: 'Select export format',

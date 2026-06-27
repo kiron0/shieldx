@@ -118,9 +118,18 @@
           "default": "markdown",
           "enum": [
             "markdown",
-            "json"
+            "json",
+            "html",
+            "pdf",
+            "csv",
+            "sarif"
           ],
           "description": "Default format for exported reports"
+        },
+        "shieldex.pdfBrowserPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional absolute path to Chrome, Chromium, Edge, or Brave for exact HTML-to-PDF export"
         },
         "shieldex.enableOsvScan": {
           "type": "boolean",

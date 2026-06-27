@@ -12,6 +12,7 @@ export function generateMarkdownReport(summary: {
     version: string;
     marketplaceId?: string;
     category?: string;
+    iconDataUrl?: string;
     riskScore: number;
     riskLevel: string;
     riskFactors: Array<{ title: string; description: string }>;
@@ -98,6 +99,7 @@ export function generateHtmlReport(summary: {
     version: string;
     marketplaceId?: string;
     category?: string;
+    iconDataUrl?: string;
     riskScore: number;
     riskLevel: string;
     riskFactors: Array<{ title: string; description: string }>;
@@ -129,6 +131,11 @@ export function generateHtmlReport(summary: {
     table { width: 100%; border-collapse: collapse; margin: 20px 0; }
     th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #ddd; }
     th { background: #f5f5f5; font-weight: 600; }
+    .ext-link { display: inline-flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; }
+    .ext-link:hover { text-decoration: underline; }
+    .ext-icon-wrap { width: 24px; height: 24px; flex: 0 0 24px; border-radius: 6px; overflow: hidden; background: rgba(0,0,0,0.06); display: inline-flex; align-items: center; justify-content: center; }
+    .ext-icon { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .ext-icon-fallback { font-size: 10px; font-weight: 700; color: #555; text-transform: uppercase; }
     .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.8em; font-weight: 600; color: #fff; }
     .badge.low { background: #4caf50; }
     .badge.moderate { background: #ff9800; }
@@ -161,7 +168,7 @@ export function generateHtmlReport(summary: {
       ${summary.reports
         .map(
           (r) => `<tr>
-        <td><a href="${getMarketplaceUrl(r.marketplaceId, r.publisher, r.name)}" target="_blank" rel="noopener noreferrer">${escapeHtml(r.name)}</a></td><td>${escapeHtml(r.publisher)}</td><td>${escapeHtml(r.version)}</td>
+        <td><a class="ext-link" href="${getMarketplaceUrl(r.marketplaceId, r.publisher, r.name)}" target="_blank" rel="noopener noreferrer">${renderHtmlReportIcon(r.name, r.iconDataUrl)}<span>${escapeHtml(r.name)}</span></a></td><td>${escapeHtml(r.publisher)}</td><td>${escapeHtml(r.version)}</td>
         <td>${r.riskScore}</td>
         <td><span class="badge ${r.riskLevel}">${r.riskLevel.toUpperCase()}</span></td>
       </tr>`,
@@ -175,7 +182,7 @@ export function generateHtmlReport(summary: {
     .map(
       (r) => `
     <div class="ext-section risky">
-      <h3><a href="${getMarketplaceUrl(r.marketplaceId, r.publisher, r.name)}" target="_blank" rel="noopener noreferrer">${escapeHtml(r.name)}</a> <span class="badge ${r.riskLevel}">${r.riskLevel.toUpperCase()}</span></h3>
+      <h3><a class="ext-link" href="${getMarketplaceUrl(r.marketplaceId, r.publisher, r.name)}" target="_blank" rel="noopener noreferrer">${renderHtmlReportIcon(r.name, r.iconDataUrl)}<span>${escapeHtml(r.name)}</span></a> <span class="badge ${r.riskLevel}">${r.riskLevel.toUpperCase()}</span></h3>
       <p><strong>Publisher:</strong> ${escapeHtml(r.publisher)} | <strong>Version:</strong> ${escapeHtml(r.version)} | <strong>Score:</strong> ${r.riskScore}/100</p>
       ${r.riskFactors.length > 0 ? `<p><strong>Risk Factors:</strong> ${r.riskFactors.map((f) => escapeHtml(f.title)).join(', ')}</p>` : ''}
       <p><strong>Recommendation:</strong> ${escapeHtml(r.recommendation)}</p>
@@ -259,12 +266,25 @@ function formatMarkdownExtensionLink(
   return `[${name}](${getMarketplaceUrl(marketplaceId, publisher, name)})`;
 }
 
+function renderHtmlReportIcon(name: string, iconDataUrl?: string): string {
+  if (iconDataUrl) {
+    return `<span class="ext-icon-wrap"><img class="ext-icon" src="${escapeHtmlAttribute(iconDataUrl)}" alt="" /></span>`;
+  }
+
+  const fallback = escapeHtml(name.slice(0, 2).toUpperCase() || '?');
+  return `<span class="ext-icon-wrap"><span class="ext-icon-fallback">${fallback}</span></span>`;
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;');
+}
+
+function escapeHtmlAttribute(value: string): string {
+  return escapeHtml(value).replace(/'/g, '&#39;');
 }
 
 function normalizeExportSummary(summary: {
