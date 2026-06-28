@@ -1,5 +1,14 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import { formatDateTime } from '../utils/date-format';
 import { EXT_CONFIG } from '../config';
+
+const SPACE_GROTESK_FONT_PATH = path.resolve(
+  __dirname,
+  '../../assets/fonts/SpaceGrotesk.ttf',
+);
+
+const SPACE_GROTESK_FONT_CSS = buildEmbeddedFontCss();
 
 export function generateMarkdownReport(summary: {
   totalExtensions: number;
@@ -118,7 +127,8 @@ export function generateHtmlReport(summary: {
   <meta charset="UTF-8">
   <title>${EXT_CONFIG.name} Security Report</title>
   <style>
-    body { font-family: -apple-system, system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #333; }
+    ${SPACE_GROTESK_FONT_CSS}
+    body { font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #333; }
     h1 { border-bottom: 2px solid #007acc; padding-bottom: 10px; }
     .meta { color: #666; margin-bottom: 24px; }
     .summary { display: flex; gap: 16px; margin: 20px 0; flex-wrap: wrap; }
@@ -286,6 +296,17 @@ function escapeHtml(value: string): string {
 
 function escapeHtmlAttribute(value: string): string {
   return escapeHtml(value).replace(/'/g, '&#39;');
+}
+
+function buildEmbeddedFontCss(): string {
+  try {
+    const fontBase64 = fs
+      .readFileSync(SPACE_GROTESK_FONT_PATH)
+      .toString('base64');
+    return `@font-face { font-family: "Space Grotesk"; src: url(data:font/ttf;base64,${fontBase64}) format("truetype"); font-weight: 400 700; font-style: normal; font-display: swap; }`;
+  } catch {
+    return '';
+  }
 }
 
 function normalizeExportSummary(summary: {

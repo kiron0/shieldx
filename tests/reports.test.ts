@@ -161,12 +161,20 @@ describe('HTML Report', () => {
     const html = generateHtmlReport(mockSummary as any);
     expect(html).toContain('class="ext-icon-fallback"');
   });
+
+  it('uses Space Grotesk in report styles', () => {
+    const html = generateHtmlReport(mockSummary as any);
+    expect(html).toContain('@font-face');
+    expect(html).toContain('data:font/ttf;base64,');
+    expect(html).toContain('font-family: "Space Grotesk"');
+  });
 });
 
 describe('PDF Report', () => {
   it('builds browser print args for exact html rendering', () => {
     const args = buildPdfBrowserArgs('/tmp/report.html', '/tmp/report.pdf');
     expect(args).toContain('--headless=new');
+    expect(args).toContain('--no-pdf-header-footer');
     expect(args).toContain('--print-to-pdf=/tmp/report.pdf');
     expect(args[args.length - 1]).toBe('file:///tmp/report.html');
   });

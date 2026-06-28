@@ -85,7 +85,7 @@ export function buildPdfBrowserArgs(
     '--no-first-run',
     '--no-default-browser-check',
     '--allow-file-access-from-files',
-    '--print-to-pdf-no-header',
+    '--no-pdf-header-footer',
     `--print-to-pdf=${pdfPath}`,
     pathToFileUrl(htmlPath),
   ];
