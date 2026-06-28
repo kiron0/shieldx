@@ -350,8 +350,8 @@ function getStyles(): string {
     /* ── About Box ── */
     .about-box{border-top:1px solid var(--border);padding:10px;margin-top:2px;background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border)}
     .about-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-    .about-icon{width:22px;height:22px;flex:0 0 22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#005a9e);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px var(--accent-glow)}
-    .about-icon svg{width:12px;height:12px;color:var(--accent-fg)}
+    .about-icon{width:28px;height:28px;flex:0 0 28px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#005a9e);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px var(--accent-glow)}
+    .about-icon svg{width:15px;height:15px;color:var(--accent-fg)}
     .about-title{font-size:11px;font-weight:700;letter-spacing:.2px}
     .about-author{font-size:10px;opacity:.5}
     .about-desc{font-size:10px;opacity:.6;line-height:1.5}
