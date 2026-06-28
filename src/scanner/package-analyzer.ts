@@ -11,8 +11,8 @@ import {
   getExtensionDependencies,
 } from '../utils/extension-utils';
 import { readFileContent } from '../utils/file-utils';
+import { hasLicenseMetadataOrFile } from '../utils/scanner-helpers';
 import * as path from 'path';
-import * as fs from 'fs';
 
 export interface PackageAnalysisResult {
   riskFactors: RiskFactor[];
@@ -212,32 +212,4 @@ function checkMainFileSize(mainPath: string, riskFactors: RiskFactor[]): void {
       evidence: [mainPath],
     });
   }
-}
-
-function hasLicenseMetadataOrFile(pkg: any, installPath?: string): boolean {
-  if (hasDeclaredLicense(pkg)) return true;
-  if (!installPath) return false;
-  try {
-    return fs.readdirSync(installPath).some((f) => {
-      const u = f.toUpperCase();
-      return (
-        u.startsWith('LICENSE') ||
-        u.startsWith('LICENCE') ||
-        u.startsWith('COPYING') ||
-        u === 'UNLICENSE'
-      );
-    });
-  } catch {
-    return false;
-  }
-}
-
-function hasDeclaredLicense(pkg: any): boolean {
-  const lic = pkg?.license || pkg?.licenses;
-  if (!lic) return false;
-  const check = (l: any) =>
-    typeof l === 'string'
-      ? !!l.trim()
-      : typeof l?.type === 'string' && !!l.type.trim();
-  return Array.isArray(lic) ? lic.some(check) : check(lic);
 }
