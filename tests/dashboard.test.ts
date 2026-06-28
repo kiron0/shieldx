@@ -33,7 +33,7 @@ describe('Dashboard HTML', () => {
   it('has scan and export buttons', () => {
     const html = generateDashboardHtml();
     expect(html).toContain('id="btn-scan"');
-    expect(html).toContain('>Scan<');
+    expect(html).toContain('>Scan Now<');
     expect(html).toContain('>Cancel<');
     expect(html).toContain('data-action="export"');
     expect(html).toContain('title="Export Report"');
@@ -89,7 +89,7 @@ describe('Dashboard HTML', () => {
       'class="history-item-main history-item-header-toggle" data-action="select-history"',
     );
     expect(html).toContain('class="item-toggle history-arrow"');
-    expect(html).toContain('#ext-list .ext-item[data-level="critical"]');
+    expect(html).toContain('#ext-list .ext-item');
   });
 
   it('only saves history from explicit actions', () => {

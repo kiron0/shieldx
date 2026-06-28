@@ -20,8 +20,16 @@ export function generateDashboardHtml(cspSource: string): string {
   <div class="app-shell">
     <div class="app-top">
       <div class="header">
-        <h1>${aboutTitle}</h1>
-        <span id="header-badge" class="badge-count">0</span>
+        <div class="header-left">
+          <div class="header-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <div class="header-text">
+            <h1>${aboutTitle}</h1>
+            <span class="header-slogan">${EXT_CONFIG.slogan}</span>
+          </div>
+        </div>
+        <span id="header-badge" class="badge-count"><span class="badge-num">0</span><span class="badge-label">scanned</span></span>
       </div>
 
       <div id="progress-section">
@@ -33,37 +41,58 @@ export function generateDashboardHtml(cspSource: string): string {
       </div>
 
       <div class="quick-actions">
-        <button class="btn-primary" id="btn-scan" data-action="scan">Scan</button>
-        <button class="secondary" data-action="export" title="Export Report">Export</button>
+        <button class="btn-scan" id="btn-scan" data-action="scan">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/></svg>
+          <span>Scan Now</span>
+        </button>
+        <button class="btn-export" data-action="export" title="Export Report">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>Export</span>
+        </button>
       </div>
 
       <div class="nav-tabs">
         <button class="nav-tab active" data-tab="overview" data-action="tab">Overview</button>
         <button class="nav-tab" data-tab="extensions" data-action="tab">Extensions</button>
         <button class="nav-tab" data-tab="history" data-action="tab">History</button>
+        <div class="nav-indicator"></div>
       </div>
     </div>
 
     <div class="app-main">
       <div id="panel-overview" class="panel visible">
         <div id="summary-cards" class="summary-cards"></div>
-        <div id="dist-bar" class="dist-bar"></div>
+        <div class="dist-section">
+          <div class="dist-header"><span class="dist-title">Risk Distribution</span></div>
+          <div id="dist-bar" class="dist-bar"></div>
+          <div id="dist-legend" class="dist-legend"></div>
+        </div>
         <div class="score-explainer">
-          <div class="score-explainer-title">How scores work</div>
+          <div class="score-explainer-header">
+            <svg class="score-explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div class="score-explainer-title">How scores work</div>
+          </div>
           <div class="score-explainer-copy">Lower score = safer. Higher score = more risky signals found. Treat high and critical first.</div>
           <div class="score-explainer-scale">
-            <span class="score-band low">0-25 Low</span>
-            <span class="score-band moderate">26-50 Moderate</span>
-            <span class="score-band high">51-75 High</span>
-            <span class="score-band critical">76-100 Critical</span>
+            <span class="score-band low"><span class="score-band-dot"></span>0-25 Low</span>
+            <span class="score-band moderate"><span class="score-band-dot"></span>26-50 Moderate</span>
+            <span class="score-band high"><span class="score-band-dot"></span>51-75 High</span>
+            <span class="score-band critical"><span class="score-band-dot"></span>76-100 Critical</span>
           </div>
         </div>
         <div id="rec-actions" class="rec-actions hidden">
-          <details><summary>Recommended Actions</summary><ul id="rec-list"></ul></details>
+          <div class="section-card-header">
+            <svg class="section-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span class="section-card-title">Recommended Actions</span>
+          </div>
+          <ul id="rec-list" class="rec-list"></ul>
         </div>
         <div id="empty-state" class="empty-state">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-          <p>No scan yet.<br>Click <strong>Scan</strong> to begin.</p>
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <p class="empty-state-title">Ready to Scan</p>
+          <p class="empty-state-sub">Click <strong>Scan Now</strong> to analyze your extensions for security risks.</p>
         </div>
         <div id="last-scan" class="last-scan"></div>
       </div>
@@ -74,21 +103,40 @@ export function generateDashboardHtml(cspSource: string): string {
           <div class="filter-bar"></div>
         </div>
         <div id="ext-list" class="ext-list"></div>
-        <div id="ext-empty" class="empty-state"><p>No extensions found.</p></div>
+        <div id="ext-empty" class="empty-state">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </div>
+          <p class="empty-state-title">No Extensions Found</p>
+          <p class="empty-state-sub">Try adjusting your search query.</p>
+        </div>
       </div>
 
       <div id="panel-history" class="panel">
         <div id="history-header" class="history-header"><button class="history-back" data-action="history-back">Back</button><button class="history-clear" data-action="clear-history">Clear</button></div>
         <div id="history-list" class="history-list"></div>
         <div id="history-detail" class="history-detail"></div>
-        <div id="history-empty" class="empty-state"><p>No scan history yet.</p></div>
+        <div id="history-empty" class="empty-state">
+          <div class="empty-state-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <p class="empty-state-title">No History Yet</p>
+          <p class="empty-state-sub">Scan results will appear here after your first scan.</p>
+        </div>
       </div>
     </div>
 
     <div class="app-bottom">
       <div class="about-box">
-        <div class="about-title">${aboutTitle}</div>
-        <div class="about-author">${aboutAuthor}</div>
+        <div class="about-header">
+          <div class="about-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/><polyline points="9 12 11 14 15 10"/></svg>
+          </div>
+          <div>
+            <div class="about-title">${aboutTitle}</div>
+            <div class="about-author">${aboutAuthor}</div>
+          </div>
+        </div>
         <div class="about-desc">${aboutDescription}</div>
       </div>
     </div>
@@ -102,103 +150,180 @@ export function generateDashboardHtml(cspSource: string): string {
 function getStyles(): string {
   return `
     *{box-sizing:border-box;margin:0;padding:0}
-    :root{--bg:var(--vscode-editor-background,#1e1e1e);--fg:var(--vscode-editor-foreground,#d4d4d4);--border:var(--vscode-panel-border,#3c3c3c);--card-bg:var(--vscode-editorWidget-background,#252526);--accent:var(--vscode-button-background,#007acc);--accent-fg:var(--vscode-button-foreground,#fff);--sec-bg:var(--vscode-button-secondaryBackground,#3c3c3c);--sec-fg:var(--vscode-button-secondaryForeground,#ccc);--input-bg:var(--vscode-input-background,#3c3c3c);--input-fg:var(--vscode-input-foreground,#ccc);--input-border:var(--vscode-input-border,#3c3c3c);--input-ph:var(--vscode-input-placeholderForeground,#888);--low:#4caf50;--moderate:#ff9800;--high:#f44336;--critical:#9c27b0;--radius:6px;--pad:10px}
-    .low{--c:var(--low);--bgc:#4caf5020}
-    .moderate{--c:var(--moderate);--bgc:#ff980020}
-    .high{--c:var(--high);--bgc:#f4433620}
-    .critical{--c:var(--critical);--bgc:#9c27b020}
-    [data-level="low"]{--c:var(--low);--bgc:#4caf5020}
-    [data-level="moderate"]{--c:var(--moderate);--bgc:#ff980020}
-    [data-level="high"]{--c:var(--high);--bgc:#f4433620}
-    [data-level="critical"]{--c:var(--critical);--bgc:#9c27b020}
+    :root{--bg:var(--vscode-editor-background,#1e1e1e);--fg:var(--vscode-editor-foreground,#d4d4d4);--border:var(--vscode-panel-border,#3c3c3c);--card-bg:var(--vscode-editorWidget-background,#252526);--accent:var(--vscode-button-background,#007acc);--accent-fg:var(--vscode-button-foreground,#fff);--sec-bg:var(--vscode-button-secondaryBackground,#3c3c3c);--sec-fg:var(--vscode-button-secondaryForeground,#ccc);--input-bg:var(--vscode-input-background,#3c3c3c);--input-fg:var(--vscode-input-foreground,#ccc);--input-border:var(--vscode-input-border,#3c3c3c);--input-ph:var(--vscode-input-placeholderForeground,#888);--low:#4caf50;--moderate:#ff9800;--high:#f44336;--critical:#9c27b0;--radius:8px;--pad:12px;--accent-glow:rgba(0,122,204,.25)}
+    .low{--c:var(--low);--bgc:#4caf5018}
+    .moderate{--c:var(--moderate);--bgc:#ff980018}
+    .high{--c:var(--high);--bgc:#f4433618}
+    .critical{--c:var(--critical);--bgc:#9c27b018}
+    [data-level="low"]{--c:var(--low);--bgc:#4caf5018}
+    [data-level="moderate"]{--c:var(--moderate);--bgc:#ff980018}
+    [data-level="high"]{--c:var(--high);--bgc:#f4433618}
+    [data-level="critical"]{--c:var(--critical);--bgc:#9c27b018}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    @keyframes pulse-ring{0%{box-shadow:0 0 0 0 var(--accent-glow)}70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
+    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
     body{font-family:var(--vscode-font-family,-apple-system,BlinkMacSystemFont,sans-serif);font-size:13px;background:var(--bg);color:var(--fg);line-height:1.5;overflow:hidden;height:100vh}
     .app-shell{height:100%;display:flex;flex-direction:column;padding:var(--pad);gap:10px}
     .app-top,.app-bottom{flex:0 0 auto}
     .app-main{flex:1 1 auto;min-height:0;overflow:hidden;display:flex}
-    .header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-    .header h1{font-size:13px;font-weight:700;letter-spacing:.2px;flex:1}
-    .badge-count{background:var(--accent);color:var(--accent-fg);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+
+    /* ── Header ── */
+    .header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);position:relative}
+    .header::after{content:'';position:absolute;bottom:-1px;left:0;width:60px;height:2px;background:linear-gradient(90deg,var(--accent),transparent);border-radius:1px}
+    .header-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
+    .header-icon{width:28px;height:28px;flex:0 0 28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#005a9e);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px var(--accent-glow)}
+    .header-icon svg{width:16px;height:16px;color:var(--accent-fg)}
+    .header-text{min-width:0}
+    .header h1{font-size:14px;font-weight:700;letter-spacing:.3px;line-height:1.2}
+    .header-slogan{font-size:10px;opacity:.45;letter-spacing:.5px;text-transform:uppercase;display:block}
+    .badge-count{display:flex;align-items:center;gap:4px;background:var(--card-bg);border:1px solid var(--border);padding:3px 8px;border-radius:12px;font-size:10px;opacity:.8}
+    .badge-num{font-weight:700;color:var(--accent);font-size:12px}
+    .badge-label{opacity:.55;font-weight:500}
+
+    /* ── Progress ── */
     #progress-section{display:none;margin-bottom:10px}
     #progress-section.visible{display:block}
     .progress-row{display:flex;align-items:center;gap:8px}
     .progress-track{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
-    .progress-fill{height:100%;width:0%;background:var(--accent);border-radius:2px;transition:width .3s}
+    .progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),#00a6ff);border-radius:2px;transition:width .3s}
     .progress-info{display:flex;justify-content:space-between;font-size:10px;opacity:.6;margin-top:4px}
     .progress-cancel{display:none;background:var(--sec-bg);color:var(--sec-fg);border:none;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer}
     #progress-section.visible .progress-cancel{display:inline-flex}
-    .quick-actions{display:flex;gap:6px;margin-bottom:10px}
-    .quick-actions button{background:var(--accent);color:var(--accent-fg);border:none;padding:7px 10px;border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;transition:opacity .15s}
-    .quick-actions button:hover{opacity:.85}
-    .quick-actions .btn-primary{flex:1}
-    .quick-actions button.secondary{flex:0 0 auto;background:var(--sec-bg);color:var(--sec-fg)}
-    .quick-actions button.secondary svg{width:14px;height:14px;fill:currentColor}
-    .quick-actions button:disabled{opacity:.35;cursor:not-allowed}
-    .nav-tabs{display:flex;gap:2px;background:var(--card-bg);border-radius:var(--radius);padding:2px;margin-bottom:10px}
-    .nav-tab{flex:1;text-align:center;padding:5px 4px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--fg);opacity:.5;cursor:pointer;border-radius:4px;transition:all .15s}
-    .nav-tab:hover{opacity:.7;background:rgba(255,255,255,.04)}
-    .nav-tab.active{opacity:1;background:var(--bg)}
+
+    /* ── Quick Actions (Scan + Export) ── */
+    .quick-actions{display:flex;gap:8px;margin-bottom:12px}
+    .btn-scan{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border:none;border-radius:var(--radius);font-size:12px;font-weight:700;cursor:pointer;background:linear-gradient(135deg,var(--accent) 0%,#005a9e 100%);color:var(--accent-fg);letter-spacing:.3px;transition:all .2s;position:relative;overflow:hidden}
+    .btn-scan::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent);background-size:200% 100%;animation:shimmer 3s ease infinite}
+    .btn-scan:hover{transform:translateY(-1px);box-shadow:0 4px 14px var(--accent-glow)}
+    .btn-scan:active{transform:translateY(0)}
+    .btn-scan svg{width:15px;height:15px;flex:0 0 15px}
+    .btn-scan:disabled{opacity:.35;cursor:not-allowed;transform:none;box-shadow:none}
+    .btn-scan:disabled::before{animation:none}
+    .btn-export{flex:0 0 auto;display:flex;align-items:center;gap:5px;padding:9px 14px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--fg);transition:all .2s}
+    .btn-export svg{width:14px;height:14px;flex:0 0 14px;opacity:.7}
+    .btn-export:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.06)}
+    .btn-export:hover svg{opacity:1}
+    .btn-export:disabled{opacity:.35;cursor:not-allowed}
+
+    /* ── Nav Tabs ── */
+    .nav-tabs{display:flex;gap:2px;background:var(--card-bg);border-radius:var(--radius);padding:3px;margin-bottom:10px;position:relative}
+    .nav-tab{flex:1;text-align:center;padding:6px 4px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--fg);opacity:.45;cursor:pointer;border-radius:6px;transition:all .2s;position:relative;z-index:1}
+    .nav-tab:hover{opacity:.65}
+    .nav-tab.active{opacity:1;background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.2)}
     .panel{display:none;height:100%;overflow-y:auto;padding-right:2px;min-width:0}
     .panel.visible{display:flex;flex:1 1 auto;flex-direction:column;min-height:0}
-    .summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:8px}
-    .card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:8px 6px;text-align:center}
-    .card .count{font-size:18px;font-weight:700;line-height:1.2;color:var(--c)}
-    .card .label{font-size:9px;opacity:.6;text-transform:uppercase;letter-spacing:.3px}
-    .dist-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;background:var(--border);margin-bottom:10px}
-    .dist-seg{height:100%;transition:width .3s;background:var(--c)}
-    .rec-actions{margin-bottom:10px}.rec-actions.hidden{display:none}
-    .rec-actions summary{font-size:11px;font-weight:600;cursor:pointer;padding:4px 0;opacity:.7}
-    .rec-actions ul{list-style:none;margin-top:4px}
-    .rec-actions li{padding:3px 0;font-size:11px;display:flex;align-items:center;gap:6px}
-    .rec-actions li::before{content:'\\2192';opacity:.4}
-    .score-explainer{margin-bottom:10px;padding:8px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card-bg)}
-    .score-explainer-title{font-size:11px;font-weight:700;margin-bottom:4px}
-    .score-explainer-copy{font-size:11px;opacity:.72}
-    .score-explainer-scale{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-    .score-band{font-size:10px;padding:2px 6px;border-radius:999px;background:rgba(255,255,255,.05);color:var(--c)}
+
+    /* ── Summary Cards ── */
+    .summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+    .card{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--c,var(--accent));border-radius:var(--radius);padding:10px 8px;text-align:center;transition:border-color .2s,transform .15s}
+    .card:hover{transform:translateY(-1px)}
+    .card .card-icon{display:flex;justify-content:center;margin-bottom:4px}
+    .card .card-icon svg{width:14px;height:14px;color:var(--c,var(--fg));opacity:.65}
+    .card .count{font-size:20px;font-weight:800;line-height:1.2;color:var(--c);letter-spacing:-.3px}
+    .card .label{font-size:9px;opacity:.5;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+    .card.total-card{border-left-color:var(--accent)}
+    .card.total-card .count{color:var(--fg)}
+
+    /* ── Distribution Bar ── */
+    .dist-section{margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card-bg)}
+    .dist-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .dist-title{font-size:11px;font-weight:700;opacity:.7}
+    .dist-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--border)}
+    .dist-seg{height:100%;transition:width .4s ease;background:var(--c);position:relative}
+    .dist-seg:first-child{border-radius:4px 0 0 4px}
+    .dist-seg:last-child{border-radius:0 4px 4px 0}
+    .dist-seg:only-child{border-radius:4px}
+    .dist-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+    .dist-legend-item{display:flex;align-items:center;gap:4px;font-size:10px;opacity:.65}
+    .dist-legend-dot{width:6px;height:6px;border-radius:50%;background:var(--c)}
+
+    /* ── Section Card (shared pattern) ── */
+    .section-card-header{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+    .section-card-icon{width:14px;height:14px;opacity:.6;color:var(--accent)}
+    .section-card-title{font-size:11px;font-weight:700;opacity:.85}
+
+    /* ── Rec Actions ── */
+    .rec-actions{margin-bottom:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card-bg)}.rec-actions.hidden{display:none}
+    .rec-list{list-style:none;display:flex;flex-direction:column;gap:4px}
+    .rec-list li{padding:6px 8px;font-size:11px;display:flex;align-items:center;gap:8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid var(--border);transition:border-color .15s}
+    .rec-list li:hover{border-color:var(--accent)}
+    .rec-list li .rec-dot{width:6px;height:6px;border-radius:50%;flex:0 0 6px}
+    .rec-list li .rec-text{flex:1;min-width:0}
+
+    /* ── Score Explainer ── */
+    .score-explainer{margin-bottom:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card-bg)}
+    .score-explainer-header{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+    .score-explainer-icon{width:14px;height:14px;opacity:.55;color:var(--accent)}
+    .score-explainer-title{font-size:11px;font-weight:700;opacity:.85}
+    .score-explainer-copy{font-size:11px;opacity:.6;line-height:1.5}
+    .score-explainer-scale{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+    .score-band{font-size:10px;padding:3px 8px;border-radius:999px;background:var(--bgc);color:var(--c);font-weight:600;display:flex;align-items:center;gap:4px;transition:transform .15s}
+    .score-band:hover{transform:scale(1.05)}
+    .score-band-dot{width:5px;height:5px;border-radius:50%;background:var(--c)}
+
+    /* ── Empty State ── */
+    .empty-state{text-align:center;padding:32px 16px;opacity:1}
+    .empty-state-icon{width:56px;height:56px;margin:0 auto 14px;border-radius:16px;background:linear-gradient(135deg,rgba(0,122,204,.12),rgba(0,122,204,.04));display:flex;align-items:center;justify-content:center;animation:float 4s ease-in-out infinite}
+    .empty-state-icon svg{width:28px;height:28px;color:var(--accent);opacity:.7}
+    .empty-state-title{font-size:14px;font-weight:700;margin-bottom:4px;opacity:.75}
+    .empty-state-sub{font-size:11px;opacity:.4;line-height:1.5}
+    #history-empty{flex:1 1 auto;display:flex;align-items:center;justify-content:center}
+    .empty-state svg{width:36px;height:36px;margin-bottom:8px}
+    .empty-state p{font-size:12px}
+
+    /* ── Last Scan ── */
+    .last-scan{font-size:10px;opacity:.4;text-align:center;margin-top:8px;padding:6px 10px;border-radius:var(--radius);background:var(--card-bg);border:1px solid var(--border)}
+    .last-scan:empty{display:none}
+
+    /* ── Search & Extensions Tab ── */
     .search-bar{margin-bottom:6px;position:relative}
-    .search-bar input{width:100%;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:5px 42px 5px 8px;font-size:12px;font-family:inherit;outline:none;transition:border-color .15s}
-    .search-bar input:focus{border-color:var(--accent)}
+    .search-bar input{width:100%;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 42px 6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
+    .search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
     .search-bar input::placeholder{color:var(--input-ph)}
     .filter-bar{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:8px}
     .ext-count{position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:10px;opacity:.5;pointer-events:none}
     .ext-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px}
-    .ext-list{display:flex;flex-direction:column;gap:3px;width:100%;padding:0 1px}
-    .ext-item{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--border);border-radius:var(--radius);padding:8px;cursor:pointer;transition:border-color .15s,box-shadow .15s;width:100%;border-left-color:var(--c)}
-    .ext-item:hover{border-color:var(--accent)}
+    .ext-list{display:flex;flex-direction:column;gap:4px;width:100%;padding:0 1px}
+    .ext-item{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--c,var(--border));border-radius:var(--radius);padding:10px;cursor:pointer;transition:all .2s;width:100%}
+    .ext-item:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     .ext-item-header{display:flex;align-items:center;gap:10px}
-    .ext-icon-wrap{width:24px;height:24px;flex:0 0 24px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center}
+    .ext-icon-wrap{width:26px;height:26px;flex:0 0 26px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center}
     .ext-icon{width:100%;height:100%;object-fit:cover;display:block}
     .ext-icon-fallback{font-size:10px;font-weight:700;opacity:.65;text-transform:uppercase}
     .ext-item-info{flex:1;min-width:0}
     .ext-name{font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-    .ext-pub{font-size:10px;opacity:.45;display:block}
+    .ext-pub{font-size:10px;opacity:.45;display:block;margin-top:1px}
     .ext-version{font-size:11px;font-weight:600;white-space:nowrap;opacity:.7;margin-left:auto}
     .ext-score{font-size:12px;font-weight:700;white-space:nowrap}
     .ext-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:auto}
     .item-toggle{background:none;border:none;color:var(--fg);opacity:.55;cursor:pointer;font-size:12px;padding:0;line-height:1}
     .item-toggle:hover{opacity:.85}
-    .status-chip{font-size:9px;padding:1px 6px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;background:var(--bgc);color:var(--c)}
-    .ext-detail{display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px}
+    .status-chip{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;background:var(--bgc);color:var(--c)}
+
+    /* ── Extension Detail ── */
+    .ext-detail{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px}
     .ext-detail.open{display:block}
-    .detail-row{display:flex;justify-content:space-between;padding:2px 0}
+    .detail-row{display:flex;justify-content:space-between;padding:3px 0}
     .detail-label{opacity:.5}
-    .score-wrap{display:flex;align-items:center;gap:8px;margin:6px 0}
+    .score-wrap{display:flex;align-items:center;gap:8px;margin:8px 0}
     .score-bar{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
-    .score-fill{height:100%;border-radius:3px;transition:width .3s}
+    .score-fill{height:100%;border-radius:3px;transition:width .4s ease}
     .score-num{font-size:11px;font-weight:700;white-space:nowrap;min-width:40px;text-align:right}
-    .section-label{font-size:10px;font-weight:600;text-transform:uppercase;opacity:.5;margin:6px 0 4px;letter-spacing:.3px}
-    .factor{padding:2px 0;font-size:10px;color:var(--high)}.factor::before{content:'\\2022 ';opacity:.5}
-    .show-more-btn{background:none;border:none;color:var(--accent);font-size:10px;cursor:pointer;padding:2px 0}
-    .show-more-btn:hover{text-decoration:underline}
-    .signal{padding:2px 0;font-size:10px;color:var(--low)}.signal::before{content:'+ ';opacity:.5;font-weight:700}
-    .rec-box{margin-top:6px;padding:6px 8px;border-radius:4px;font-size:11px;background:#f4433612;border-left:2px solid var(--high)}
-    .rec-box.safe{background:#4caf5012;border-left-color:var(--low)}
-    .detail-actions{margin-top:8px;display:flex;gap:6px}
-    .detail-actions button{background:var(--sec-bg);color:var(--sec-fg);border:none;padding:4px 10px;border-radius:var(--radius);font-size:11px;cursor:pointer;transition:opacity .15s}
-    .detail-actions button:hover{opacity:.8}
-    .history-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-    .history-header button{background:none;border:none;color:var(--fg);font-size:10px;cursor:pointer;opacity:.4}
-    .history-header button:hover{opacity:.7}
+    .section-label{font-size:10px;font-weight:600;text-transform:uppercase;opacity:.5;margin:8px 0 4px;letter-spacing:.4px}
+    .factor{padding:3px 0;font-size:10px;color:var(--high)}.factor::before{content:'\\2022 ';opacity:.5}
+    .show-more-btn{background:none;border:none;color:var(--accent);font-size:10px;cursor:pointer;padding:2px 0;transition:opacity .15s}
+    .show-more-btn:hover{text-decoration:underline;opacity:.8}
+    .signal{padding:3px 0;font-size:10px;color:var(--low)}.signal::before{content:'+ ';opacity:.5;font-weight:700}
+    .rec-box{margin-top:8px;padding:8px 10px;border-radius:6px;font-size:11px;background:#f4433610;border-left:3px solid var(--high);line-height:1.5}
+    .rec-box.safe{background:#4caf5010;border-left-color:var(--low)}
+    .detail-actions{margin-top:10px;display:flex;gap:6px}
+    .detail-actions button{background:transparent;color:var(--fg);border:1px solid var(--border);padding:5px 12px;border-radius:var(--radius);font-size:11px;cursor:pointer;transition:all .2s;font-weight:600}
+    .detail-actions button:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.06)}
+
+    /* ── History Tab ── */
+    .history-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+    .history-header button{background:transparent;border:1px solid var(--border);color:var(--fg);font-size:10px;cursor:pointer;opacity:.6;padding:3px 8px;border-radius:6px;transition:all .2s}
+    .history-header button:hover{opacity:1;border-color:var(--accent);color:var(--accent)}
     .history-header .history-back{display:none;opacity:.7}
     .history-header .history-clear{display:none;margin-left:auto}
     .history-header.has-history .history-clear{display:inline-flex}
@@ -206,13 +331,14 @@ function getStyles(): string {
     #panel-history{overflow:hidden}
     .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:2px}
     .history-list.history-list-expanded{overflow:hidden}
-    .history-item{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:8px;font-size:11px}
+    .history-item{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:10px;font-size:11px;transition:all .2s}
+    .history-item:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     .history-item.history-item-expanded{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
-    .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;border-top:1px solid var(--border);padding-top:8px}
+    .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;border-top:1px solid var(--border);padding-top:10px}
     .history-detail{display:none}.history-detail.visible{display:block}
     .history-tools{display:flex;gap:6px;align-items:center;margin:8px 0}
-    .history-tools input,.history-tools select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:5px 8px;font-size:12px;font-family:inherit;outline:none;transition:border-color .15s}
-    .history-tools input:focus,.history-tools select:focus{border-color:var(--accent)}
+    .history-tools input,.history-tools select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
+    .history-tools input:focus,.history-tools select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
     .history-tools input::placeholder{color:var(--input-ph)}
     .history-tools input{flex:1}
     .history-inline-detail .history-tools{position:sticky;top:0;z-index:2;margin-top:0;padding-bottom:8px;background:var(--card-bg)}
@@ -221,25 +347,28 @@ function getStyles(): string {
     .history-item-main{flex:1;min-width:0}
     .history-item-header-toggle{cursor:pointer}
     .history-item-actions{display:flex;gap:6px}
-    .history-item-actions button{background:none;border:none;color:var(--fg);font-size:10px;cursor:pointer;opacity:.55}
+    .history-item-actions button{background:none;border:none;color:var(--fg);font-size:10px;cursor:pointer;opacity:.55;transition:opacity .15s}
+    .history-item-actions button:hover{opacity:.85}
     .history-item-actions .clear-history-entry{padding:0}
     .history-item-actions .history-arrow{padding:0;font-size:12px}
     .h-time{font-size:10px;opacity:.45}
-    .h-stats{display:flex;gap:8px;margin-top:3px;width:fit-content}
+    .h-stats{display:flex;gap:8px;margin-top:4px;width:fit-content}
     .h-stats span{font-size:10px}
     .h-stats .h-high{color:var(--high);font-weight:600}.h-stats .h-crit{color:var(--critical);font-weight:600}
-    .empty-state{text-align:center;padding:28px 16px;opacity:.35}
-    #history-empty{flex:1 1 auto;display:flex;align-items:center;justify-content:center}
-    .empty-state svg{width:36px;height:36px;margin-bottom:8px}
-    .empty-state p{font-size:12px}
-    .last-scan{font-size:10px;opacity:.35;text-align:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
-    .about-box{border-top:1px solid var(--border);padding-top:10px}
+
+    /* ── About Box ── */
+    .about-box{border-top:1px solid var(--border);padding:10px;margin-top:2px;background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border)}
+    .about-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .about-icon{width:22px;height:22px;flex:0 0 22px;border-radius:6px;background:linear-gradient(135deg,var(--accent),#005a9e);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px var(--accent-glow)}
+    .about-icon svg{width:12px;height:12px;color:var(--accent-fg)}
     .about-title{font-size:11px;font-weight:700;letter-spacing:.2px}
-    .about-author{font-size:10px;opacity:.6;margin-top:2px}
-    .about-desc{font-size:10px;opacity:.7;margin-top:6px}
+    .about-author{font-size:10px;opacity:.5}
+    .about-desc{font-size:10px;opacity:.6;line-height:1.5}
+
+    /* ── Extensions List Overrides ── */
     #ext-list .ext-item{border-left-width:1px;border-left-color:var(--border)}
-    #ext-list .ext-item:hover{box-shadow:0 0 0 1px var(--accent)}
-    /* #ext-list .ext-item[data-level="critical"] */
+    #ext-list .ext-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.15)}
+
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
   `;
 }
@@ -418,12 +547,12 @@ function getScript(): string {
           $('summary-cards').innerHTML = '';
           $('dist-bar').innerHTML = '';
           $('rec-actions').classList.add('hidden');
-          $('header-badge').textContent = '0';
+          var badgeNum0 = q('.badge-num'); if (badgeNum0) badgeNum0.textContent = '0';
           $('last-scan').textContent = '';
           return;
         }
         $('empty-state').style.display = 'none';
-        $('header-badge').textContent = scanData.totalExtensions || 0;
+        var badgeNum = q('.badge-num'); if (badgeNum) badgeNum.textContent = scanData.totalExtensions || 0;
         if (scanData.scannedAt) $('last-scan').textContent = 'Last scan: ' + formatRelativeTime(scanData.scannedAt);
         renderSummary();
         renderDistribution();
@@ -432,17 +561,24 @@ function getScript(): string {
 
       function renderSummary() {
         var d = scanData;
+        var icons = {
+          total: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>',
+          low: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+          moderate: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+          high: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+          critical: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
+        };
         var cards = [
-          { l: 'Total', c: d.totalExtensions, k: '' },
-          { l: 'Low', c: d.lowRisk, k: 'low' },
-          { l: 'Mod', c: d.moderateRisk, k: 'moderate' },
-          { l: 'High', c: d.highRisk, k: 'high' },
-          { l: 'Crit', c: d.criticalRisk, k: 'critical' }
+          { l: 'Total', c: d.totalExtensions, k: 'total', cls: 'total-card' },
+          { l: 'Low', c: d.lowRisk, k: 'low', cls: 'low' },
+          { l: 'Moderate', c: d.moderateRisk, k: 'moderate', cls: 'moderate' },
+          { l: 'High', c: d.highRisk, k: 'high', cls: 'high' },
+          { l: 'Critical', c: d.criticalRisk, k: 'critical', cls: 'critical' }
         ];
         var h = '';
         for (var i = 0; i < cards.length; i++) {
           var c = cards[i];
-          h += '<div class="card ' + c.k + '"><div class="count">' + c.c + '</div><div class="label">' + c.l + '</div></div>';
+          h += '<div class="card ' + c.cls + '"><div class="card-icon">' + icons[c.k] + '</div><div class="count">' + c.c + '</div><div class="label">' + c.l + '</div></div>';
         }
         $('summary-cards').innerHTML = h;
       }
@@ -450,16 +586,20 @@ function getScript(): string {
       function renderDistribution() {
         var d = scanData, t = d.totalExtensions || 1;
         var segs = [
-          { k: 'low', pct: Math.round(d.lowRisk / t * 100) },
-          { k: 'moderate', pct: Math.round(d.moderateRisk / t * 100) },
-          { k: 'high', pct: Math.round(d.highRisk / t * 100) },
-          { k: 'critical', pct: Math.round(d.criticalRisk / t * 100) }
+          { k: 'low', label: 'Low', count: d.lowRisk, pct: Math.round(d.lowRisk / t * 100) },
+          { k: 'moderate', label: 'Moderate', count: d.moderateRisk, pct: Math.round(d.moderateRisk / t * 100) },
+          { k: 'high', label: 'High', count: d.highRisk, pct: Math.round(d.highRisk / t * 100) },
+          { k: 'critical', label: 'Critical', count: d.criticalRisk, pct: Math.round(d.criticalRisk / t * 100) }
         ];
-        var h = '';
+        var barH = '';
+        var legH = '';
         for (var i = 0; i < segs.length; i++) {
-          if (segs[i].pct > 0) h += '<div class="dist-seg ' + segs[i].k + '" style="width:' + segs[i].pct + '%"></div>';
+          if (segs[i].pct > 0) barH += '<div class="dist-seg ' + segs[i].k + '" style="width:' + segs[i].pct + '%" title="' + segs[i].label + ': ' + segs[i].count + ' (' + segs[i].pct + '%)"></div>';
+          legH += '<span class="dist-legend-item ' + segs[i].k + '"><span class="dist-legend-dot"></span>' + segs[i].label + ' ' + segs[i].pct + '%</span>';
         }
-        $('dist-bar').innerHTML = h;
+        $('dist-bar').innerHTML = barH;
+        var legend = $('dist-legend');
+        if (legend) legend.innerHTML = legH;
       }
 
       function renderRecActions() {
@@ -477,13 +617,13 @@ function getScript(): string {
           }
         }
         var actions = [];
-        if (risky > 0) actions.push('Review ' + risky + ' high/critical risk extension' + (risky > 1 ? 's' : ''));
-        if (scripts > 0) actions.push(scripts + ' extension' + (scripts > 1 ? 's' : '') + ' run install scripts');
-        if (noRepo > 0) actions.push(noRepo + ' extension' + (noRepo > 1 ? 's' : '') + ' lack repo url');
+        if (risky > 0) actions.push({ text: 'Review ' + risky + ' high/critical risk extension' + (risky > 1 ? 's' : ''), color: 'var(--high)' });
+        if (scripts > 0) actions.push({ text: scripts + ' extension' + (scripts > 1 ? 's' : '') + ' run install scripts', color: 'var(--moderate)' });
+        if (noRepo > 0) actions.push({ text: noRepo + ' extension' + (noRepo > 1 ? 's' : '') + ' lack repo url', color: 'var(--moderate)' });
         if (actions.length === 0) { c.classList.add('hidden'); return; }
         c.classList.remove('hidden');
         var h = '';
-        for (var i = 0; i < actions.length; i++) h += '<li>' + actions[i] + '</li>';
+        for (var i = 0; i < actions.length; i++) h += '<li><span class="rec-dot" style="background:' + actions[i].color + '"></span><span class="rec-text">' + actions[i].text + '</span></li>';
         list.innerHTML = h;
       }
 
