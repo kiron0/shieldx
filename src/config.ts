@@ -5,4 +5,9 @@ export const EXT_CONFIG = {
   description:
     'Scan installed VS Code extensions for security risks, suspicious behavior, and excessive permissions.',
   slogan: 'Extension Auditor',
-};
+  publisher: 'thk',
+  displayName: 'ShieldX - Extension Auditor',
+  homepage: 'https://shieldx.js.org',
+  license: 'MIT',
+  repositoryUrl: 'https://github.com/kiron0/shieldx.git',
+} as const;

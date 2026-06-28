@@ -141,7 +141,7 @@
     }
   },
   "scripts": {
-    "clean": "node ./scripts/clean-build.mjs",
+    "clean": "bun run ./scripts/clean-build.ts",
     "vscode:prepublish": "npm run compile",
     "compile": "npm run clean && tsc -p ./",
     "watch": "tsc -watch -p ./",
@@ -150,7 +150,7 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest watch",
-    "check-all": "bun run format && bun run lint && bun run test && bun run build"
+    "check-all": "bun run lint && bun run test && bun run build && bun run format"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
