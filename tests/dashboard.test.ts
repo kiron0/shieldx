@@ -56,13 +56,13 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('data-action="select-history"');
     expect(html).toContain('data-action="history-back"');
     expect(html).toContain("type: 'cancelScan'");
-    expect(html).toContain("type: 'export'");
+    expect(html).toContain("type: 'directExport'");
     expect(html).toContain('history-inline-results');
     expect(html).toContain('renderHistoryInlineDetail(s.summary, historyId)');
     expect(html).toContain('expandedHistoryEntryId === historyId');
     expect(html).toContain('openLatestHistoryEntry()');
-    expect(html).toContain("type: 'requestClearHistory'");
-    expect(html).toContain("type: 'requestClearHistoryEntry'");
+    expect(html).toContain("type: 'forceClearHistory'");
+    expect(html).toContain("type: 'forceClearHistoryEntry'");
     expect(html).toContain("msg.type === 'historyEntryCleared'");
     expect(html).toContain("msg.type === 'scanCleared'");
     expect(html).toContain("'history-risk-filter'");
@@ -95,10 +95,10 @@ describe('Dashboard HTML', () => {
   it('only saves history from explicit actions', () => {
     const html = generateDashboardHtml();
     expect(html).toContain(
-      "vscode.postMessage({ type: 'requestClearHistory' });",
+      "vscode.postMessage({ type: 'forceClearHistory' });",
     );
     expect(html).toContain(
-      "vscode.postMessage({ type: 'requestClearHistoryEntry', id: id });",
+      "vscode.postMessage({ type: 'forceClearHistoryEntry', id: id });",
     );
     expect(html).not.toContain(
       "vscode.postMessage({ type: 'saveHistory', history: [] });",

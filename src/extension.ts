@@ -159,6 +159,34 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
+      `${EXT_CONFIG.name.toLowerCase()}.exportSpecificReport`,
+      async (historyId: string, format: string) => {
+        let summary: SecuritySummary | undefined;
+        if (historyId === 'latest') {
+          summary = context.globalState.get<SecuritySummary>(CACHE_KEY);
+        } else {
+          const history = context.globalState.get<ScanHistoryEntry[]>(
+            HISTORY_KEY,
+            [],
+          );
+          const entry = history.find((e) => (e.id || e.time) === historyId);
+          summary = entry?.summary;
+        }
+
+        if (!summary) {
+          vscode.window.showWarningMessage(
+            'No scan results found for the selected history.',
+          );
+          return;
+        }
+
+        await exportReport(context, summary, format);
+      },
+    ),
+  );
+
+  context.subscriptions.push(
+    vscode.commands.registerCommand(
       `${EXT_CONFIG.name.toLowerCase()}.rescanExtension`,
       async () => {
         vscode.commands.executeCommand(

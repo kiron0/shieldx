@@ -4,6 +4,7 @@ import { EXT_CONFIG } from '../config';
 export function generateDashboardHtml(cspSource: string): string {
   const nonce = getNonce();
   const aboutTitle = EXT_CONFIG.name;
+  const aboutVersion = EXT_CONFIG.version;
   const aboutAuthor = EXT_CONFIG.author;
   const aboutDescription = EXT_CONFIG.description;
 
@@ -25,7 +26,7 @@ export function generateDashboardHtml(cspSource: string): string {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div class="header-text">
-            <h1>${aboutTitle}</h1>
+            <h1>${aboutTitle} <sub style="font-size:9px;opacity:.45;font-weight:500">v${aboutVersion}</sub></h1>
             <span class="header-slogan">${EXT_CONFIG.slogan}</span>
           </div>
         </div>
@@ -62,24 +63,15 @@ export function generateDashboardHtml(cspSource: string): string {
     <div class="app-main">
       <div id="panel-overview" class="panel visible">
         <div id="summary-cards" class="summary-cards"></div>
-        <div class="dist-section">
+        <div class="dist-section hidden" id="dist-section">
           <div class="dist-header"><span class="dist-title">Risk Distribution</span></div>
           <div id="dist-bar" class="dist-bar"></div>
           <div id="dist-legend" class="dist-legend"></div>
         </div>
-        <div class="score-explainer">
-          <div class="score-explainer-header">
-            <svg class="score-explainer-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-            <div class="score-explainer-title">How scores work</div>
-          </div>
-          <div class="score-explainer-copy">Lower score = safer. Higher score = more risky signals found. Treat high and critical first.</div>
-          <div class="score-explainer-scale">
-            <span class="score-band low"><span class="score-band-dot"></span>0-25 Low</span>
-            <span class="score-band moderate"><span class="score-band-dot"></span>26-50 Moderate</span>
-            <span class="score-band high"><span class="score-band-dot"></span>51-75 High</span>
-            <span class="score-band critical"><span class="score-band-dot"></span>76-100 Critical</span>
-          </div>
-        </div>
+        <button class="score-explainer-trigger" data-action="show-score-explainer" style="align-self:flex-start">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span style="text-decoration:underline">How scores work</span>
+        </button>
         <div id="rec-actions" class="rec-actions hidden">
           <div class="section-card-header">
             <svg class="section-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -133,7 +125,7 @@ export function generateDashboardHtml(cspSource: string): string {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div>
-            <div class="about-title">${aboutTitle}</div>
+            <div class="about-title">${aboutTitle} <sub style="font-size:8px;opacity:.45;font-weight:500">v${aboutVersion}</sub></div>
             <div class="about-author">${aboutAuthor}</div>
           </div>
         </div>
@@ -210,13 +202,13 @@ function getStyles(): string {
     .nav-tab{flex:1;text-align:center;padding:6px 4px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--fg);opacity:.45;cursor:pointer;border-radius:6px;transition:all .2s;position:relative;z-index:1}
     .nav-tab:hover{opacity:.65}
     .nav-tab.active{opacity:1;background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.2)}
-    .panel{display:none;height:100%;overflow-y:auto;padding-right:2px;min-width:0}
+    .panel{display:none;height:100%;overflow-y:auto;padding:2px 2px 0 3px;min-width:0}
     .panel.visible{display:flex;flex:1 1 auto;flex-direction:column;min-height:0}
 
     /* ── Summary Cards ── */
     .summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
-    .card{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--c,var(--accent));border-radius:var(--radius);padding:10px 8px;text-align:center;transition:border-color .2s,transform .15s}
-    .card:hover{transform:translateY(-1px)}
+    .card{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--c,var(--accent));border-radius:var(--radius);padding:10px 8px;text-align:center;transition:border-color .2s,transform .15s;cursor:pointer}
+    .card:hover{transform:translateY(-1px);border-color:var(--accent)}
     .card .card-icon{display:flex;justify-content:center;margin-bottom:4px}
     .card .card-icon svg{width:14px;height:14px;color:var(--c,var(--fg));opacity:.65}
     .card .count{font-size:20px;font-weight:800;line-height:1.2;color:var(--c);letter-spacing:-.3px}
@@ -226,6 +218,7 @@ function getStyles(): string {
 
     /* ── Distribution Bar ── */
     .dist-section{margin-bottom:12px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card-bg)}
+    .dist-section.hidden{display:none}
     .dist-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
     .dist-title{font-size:11px;font-weight:700;opacity:.7}
     .dist-bar{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--border)}
@@ -247,15 +240,13 @@ function getStyles(): string {
     .rec-list{list-style:none;display:flex;flex-direction:column;gap:4px}
     .rec-list li{padding:6px 8px;font-size:11px;display:flex;align-items:center;gap:8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid var(--border);transition:border-color .15s}
     .rec-list li:hover{border-color:var(--accent)}
-    .rec-list li .rec-dot{width:6px;height:6px;border-radius:50%;flex:0 0 6px}
+    .rec-list li .rec-dot{width:6px;height:6px;border-radius:50%}
     .rec-list li .rec-text{flex:1;min-width:0}
 
     /* ── Score Explainer ── */
-    .score-explainer{margin-bottom:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card-bg)}
-    .score-explainer-header{display:flex;align-items:center;gap:6px;margin-bottom:6px}
-    .score-explainer-icon{width:14px;height:14px;opacity:.55;color:var(--accent)}
-    .score-explainer-title{font-size:11px;font-weight:700;opacity:.85}
-    .score-explainer-copy{font-size:11px;opacity:.6;line-height:1.5}
+    .score-explainer-trigger{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--fg);opacity:.6;font-size:11px;cursor:pointer;padding:8px 0;margin-bottom:10px;transition:opacity .15s}
+    .score-explainer-trigger:hover{opacity:.95}
+    .score-explainer-trigger svg{width:14px;height:14px;color:var(--accent)}
     .score-explainer-scale{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
     .score-band{font-size:10px;padding:3px 8px;border-radius:999px;background:var(--bgc);color:var(--c);font-weight:600;display:flex;align-items:center;gap:4px;transition:transform .15s}
     .score-band:hover{transform:scale(1.05)}
@@ -283,7 +274,7 @@ function getStyles(): string {
     .filter-bar{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:8px}
     .ext-count{position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:10px;opacity:.5;pointer-events:none}
     .ext-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px}
-    .ext-list{display:flex;flex-direction:column;gap:4px;width:100%;padding:0 1px}
+    .ext-list{display:flex;flex-direction:column;gap:4px;width:100%;padding:0}
     .ext-item{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--c,var(--border));border-radius:var(--radius);padding:10px;cursor:pointer;transition:all .2s;width:100%}
     .ext-item:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     .ext-item-header{display:flex;align-items:center;gap:10px}
@@ -329,20 +320,20 @@ function getStyles(): string {
     .history-header.has-history .history-clear{display:inline-flex}
     .history-header.detail .history-back{display:inline-flex}
     #panel-history{overflow:hidden}
-    .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:2px}
+    .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 2px 0 3px}
     .history-list.history-list-expanded{overflow:hidden}
     .history-item{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:10px;font-size:11px;transition:all .2s}
     .history-item:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     .history-item.history-item-expanded{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
     .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;border-top:1px solid var(--border);padding-top:10px}
     .history-detail{display:none}.history-detail.visible{display:block}
-    .history-tools{display:flex;gap:6px;align-items:center;margin:8px 0}
+    .history-tools{display:flex;gap:6px;align-items:center;margin:8px 0;margin-bottom:10px}
     .history-tools input,.history-tools select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
     .history-tools input:focus,.history-tools select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
     .history-tools input::placeholder{color:var(--input-ph)}
     .history-tools input{flex:1}
     .history-inline-detail .history-tools{position:sticky;top:0;z-index:2;margin-top:0;padding-bottom:8px;background:var(--card-bg)}
-    .history-inline-results{overflow-y:auto;min-height:0;padding-right:2px}
+    .history-inline-results{overflow-y:auto;min-height:0;padding:3px 2px 0 3px}
     .history-item-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
     .history-item-main{flex:1;min-width:0}
     .history-item-header-toggle{cursor:pointer}
@@ -366,10 +357,24 @@ function getStyles(): string {
     .about-desc{font-size:10px;opacity:.6;line-height:1.5}
 
     /* ── Extensions List Overrides ── */
+    .ext-list .ext-item{margin:2px 2px 2px 4px;width:auto}
     #ext-list .ext-item{border-left-width:1px;border-left-color:var(--border)}
     #ext-list .ext-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.15)}
 
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+    /* ── Scan Confirm Overlay ── */
+    .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;transition:opacity .2s;backdrop-filter:blur(2px)}
+    .confirm-overlay.visible{opacity:1}
+    .confirm-box{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px;max-width:320px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.35);transform:scale(.95);transition:transform .2s}
+    .confirm-overlay.visible .confirm-box{transform:scale(1)}
+    .confirm-title{font-size:13px;font-weight:700;margin-bottom:8px}
+    .confirm-body{font-size:11px;opacity:.6;line-height:1.5;margin-bottom:14px}
+    .confirm-actions{display:flex;gap:8px;justify-content:flex-end}
+    .confirm-cancel{background:var(--sec-bg);color:var(--sec-fg);border:none;padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;transition:all .15s}
+    .confirm-cancel:hover{opacity:.85}
+    .confirm-ok{background:linear-gradient(135deg,var(--accent),#005a9e);color:var(--accent-fg);border:none;padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;transition:all .15s}
+    .confirm-ok:hover{box-shadow:0 2px 8px var(--accent-glow)}
   `;
 }
 
@@ -393,12 +398,11 @@ function getScript(): string {
         if (!el) return;
         var act = el.getAttribute('data-action');
         if (act === 'scan') {
-          $('btn-scan').disabled = true;
-          vscode.postMessage({ type: 'scan' });
+          showScanConfirm();
         } else if (act === 'cancel-scan') {
           vscode.postMessage({ type: 'cancelScan' });
         } else if (act === 'export') {
-          vscode.postMessage({ type: 'export' });
+          showExportModal();
         } else if (act === 'show-history') {
           switchTab('history');
         } else if (act === 'tab') {
@@ -435,7 +439,12 @@ function getScript(): string {
           var extId = el.getAttribute('data-id');
           if (extId) vscode.postMessage({ type: 'navigate', extensionId: extId });
         } else if (act === 'clear-history') {
-          vscode.postMessage({ type: 'requestClearHistory' });
+          showConfirm('Clear All History?', 'This will permanently remove all scan history entries. This action cannot be undone.', 'Clear', function() { vscode.postMessage({ type: 'forceClearHistory' }); });
+        } else if (act === 'card-filter') {
+          var filterLevel = el.getAttribute('data-filter');
+          navigateToHistoryWithFilter(filterLevel);
+        } else if (act === 'show-score-explainer') {
+          showScoreExplainerModal();
         }
       });
 
@@ -538,20 +547,79 @@ function getScript(): string {
 
       function clearHistoryEntry(id) {
         if (!id) return;
-        vscode.postMessage({ type: 'requestClearHistoryEntry', id: id });
+        var entry = getHistoryEntry(id);
+        var label = entry ? formatDateTime(entry.time) : 'this scan history';
+        showConfirm('Clear History Entry?', 'This will permanently remove the history entry for ' + label + '. This action cannot be undone.', 'Clear', function() {
+          vscode.postMessage({ type: 'forceClearHistoryEntry', id: id });
+        });
+      }
+
+      function showExportModal() {
+        var overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        
+        var optionsHtml = '<option value="latest">Latest Scan Results</option>';
+        if (scanHistory) {
+          for (var i = 0; i < scanHistory.length; i++) {
+            var entry = scanHistory[i];
+            var entryId = entry.id || entry.time;
+            var label = formatDateTime(entry.time) + ' (' + entry.total + ' total, ' + entry.high + ' high, ' + entry.critical + ' crit)';
+            optionsHtml += '<option value="' + escAttr(entryId) + '">' + esc(label) + '</option>';
+          }
+        }
+
+        overlay.innerHTML = '<div class="confirm-box">' +
+          '<div class="confirm-title">Export Security Report</div>' +
+          '<div class="confirm-body" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;opacity:1">' +
+            '<div style="display:flex;flex-direction:column;gap:4px">' +
+              '<span style="font-size:10px;opacity:.65;font-weight:600">Select Scan</span>' +
+              '<select id="export-scan-select" style="width:100%;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px;font-size:11px;outline:none">' + optionsHtml + '</select>' +
+            '</div>' +
+            '<div style="display:flex;flex-direction:column;gap:4px">' +
+              '<span style="font-size:10px;opacity:.65;font-weight:600">Format</span>' +
+              '<select id="export-format-select" style="width:100%;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px;font-size:11px;outline:none">' +
+                '<option value="markdown">Markdown (.md)</option>' +
+                '<option value="json">JSON (.json)</option>' +
+                '<option value="html">HTML (.html)</option>' +
+                '<option value="pdf">PDF (.pdf)</option>' +
+                '<option value="csv">CSV (.csv)</option>' +
+                '<option value="sarif">SARIF (.sarif.json)</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+          '<div class="confirm-actions">' +
+            '<button class="confirm-cancel">Cancel</button>' +
+            '<button class="confirm-ok">Export</button>' +
+          '</div>' +
+        '</div>';
+
+        document.body.appendChild(overlay);
+        requestAnimationFrame(function() { overlay.classList.add('visible'); });
+        function dismiss() { overlay.classList.remove('visible'); setTimeout(function() { overlay.remove(); }, 200); }
+        overlay.querySelector('.confirm-cancel').addEventListener('click', dismiss);
+        overlay.querySelector('.confirm-ok').addEventListener('click', function() {
+          var scanId = overlay.querySelector('#export-scan-select').value;
+          var format = overlay.querySelector('#export-format-select').value;
+          dismiss();
+          vscode.postMessage({ type: 'directExport', historyId: scanId, format: format });
+        });
+        overlay.addEventListener('click', function(ev) { if (ev.target === overlay) dismiss(); });
       }
 
       function renderAll() {
+        var distSection = $('dist-section');
         if (!scanData || !scanData.reports) {
           $('empty-state').style.display = 'block';
           $('summary-cards').innerHTML = '';
           $('dist-bar').innerHTML = '';
+          if (distSection) distSection.classList.add('hidden');
           $('rec-actions').classList.add('hidden');
           var badgeNum0 = q('.badge-num'); if (badgeNum0) badgeNum0.textContent = '0';
           $('last-scan').textContent = '';
           return;
         }
         $('empty-state').style.display = 'none';
+        if (distSection) distSection.classList.remove('hidden');
         var badgeNum = q('.badge-num'); if (badgeNum) badgeNum.textContent = scanData.totalExtensions || 0;
         if (scanData.scannedAt) $('last-scan').textContent = 'Last scan: ' + formatRelativeTime(scanData.scannedAt);
         renderSummary();
@@ -578,7 +646,8 @@ function getScript(): string {
         var h = '';
         for (var i = 0; i < cards.length; i++) {
           var c = cards[i];
-          h += '<div class="card ' + c.cls + '"><div class="card-icon">' + icons[c.k] + '</div><div class="count">' + c.c + '</div><div class="label">' + c.l + '</div></div>';
+          var filterVal = c.k === 'total' ? 'all' : c.k;
+          h += '<div class="card ' + c.cls + '" data-action="card-filter" data-filter="' + filterVal + '"><div class="card-icon">' + icons[c.k] + '</div><div class="count">' + c.c + '</div><div class="label">' + c.l + '</div></div>';
         }
         $('summary-cards').innerHTML = h;
       }
@@ -691,6 +760,67 @@ function getScript(): string {
         if (!first) return;
         expandedHistoryEntryId = first.id || first.time;
         switchTab('history');
+      }
+
+      function navigateToHistoryWithFilter(filterLevel) {
+        if (!scanHistory || scanHistory.length === 0) return;
+        var first = scanHistory[0];
+        if (!first) return;
+        var historyId = first.id || first.time;
+        expandedHistoryEntryId = historyId;
+        if (filterLevel && filterLevel !== 'all') {
+          inlineHistoryFilter[historyId] = filterLevel;
+        } else {
+          inlineHistoryFilter[historyId] = 'all';
+        }
+        switchTab('history');
+      }
+
+      function showConfirm(title, body, okLabel, onOk) {
+        var overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        overlay.innerHTML = '<div class="confirm-box"><div class="confirm-title">' + esc(title) + '</div><div class="confirm-body">' + esc(body) + '</div><div class="confirm-actions"><button class="confirm-cancel">Cancel</button><button class="confirm-ok">' + esc(okLabel) + '</button></div></div>';
+        document.body.appendChild(overlay);
+        requestAnimationFrame(function() { overlay.classList.add('visible'); });
+        function dismiss() { overlay.classList.remove('visible'); setTimeout(function() { overlay.remove(); }, 200); }
+        overlay.querySelector('.confirm-cancel').addEventListener('click', dismiss);
+        overlay.querySelector('.confirm-ok').addEventListener('click', function() { dismiss(); onOk(); });
+        overlay.addEventListener('click', function(ev) { if (ev.target === overlay) dismiss(); });
+      }
+
+      function showScanConfirm() {
+        showConfirm('Start Security Scan?', 'This will analyze all installed extensions for security risks, suspicious behavior, and excessive permissions.', 'Scan Now', function() {
+          $('btn-scan').disabled = true;
+          vscode.postMessage({ type: 'scan' });
+        });
+      }
+
+      function showScoreExplainerModal() {
+        var overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        overlay.innerHTML = '<div class="confirm-box">' +
+          '<div class="confirm-title" style="display:flex;align-items:center;gap:6px">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;color:var(--accent)"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>' +
+            '<span>How scores work</span>' +
+          '</div>' +
+          '<div class="confirm-body" style="font-size:11px;opacity:.7;line-height:1.5;margin-bottom:14px">' +
+            'Lower score = safer. Higher score = more risky signals found. Treat high and critical first.' +
+            '<div class="score-explainer-scale">' +
+              '<span class="score-band low"><span class="score-band-dot"></span>0-25 Low</span>' +
+              '<span class="score-band moderate"><span class="score-band-dot"></span>26-50 Moderate</span>' +
+              '<span class="score-band high"><span class="score-band-dot"></span>51-75 High</span>' +
+              '<span class="score-band critical"><span class="score-band-dot"></span>76-100 Critical</span>' +
+            '</div>' +
+          '</div>' +
+          '<div class="confirm-actions">' +
+            '<button class="confirm-cancel" style="width:100%">Close</button>' +
+          '</div>' +
+        '</div>';
+        document.body.appendChild(overlay);
+        requestAnimationFrame(function() { overlay.classList.add('visible'); });
+        function dismiss() { overlay.classList.remove('visible'); setTimeout(function() { overlay.remove(); }, 200); }
+        overlay.querySelector('.confirm-cancel').addEventListener('click', dismiss);
+        overlay.addEventListener('click', function(ev) { if (ev.target === overlay) dismiss(); });
       }
 
       function getHistoryEntry(historyId) {

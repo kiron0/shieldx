@@ -85,9 +85,26 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
         case 'requestClearHistory':
           void this.confirmClearHistory();
           break;
+        case 'forceClearHistory':
+          void this.executeClearHistory();
+          break;
         case 'requestClearHistoryEntry':
           if (message.id) {
             void this.confirmClearHistoryEntry(message.id);
+          }
+          break;
+        case 'forceClearHistoryEntry':
+          if (message.id) {
+            this.executeClearHistoryEntry(message.id);
+          }
+          break;
+        case 'directExport':
+          if (message.format) {
+            void vscode.commands.executeCommand(
+              `${EXT_CONFIG.name.toLowerCase()}.exportSpecificReport`,
+              message.historyId,
+              message.format,
+            );
           }
           break;
       }
@@ -177,6 +194,10 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
       'Clear',
     );
     if (picked !== 'Clear') return;
+    await this.executeClearHistory();
+  }
+
+  private async executeClearHistory(): Promise<void> {
     if (this._clearPersistedScanState) {
       await this._clearPersistedScanState();
     }
@@ -197,7 +218,10 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
       'Clear',
     );
     if (picked !== 'Clear') return;
+    this.executeClearHistoryEntry(id);
+  }
 
+  private executeClearHistoryEntry(id: string): void {
     const history = this.getHistory().filter(
       (entry) => (entry.id || entry.time) !== id,
     );
