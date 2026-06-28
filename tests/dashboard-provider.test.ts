@@ -1,22 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { EXT_CONFIG } from '../src/config';
 import { DashboardProvider } from '../src/dashboard/dashboard-provider';
 
-const { showWarningMessage } = vi.hoisted(() => ({
-  showWarningMessage: vi.fn(),
-}));
-
-vi.mock('vscode', () => ({
-  window: {
-    showWarningMessage,
-  },
-}));
+vi.mock('vscode', () => ({}));
 
 describe('DashboardProvider', () => {
-  beforeEach(() => {
-    showWarningMessage.mockReset();
-  });
-
   function createHarness(historyEntries: any[] = []) {
     const state = {
       history: historyEntries,
@@ -66,7 +54,6 @@ describe('DashboardProvider', () => {
   }
 
   it('clears cached scan state when clearing all history', async () => {
-    showWarningMessage.mockResolvedValue('Clear');
     const entry = {
       id: 'scan-1',
       time: '2026-06-26T05:03:46.058Z',
@@ -79,7 +66,7 @@ describe('DashboardProvider', () => {
     };
     const harness = createHarness([entry]);
 
-    await (harness.provider as any).confirmClearHistory();
+    await (harness.provider as any).executeClearHistory();
 
     expect(harness.state.history).toEqual([]);
     expect(harness.state.cache).toBeUndefined();
@@ -95,7 +82,6 @@ describe('DashboardProvider', () => {
   });
 
   it('clears current scan state when last history entry is removed', async () => {
-    showWarningMessage.mockResolvedValue('Clear');
     const entry = {
       id: 'scan-1',
       time: '2026-06-26T05:03:46.058Z',
@@ -108,7 +94,7 @@ describe('DashboardProvider', () => {
     };
     const harness = createHarness([entry]);
 
-    await (harness.provider as any).confirmClearHistoryEntry('scan-1');
+    (harness.provider as any).executeClearHistoryEntry('scan-1');
 
     expect(harness.state.history).toEqual([]);
     expect(harness.state.cache).toBeUndefined();
@@ -120,7 +106,6 @@ describe('DashboardProvider', () => {
   });
 
   it('falls back overview state to next history entry after removal', async () => {
-    showWarningMessage.mockResolvedValue('Clear');
     const newer = {
       id: 'scan-2',
       time: '2026-06-27T05:03:46.058Z',
@@ -143,7 +128,7 @@ describe('DashboardProvider', () => {
     };
     const harness = createHarness([newer, older]);
 
-    await (harness.provider as any).confirmClearHistoryEntry('scan-2');
+    (harness.provider as any).executeClearHistoryEntry('scan-2');
 
     expect(harness.state.history).toEqual([older]);
     expect(harness.state.cache).toEqual(older.summary);

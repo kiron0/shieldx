@@ -399,7 +399,9 @@ function getScript(): string {
         if (act === 'scan') {
           showScanConfirm();
         } else if (act === 'cancel-scan') {
-          vscode.postMessage({ type: 'cancelScan' });
+          showConfirm('Cancel Security Scan?', 'This will stop current extension scan before completion.', 'Stop Scan', function() {
+            vscode.postMessage({ type: 'cancelScan' });
+          });
         } else if (act === 'export') {
           showExportModal();
         } else if (act === 'show-history') {

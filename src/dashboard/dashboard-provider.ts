@@ -1,4 +1,4 @@
-import { commands, window } from 'vscode';
+import { commands } from 'vscode';
 import type {
   WebviewViewProvider,
   ExtensionContext,
@@ -7,7 +7,6 @@ import type {
   CancellationToken,
 } from 'vscode';
 import { ScanHistoryEntry, SecuritySummary } from '../types';
-import { formatDateTime } from '../utils/date-format';
 import { generateDashboardHtml } from './webview-html';
 import { EXT_CONFIG } from '../config';
 
@@ -90,14 +89,14 @@ export class DashboardProvider implements WebviewViewProvider {
           this.setHistory(message.history);
           break;
         case 'requestClearHistory':
-          void this.confirmClearHistory();
+          void this.executeClearHistory();
           break;
         case 'forceClearHistory':
           void this.executeClearHistory();
           break;
         case 'requestClearHistoryEntry':
           if (message.id) {
-            void this.confirmClearHistoryEntry(message.id);
+            this.executeClearHistoryEntry(message.id);
           }
           break;
         case 'forceClearHistoryEntry':
@@ -194,38 +193,12 @@ export class DashboardProvider implements WebviewViewProvider {
     }
   }
 
-  private async confirmClearHistory(): Promise<void> {
-    const picked = await window.showWarningMessage(
-      'Clear all scan history?',
-      { modal: true },
-      'Clear',
-    );
-    if (picked !== 'Clear') return;
-    await this.executeClearHistory();
-  }
-
   private async executeClearHistory(): Promise<void> {
     if (this._clearPersistedScanState) {
       await this._clearPersistedScanState();
     }
     this.clearCurrentScanState();
     this.setHistory([]);
-  }
-
-  private async confirmClearHistoryEntry(id: string): Promise<void> {
-    const entry = this.getHistory().find(
-      (item) => (item.id || item.time) === id,
-    );
-    const label = entry
-      ? `${formatDateTime(entry.time)} (${entry.total} total, ${entry.high} high, ${entry.critical} critical)`
-      : 'selected history entry';
-    const picked = await window.showWarningMessage(
-      `Clear history entry for ${label}?`,
-      { modal: true },
-      'Clear',
-    );
-    if (picked !== 'Clear') return;
-    this.executeClearHistoryEntry(id);
   }
 
   private executeClearHistoryEntry(id: string): void {
