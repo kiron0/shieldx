@@ -202,7 +202,7 @@ function getStyles(): string {
     .nav-tab{flex:1;text-align:center;padding:6px 4px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--fg);opacity:.45;cursor:pointer;border-radius:6px;transition:all .2s;position:relative;z-index:1}
     .nav-tab:hover{opacity:.65}
     .nav-tab.active{opacity:1;background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.2)}
-    .panel{display:none;height:100%;overflow-y:auto;padding:2px 2px 0 3px;min-width:0}
+    .panel{display:none;height:100%;overflow-y:auto;min-width:0}
     .panel.visible{display:flex;flex:1 1 auto;flex-direction:column;min-height:0}
 
     /* ── Summary Cards ── */
@@ -320,7 +320,7 @@ function getStyles(): string {
     .history-header.has-history .history-clear{display:inline-flex}
     .history-header.detail .history-back{display:inline-flex}
     #panel-history{overflow:hidden}
-    .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 2px 0 3px}
+    .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:2px}
     .history-list.history-list-expanded{overflow:hidden}
     .history-item{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:10px;font-size:11px;transition:all .2s}
     .history-item:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
@@ -333,7 +333,7 @@ function getStyles(): string {
     .history-tools input::placeholder{color:var(--input-ph)}
     .history-tools input{flex:1}
     .history-inline-detail .history-tools{position:sticky;top:0;z-index:2;margin-top:0;padding-bottom:8px;background:var(--card-bg)}
-    .history-inline-results{overflow-y:auto;min-height:0;padding:3px 2px 0 3px}
+    .history-inline-results{overflow-y:auto;min-height:0;padding-right:2px}
     .history-item-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
     .history-item-main{flex:1;min-width:0}
     .history-item-header-toggle{cursor:pointer}
@@ -357,9 +357,8 @@ function getStyles(): string {
     .about-desc{font-size:10px;opacity:.6;line-height:1.5}
 
     /* ── Extensions List Overrides ── */
-    .ext-list .ext-item{margin:2px 2px 2px 4px;width:auto}
     #ext-list .ext-item{border-left-width:1px;border-left-color:var(--border)}
-    #ext-list .ext-item:hover{box-shadow:0 2px 8px rgba(0,0,0,.15)}
+    #ext-list .ext-item:hover{border-left-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.15)}
 
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
