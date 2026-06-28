@@ -1,4 +1,11 @@
-import * as vscode from 'vscode';
+import { commands, window } from 'vscode';
+import type {
+  WebviewViewProvider,
+  ExtensionContext,
+  WebviewView,
+  WebviewViewResolveContext,
+  CancellationToken,
+} from 'vscode';
 import { ScanHistoryEntry, SecuritySummary } from '../types';
 import { formatDateTime } from '../utils/date-format';
 import { generateDashboardHtml } from './webview-html';
@@ -8,21 +15,21 @@ const HISTORY_KEY = `${EXT_CONFIG.name.toLowerCase()}.scanHistory`;
 const CACHE_KEY = `${EXT_CONFIG.name.toLowerCase()}.lastScan`;
 const MAX_HISTORY_ITEMS = 30;
 
-export class DashboardProvider implements vscode.WebviewViewProvider {
+export class DashboardProvider implements WebviewViewProvider {
   public static readonly viewType = `${EXT_CONFIG.name.toLowerCase()}.dashboard`;
 
-  private _view?: vscode.WebviewView;
+  private _view?: WebviewView;
   private _lastSummary?: SecuritySummary;
 
   constructor(
-    private readonly _context: vscode.ExtensionContext,
+    private readonly _context: ExtensionContext,
     private readonly _clearPersistedScanState?: () => Thenable<void> | void,
   ) {}
 
   resolveWebviewView(
-    webviewView: vscode.WebviewView,
-    _context: vscode.WebviewViewResolveContext,
-    _token: vscode.CancellationToken,
+    webviewView: WebviewView,
+    _context: WebviewViewResolveContext,
+    _token: CancellationToken,
   ): void {
     this._view = webviewView;
 
@@ -58,24 +65,24 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
           break;
         }
         case 'scan':
-          vscode.commands.executeCommand(
+          commands.executeCommand(
             `${EXT_CONFIG.name.toLowerCase()}.scanExtensions`,
           );
           break;
         case 'cancelScan':
-          vscode.commands.executeCommand(
+          commands.executeCommand(
             `${EXT_CONFIG.name.toLowerCase()}.cancelScan`,
           );
           break;
         case 'export':
-          vscode.commands.executeCommand(
+          commands.executeCommand(
             `${EXT_CONFIG.name.toLowerCase()}.pickHistoryExport`,
           );
           break;
         case 'navigate': {
           const extId = message.extensionId;
           if (extId) {
-            vscode.commands.executeCommand('extension.open', extId);
+            commands.executeCommand('extension.open', extId);
           }
           break;
         }
@@ -100,7 +107,7 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
           break;
         case 'directExport':
           if (message.format) {
-            void vscode.commands.executeCommand(
+            void commands.executeCommand(
               `${EXT_CONFIG.name.toLowerCase()}.exportSpecificReport`,
               message.historyId,
               message.format,
@@ -188,7 +195,7 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
   }
 
   private async confirmClearHistory(): Promise<void> {
-    const picked = await vscode.window.showWarningMessage(
+    const picked = await window.showWarningMessage(
       'Clear all scan history?',
       { modal: true },
       'Clear',
@@ -212,7 +219,7 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
     const label = entry
       ? `${formatDateTime(entry.time)} (${entry.total} total, ${entry.high} high, ${entry.critical} critical)`
       : 'selected history entry';
-    const picked = await vscode.window.showWarningMessage(
+    const picked = await window.showWarningMessage(
       `Clear history entry for ${label}?`,
       { modal: true },
       'Clear',
