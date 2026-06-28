@@ -166,6 +166,7 @@ describe('HTML Report', () => {
     const html = generateHtmlReport(mockSummary as any);
     expect(html).toContain('@font-face');
     expect(html).toContain('data:font/ttf;base64,');
+    expect(html.match(/@font-face/g)?.length).toBe(2);
     expect(html).toContain('font-family: "Space Grotesk"');
   });
 });

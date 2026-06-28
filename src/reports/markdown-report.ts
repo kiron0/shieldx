@@ -3,9 +3,14 @@ import * as path from 'path';
 import { formatDateTime } from '../utils/date-format';
 import { EXT_CONFIG } from '../config';
 
-const SPACE_GROTESK_FONT_PATH = path.resolve(
+const SPACE_GROTESK_REGULAR_FONT_PATH = path.resolve(
   __dirname,
-  '../../assets/fonts/SpaceGrotesk.ttf',
+  '../../assets/fonts/SpaceGrotesk-Regular.ttf',
+);
+
+const SPACE_GROTESK_BOLD_FONT_PATH = path.resolve(
+  __dirname,
+  '../../assets/fonts/SpaceGrotesk-Bold.ttf',
 );
 
 const SPACE_GROTESK_FONT_CSS = buildEmbeddedFontCss();
@@ -304,10 +309,13 @@ function toTitleCase(value: string): string {
 
 function buildEmbeddedFontCss(): string {
   try {
-    const fontBase64 = fs
-      .readFileSync(SPACE_GROTESK_FONT_PATH)
+    const regularFontBase64 = fs
+      .readFileSync(SPACE_GROTESK_REGULAR_FONT_PATH)
       .toString('base64');
-    return `@font-face { font-family: "Space Grotesk"; src: url(data:font/ttf;base64,${fontBase64}) format("truetype"); font-weight: 400 700; font-style: normal; font-display: swap; }`;
+    const boldFontBase64 = fs
+      .readFileSync(SPACE_GROTESK_BOLD_FONT_PATH)
+      .toString('base64');
+    return `@font-face { font-family: "Space Grotesk"; src: url(data:font/ttf;base64,${regularFontBase64}) format("truetype"); font-weight: 400; font-style: normal; font-display: swap; } @font-face { font-family: "Space Grotesk"; src: url(data:font/ttf;base64,${boldFontBase64}) format("truetype"); font-weight: 700; font-style: normal; font-display: swap; }`;
   } catch {
     return '';
   }
