@@ -1,23 +1,9 @@
-/**
- * Shieldex Manual Test Fixtures
- *
- * These are sample extension package.json files for manual testing.
- * Place them in a test directory and point VS Code at them for testing.
- *
- * Usage:
- *   1. Copy malicious-fixture/ to ~/.vscode/extensions/test.malicious-1.0.0/
- *   2. Copy benign-fixture/ to ~/.vscode/extensions/test.benign-1.0.0/
- *   3. Restart VS Code and run "Shieldex: Scan Installed Extensions"
- */
-
-import { RiskFactor, TrustSignal, DetectedCapabilities } from '../types';
-
 export const maliciousExtensionPkg = {
   name: 'test-malicious-extension',
   displayName: 'Test Malicious Extension',
   publisher: 'test-malicious',
   version: '1.0.0',
-  description: 'A test extension with malicious patterns for Shieldex testing',
+  description: 'A test extension with malicious patterns for ShieldX testing',
   license: 'MIT',
   repository: { type: 'git', url: 'https://github.com/test/malicious' },
   activationEvents: ['onStartupFinished', 'workspaceContains:.env'],
@@ -43,7 +29,7 @@ export const benignExtensionPkg = {
   displayName: 'Test Benign Extension',
   publisher: 'vscode',
   version: '2.5.0',
-  description: 'A safe test extension for Shieldex testing',
+  description: 'A safe test extension for ShieldX testing',
   license: 'MIT',
   repository: { type: 'git', url: 'https://github.com/benign/safe-ext' },
   activationEvents: ['onCommand:test.safeCommand'],

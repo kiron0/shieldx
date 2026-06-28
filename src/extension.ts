@@ -14,7 +14,7 @@ import { compareScans } from './scanner/history-comparison';
 import {
   ScanHistoryEntry,
   SecuritySummary,
-  ShieldexPolicy,
+  ShieldXPolicy,
   StoredScan,
 } from './types';
 import {
@@ -467,7 +467,7 @@ async function checkForNewExtensions(
       if (riskyNew.length > 0) {
         for (const ext of riskyNew) {
           const action = await vscode.window.showWarningMessage(
-            `${EXT_CONFIG.name}: New extension "${ext.displayName || ext.name}" is ${ext.riskLevel.toUpperCase()} risk (score: ${ext.riskScore}). ${ext.recommendation}`,
+            `${EXT_CONFIG.name}: New extension "${ext.displayName || ext.name}" is ${toTitleCase(ext.riskLevel)} risk (score: ${ext.riskScore}). ${ext.recommendation}`,
             'Show in Sidebar',
             'Dismiss',
           );
@@ -677,7 +677,7 @@ function formatHistoryLabel(entry: ScanHistoryEntry): string {
   return formatDateTime(entry.time);
 }
 
-function loadPolicy(): ShieldexPolicy | null {
+function loadPolicy(): ShieldXPolicy | null {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) return null;
 
@@ -686,7 +686,7 @@ function loadPolicy(): ShieldexPolicy | null {
       folder.uri.fsPath,
       `.${EXT_CONFIG.name.toLowerCase()}.json`,
     );
-    const policy = readJsonFile<ShieldexPolicy>(policyPath);
+    const policy = readJsonFile<ShieldXPolicy>(policyPath);
     if (policy) return policy;
   }
 
@@ -709,7 +709,7 @@ async function pickExtension(): Promise<InstalledExtension | undefined> {
   return picked?.extension;
 }
 
-function writePolicy(policy: ShieldexPolicy): void {
+function writePolicy(policy: ShieldXPolicy): void {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) {
     vscode.window.showErrorMessage(
@@ -727,7 +727,7 @@ function writePolicy(policy: ShieldexPolicy): void {
 
 function checkPolicyCompliance(
   summary: SecuritySummary,
-  policy: ShieldexPolicy,
+  policy: ShieldXPolicy,
 ): void {
   const issues: string[] = [];
 
@@ -868,6 +868,10 @@ async function clearPersistedScanState(
   } catch {
     void 0;
   }
+}
+
+function toTitleCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
 function loadFromCache(context: vscode.ExtensionContext): StoredScan | null {

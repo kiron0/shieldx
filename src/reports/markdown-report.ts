@@ -62,7 +62,7 @@ export function generateMarkdownReport(summary: {
         md += `- **Marketplace ID:** ${ext.marketplaceId}\n`;
       if (ext.category) md += `- **Category:** ${ext.category}\n`;
       md += `- **Risk Score:** ${ext.riskScore}/100\n`;
-      md += `- **Risk Level:** ${ext.riskLevel.toUpperCase()}\n\n`;
+      md += `- **Risk Level:** ${toTitleCase(ext.riskLevel)}\n\n`;
       md += `**Risk Factors:**\n`;
       for (const f of ext.riskFactors) {
         md += `- ${f.title}: ${f.description}\n`;
@@ -181,7 +181,7 @@ export function generateHtmlReport(summary: {
           (r) => `<tr>
         <td><a class="ext-link" href="${getMarketplaceUrl(r.marketplaceId, r.publisher, r.name)}" target="_blank" rel="noopener noreferrer">${renderHtmlReportIcon(r.name, r.iconDataUrl)}<span>${escapeHtml(r.name)}</span></a></td><td>${escapeHtml(r.publisher)}</td><td>${escapeHtml(r.version)}</td>
         <td>${r.riskScore}</td>
-        <td><span class="badge ${r.riskLevel}">${r.riskLevel.toUpperCase()}</span></td>
+        <td><span class="badge ${r.riskLevel}">${toTitleCase(r.riskLevel)}</span></td>
       </tr>`,
         )
         .join('')}
@@ -193,7 +193,7 @@ export function generateHtmlReport(summary: {
     .map(
       (r) => `
     <div class="ext-section risky">
-      <h3><a class="ext-link" href="${getMarketplaceUrl(r.marketplaceId, r.publisher, r.name)}" target="_blank" rel="noopener noreferrer">${renderHtmlReportIcon(r.name, r.iconDataUrl)}<span>${escapeHtml(r.name)}</span></a> <span class="badge ${r.riskLevel}">${r.riskLevel.toUpperCase()}</span></h3>
+      <h3><a class="ext-link" href="${getMarketplaceUrl(r.marketplaceId, r.publisher, r.name)}" target="_blank" rel="noopener noreferrer">${renderHtmlReportIcon(r.name, r.iconDataUrl)}<span>${escapeHtml(r.name)}</span></a> <span class="badge ${r.riskLevel}">${toTitleCase(r.riskLevel)}</span></h3>
       <p><strong>Publisher:</strong> ${escapeHtml(r.publisher)} | <strong>Version:</strong> ${escapeHtml(r.version)} | <strong>Score:</strong> ${r.riskScore}/100</p>
       ${r.riskFactors.length > 0 ? `<p><strong>Risk Factors:</strong> ${r.riskFactors.map((f) => escapeHtml(f.title)).join(', ')}</p>` : ''}
       <p><strong>Recommendation:</strong> ${escapeHtml(r.recommendation)}</p>
@@ -296,6 +296,10 @@ function escapeHtml(value: string): string {
 
 function escapeHtmlAttribute(value: string): string {
   return escapeHtml(value).replace(/'/g, '&#39;');
+}
+
+function toTitleCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
 function buildEmbeddedFontCss(): string {

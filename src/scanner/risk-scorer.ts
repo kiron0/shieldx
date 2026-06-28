@@ -92,7 +92,7 @@ export function generateExplanation(
 ): string {
   const factorLines = factors.map((f) => `- ${f.title}: ${f.description}`);
 
-  let explanation = `Risk Level: ${riskLevel.toUpperCase()}\n\n`;
+  let explanation = `Risk Level: ${toTitleCase(riskLevel)}\n\n`;
 
   if (factors.length > 0) {
     explanation += `Risk Factors Found:\n${factorLines.join('\n')}\n\n`;
@@ -104,4 +104,8 @@ export function generateExplanation(
   }
 
   return explanation;
+}
+
+function toTitleCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }

@@ -116,7 +116,7 @@ function getStyles(): string {
     .app-top,.app-bottom{flex:0 0 auto}
     .app-main{flex:1 1 auto;min-height:0;overflow:hidden;display:flex}
     .header{display:flex;align-items:center;gap:8px;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-    .header h1{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;flex:1}
+    .header h1{font-size:13px;font-weight:700;letter-spacing:.2px;flex:1}
     .badge-count{background:var(--accent);color:var(--accent-fg);font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
     #progress-section{display:none;margin-bottom:10px}
     #progress-section.visible{display:block}
@@ -234,7 +234,7 @@ function getStyles(): string {
     .empty-state p{font-size:12px}
     .last-scan{font-size:10px;opacity:.35;text-align:center;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
     .about-box{border-top:1px solid var(--border);padding-top:10px}
-    .about-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+    .about-title{font-size:11px;font-weight:700;letter-spacing:.2px}
     .about-author{font-size:10px;opacity:.6;margin-top:2px}
     .about-desc{font-size:10px;opacity:.7;margin-top:6px}
     #ext-list .ext-item{border-left-width:1px;border-left-color:var(--border)}
@@ -352,6 +352,10 @@ function getScript(): string {
         $('progress-pct').textContent = pct + '%';
       }
 
+      function titleCase(value) {
+        return value ? value.charAt(0).toUpperCase() + value.slice(1).toLowerCase() : '';
+      }
+
       function buildExtItemHtml(r, opts) {
         var cls = r.riskLevel;
         var h = '<div class="ext-item" ' + (opts.clickAction ? 'data-action="' + opts.clickAction + '" ' : '') + (opts.dataId ? 'data-id="' + opts.dataId + '" ' : '') + 'data-level="' + cls + '">';
@@ -359,7 +363,7 @@ function getScript(): string {
         h += renderExtensionIcon(r);
         h += '<div class="ext-item-info"><span class="ext-name">' + esc(r.displayName || r.name) + '</span><span class="ext-pub">' + esc(r.publisher) + '</span></div>';
         if (opts.showScore) {
-          h += '<div class="ext-meta"><span class="ext-score" style="color:var(--' + cls + ')">' + r.riskScore + '</span><span class="status-chip ' + cls + '">' + cls.toUpperCase() + '</span></div>';
+          h += '<div class="ext-meta"><span class="ext-score" style="color:var(--' + cls + ')">' + r.riskScore + '</span><span class="status-chip ' + cls + '">' + titleCase(cls) + '</span></div>';
         } else {
           h += '<span class="ext-version">' + esc(r.version) + '</span>';
         }

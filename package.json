@@ -1,6 +1,6 @@
 {
-  "name": "shieldex",
-  "displayName": "Shieldex - Extension Auditor",
+  "name": "shieldx",
+  "displayName": "ShieldX - Extension Auditor",
   "description": "Scan installed VS Code extensions for security risks, suspicious behavior, and excessive permissions.",
   "version": "0.1.0",
   "publisher": "thk",
@@ -8,11 +8,11 @@
   "icon": "assets/icon.png",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kiron0/shieldex.git"
+    "url": "https://github.com/kiron0/shieldx.git"
   },
-  "homepage": "https://shieldex.js.org",
+  "homepage": "https://shieldx.js.org",
   "bugs": {
-    "url": "https://github.com/kiron0/shieldex/issues"
+    "url": "https://github.com/kiron0/shieldx/issues"
   },
   "engines": {
     "vscode": "^1.85.0"
@@ -36,69 +36,69 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "shieldex",
-          "title": "Shieldex",
+          "id": "shieldx",
+          "title": "ShieldX",
           "icon": "assets/icon.svg"
         }
       ]
     },
     "views": {
-      "shieldex": [
+      "shieldx": [
         {
           "type": "webview",
-          "id": "shieldex.dashboard",
+          "id": "shieldx.dashboard",
           "name": "Security Dashboard"
         }
       ]
     },
     "commands": [
       {
-        "command": "shieldex.scanExtensions",
-        "title": "Shieldex: Scan Installed Extensions"
+        "command": "shieldx.scanExtensions",
+        "title": "ShieldX: Scan Installed Extensions"
       },
       {
-        "command": "shieldex.openDashboard",
-        "title": "Shieldex: Open Security Dashboard"
+        "command": "shieldx.openDashboard",
+        "title": "ShieldX: Open Security Dashboard"
       },
       {
-        "command": "shieldex.exportReport",
-        "title": "Shieldex: Export Security Report"
+        "command": "shieldx.exportReport",
+        "title": "ShieldX: Export Security Report"
       },
       {
-        "command": "shieldex.rescanExtension",
-        "title": "Shieldex: Rescan Extension"
+        "command": "shieldx.rescanExtension",
+        "title": "ShieldX: Rescan Extension"
       },
       {
-        "command": "shieldex.addToAllowlist",
-        "title": "Shieldex: Add Extension to Allowlist"
+        "command": "shieldx.addToAllowlist",
+        "title": "ShieldX: Add Extension to Allowlist"
       },
       {
-        "command": "shieldex.addToBlocklist",
-        "title": "Shieldex: Block Extension"
+        "command": "shieldx.addToBlocklist",
+        "title": "ShieldX: Block Extension"
       },
       {
-        "command": "shieldex.showPolicy",
-        "title": "Shieldex: Show Current Policy"
+        "command": "shieldx.showPolicy",
+        "title": "ShieldX: Show Current Policy"
       },
       {
-        "command": "shieldex.scanVulnerabilities",
-        "title": "Shieldex: Scan for OSV Vulnerabilities"
+        "command": "shieldx.scanVulnerabilities",
+        "title": "ShieldX: Scan for OSV Vulnerabilities"
       }
     ],
     "configuration": {
-      "title": "Shieldex",
+      "title": "ShieldX",
       "properties": {
-        "shieldex.autoScanOnStartup": {
+        "shieldx.autoScanOnStartup": {
           "type": "boolean",
           "default": false,
           "description": "Automatically scan extensions on VS Code startup"
         },
-        "shieldex.warnOnHighRisk": {
+        "shieldx.warnOnHighRisk": {
           "type": "boolean",
           "default": true,
           "description": "Show warning when high-risk extensions are detected"
         },
-        "shieldex.minimumWarningLevel": {
+        "shieldx.minimumWarningLevel": {
           "type": "string",
           "default": "high",
           "enum": [
@@ -108,12 +108,12 @@
           ],
           "description": "Minimum risk level to trigger a warning"
         },
-        "shieldex.scanNodeModules": {
+        "shieldx.scanNodeModules": {
           "type": "boolean",
           "default": false,
           "description": "Scan node_modules inside extensions (may be slow)"
         },
-        "shieldex.reportFormat": {
+        "shieldx.reportFormat": {
           "type": "string",
           "default": "markdown",
           "enum": [
@@ -126,12 +126,12 @@
           ],
           "description": "Default format for exported reports"
         },
-        "shieldex.pdfBrowserPath": {
+        "shieldx.pdfBrowserPath": {
           "type": "string",
           "default": "",
           "description": "Optional absolute path to Chrome, Chromium, Edge, or Brave for exact HTML-to-PDF export"
         },
-        "shieldex.enableOsvScan": {
+        "shieldx.enableOsvScan": {
           "type": "boolean",
           "default": true,
           "description": "Enable runtime vulnerability scanning via OSV.dev API (requires network)"

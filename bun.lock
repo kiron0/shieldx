@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "shieldex",
+      "name": "shieldx",
       "devDependencies": {
         "@eslint/js": "^10.0.1",
         "@types/node": "^26.0.1",

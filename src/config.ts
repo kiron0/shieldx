@@ -1,5 +1,5 @@
 export const EXT_CONFIG = {
-  name: 'Shieldex',
+  name: 'ShieldX',
   author: 'Toufiq Hasan Kiron',
   description:
     'Scan installed VS Code extensions for security risks, suspicious behavior, and excessive permissions.',

@@ -83,7 +83,7 @@ export interface WarningInfo {
   reasons: string[];
 }
 
-export interface ShieldexPolicy {
+export interface ShieldXPolicy {
   allowedExtensions?: string[];
   blockedExtensions?: string[];
   maxRiskLevel?: RiskLevel;

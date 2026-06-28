@@ -106,7 +106,7 @@ const mockSummary = {
 describe('Markdown Report', () => {
   it('generates valid markdown with header', () => {
     const md = generateMarkdownReport(mockSummary);
-    expect(md).toContain('# Shieldex Security Report');
+    expect(md).toContain('# ShieldX Security Report');
     expect(md).toContain('VS Code Version');
     expect(md).toContain('1.85.0');
   });
@@ -242,7 +242,7 @@ describe('SARIF Report', () => {
 
   it('has correct tool info', () => {
     const sarif = generateSarifReport(mockSummary as any);
-    expect(sarif.runs[0].tool.driver.name).toBe('Shieldex');
+    expect(sarif.runs[0].tool.driver.name).toBe('ShieldX');
     expect(sarif.runs[0].tool.driver.version).toBe('0.1.0');
   });
 

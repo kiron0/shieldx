@@ -1,15 +1,15 @@
 <p align="center">
-  <img src="./assets/icon.png" alt="Shieldex icon" width="96" height="96">
+  <img src="./assets/icon.png" alt="ShieldX icon" width="96" height="96">
 </p>
 
-<h1 align="center">Shieldex</h1>
+<h1 align="center">ShieldX</h1>
 
 <p align="center">
   <strong>Scan extensions. Surface risk. Keep VS Code safer.</strong>
 </p>
 
 <p align="center">
-  Shieldex helps you review installed VS Code extensions for suspicious behavior,
+  ShieldX helps you review installed VS Code extensions for suspicious behavior,
   risky permissions, dependency issues, publisher trust signals, maintenance red flags.
 </p>
 
