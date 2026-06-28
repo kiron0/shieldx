@@ -47,7 +47,8 @@
         {
           "type": "webview",
           "id": "shieldx.dashboard",
-          "name": "Security Dashboard"
+          "name": "Security Dashboard",
+          "icon": "assets/icon.svg"
         }
       ]
     },
