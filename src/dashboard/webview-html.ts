@@ -3,10 +3,10 @@ import { EXT_CONFIG } from '../config';
 
 export function generateDashboardHtml(cspSource: string): string {
   const nonce = getNonce();
-  const aboutTitle = EXT_CONFIG.name;
-  const aboutVersion = EXT_CONFIG.version;
-  const aboutAuthor = EXT_CONFIG.author;
-  const aboutDescription = EXT_CONFIG.description;
+  const title = EXT_CONFIG.name;
+  const version = EXT_CONFIG.version;
+  const author = EXT_CONFIG.author;
+  const description = EXT_CONFIG.description;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -14,7 +14,7 @@ export function generateDashboardHtml(cspSource: string): string {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src data:; style-src ${cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
-  <title>${aboutTitle}</title>
+  <title>${title}</title>
   <style>${getStyles()}</style>
 </head>
 <body>
@@ -26,7 +26,7 @@ export function generateDashboardHtml(cspSource: string): string {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div class="header-text">
-            <h1>${aboutTitle} <sub style="font-size:9px;opacity:.45;font-weight:500">v${aboutVersion}</sub></h1>
+            <h1>${title} <sub style="font-size:9px;opacity:.45;font-weight:500">v${version}</sub></h1>
             <span class="header-slogan">${EXT_CONFIG.slogan}</span>
           </div>
         </div>
@@ -125,11 +125,11 @@ export function generateDashboardHtml(cspSource: string): string {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/><polyline points="9 12 11 14 15 10"/></svg>
           </div>
           <div>
-            <div class="about-title">${aboutTitle} <sub style="font-size:8px;opacity:.45;font-weight:500">v${aboutVersion}</sub></div>
-            <div class="about-author">${aboutAuthor}</div>
+            <div class="about-title">${title} <sub style="font-size:8px;opacity:.45;font-weight:500">v${version}</sub></div>
+            <div class="about-author">${author}</div>
           </div>
         </div>
-        <div class="about-desc">${aboutDescription}</div>
+        <div class="about-desc">${description}</div>
       </div>
     </div>
   </div>
