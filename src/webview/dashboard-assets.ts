@@ -55,7 +55,7 @@ export function getDashboardStyles(): string {
     .nav-tab.active{opacity:1;background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.2)}
     .panel{display:none;height:100%;overflow-y:auto;min-width:0}
     .panel.visible{display:flex;flex:1 1 auto;flex-direction:column;min-height:0}
-    .summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}
+    .summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;padding-top:2px}
     .card{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--c,var(--accent));border-radius:var(--radius);padding:10px 8px;text-align:center;transition:border-color .2s,transform .15s;cursor:pointer}
     .card:hover{transform:translateY(-1px);border-color:var(--accent)}
     .card .card-icon{display:flex;justify-content:center;margin-bottom:4px}
