@@ -49,7 +49,7 @@ export function getDashboardStyles(): string {
     .btn-export:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.06)}
     .btn-export:hover svg{opacity:1}
     .btn-export:disabled{opacity:.35;cursor:not-allowed}
-    .nav-tabs{display:flex;gap:2px;background:var(--card-bg);border-radius:var(--radius);padding:3px;margin-bottom:10px;position:relative}
+    .nav-tabs{display:flex;gap:2px;background:var(--card-bg);border-radius:var(--radius);padding:3px;margin-bottom:16px;position:relative}
     .nav-tab{flex:1;text-align:center;padding:6px 4px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--fg);opacity:.45;cursor:pointer;border-radius:6px;transition:all .2s;position:relative;z-index:1}
     .nav-tab:hover{opacity:.65}
     .nav-tab.active{opacity:1;background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.2)}
@@ -109,7 +109,7 @@ export function getDashboardStyles(): string {
     .filter-bar{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:8px}
     .ext-count{position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:10px;opacity:.5;pointer-events:none}
     .ext-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px}
-    .ext-list{display:flex;flex-direction:column;gap:4px;width:100%;padding:0}
+    .ext-list{display:flex;flex-direction:column;gap:4px;width:100%;padding:2px 0}
     .ext-item{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--c,var(--border));border-radius:var(--radius);padding:10px;cursor:pointer;transition:all .2s;width:100%}
     .ext-item:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     .ext-item-header{display:flex;align-items:center;gap:10px}
@@ -151,19 +151,19 @@ export function getDashboardStyles(): string {
     .history-header.has-history .history-clear{display:inline-flex}
     .history-header.detail .history-back{display:inline-flex}
     #panel-history{overflow:hidden}
-    .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding-right:2px}
+    .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 2px 2px 0}
     .history-list.history-list-expanded{overflow:hidden}
     .history-item{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:10px;font-size:11px;transition:all .2s}
-    .history-item:hover{transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+    .history-item:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     .history-item.history-item-expanded{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
     .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;border-top:1px solid var(--border);padding-top:10px}
     .history-detail{display:none}.history-detail.visible{display:block}
-    .history-tools{display:flex;gap:6px;align-items:center;margin:8px 0;margin-bottom:10px}
+    .history-tools{display:flex;gap:6px;align-items:center;margin:8px 0;margin-bottom:12px}
     .history-tools input,.history-tools select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
     .history-tools input:focus,.history-tools select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
     .history-tools input::placeholder{color:var(--input-ph)}
     .history-tools input{flex:1}
-    .history-inline-detail .history-tools{position:sticky;top:0;z-index:2;margin-top:0;padding-bottom:8px;background:var(--card-bg)}
+    .history-inline-detail .history-tools{position:sticky;top:0;z-index:2;margin-top:0;padding-bottom:8px;margin-bottom:12px;background:var(--card-bg)}
     .history-inline-results{overflow-y:auto;min-height:0;padding-right:2px}
     .history-item-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
     .history-item-main{flex:1;min-width:0}
