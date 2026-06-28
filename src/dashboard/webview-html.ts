@@ -456,6 +456,7 @@ function getScript(): string {
         if (msg.type === 'scanResult') { scanData = msg.data; renderAll(); }
         else if (msg.type === 'scanProgress') { updateProgress(msg.percent, msg.text); }
         else if (msg.type === 'scanStart') { shouldAutoOpenLatestHistory = true; showProgress(true); }
+        else if (msg.type === 'scanCancelled') { shouldAutoOpenLatestHistory = false; }
         else if (msg.type === 'scanEnd') { showProgress(false); if (shouldAutoOpenLatestHistory) openLatestHistoryEntry(); shouldAutoOpenLatestHistory = false; }
         else if (msg.type === 'history') { scanHistory = msg.history || []; expandedHistoryEntryId = null; renderHistory(); }
         else if (msg.type === 'scanCleared') { scanData = null; expandedHistoryEntryId = null; renderAll(); renderHistory(); }

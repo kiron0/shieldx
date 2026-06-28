@@ -146,6 +146,12 @@ export class DashboardProvider implements WebviewViewProvider {
     }
   }
 
+  sendScanCancelled(): void {
+    if (this._view) {
+      this._view.webview.postMessage({ type: 'scanCancelled' });
+    }
+  }
+
   addHistoryEntry(summary: SecuritySummary): void {
     const history = this.getHistory();
     history.unshift({

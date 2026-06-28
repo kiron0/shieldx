@@ -440,6 +440,7 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
     );
   } catch (err) {
     if (err instanceof vscode.CancellationError) {
+      dashboardProvider.sendScanCancelled();
       info(`${EXT_CONFIG.name} scan cancelled.`);
       vscode.window.showInformationMessage(
         `${EXT_CONFIG.name}: Scan cancelled.`,
