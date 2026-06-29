@@ -57,7 +57,7 @@ export function getDashboardStyles(): string {
     .panel.visible{display:flex;flex:1 1 auto;flex-direction:column;min-height:0}
     .summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;padding-top:2px}
     .card{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--c,var(--accent));border-radius:var(--radius);padding:10px 8px;text-align:center;transition:border-color .2s,transform .15s;cursor:pointer}
-    .card:hover{transform:translateY(-1px);border-color:var(--accent)}
+    .card:hover{transform:translateY(-1px);border-color:var(--c,var(--accent))}
     .card .card-icon{display:flex;justify-content:center;margin-bottom:4px}
     .card .card-icon svg{width:14px;height:14px;color:var(--c,var(--fg));opacity:.65}
     .card .count{font-size:20px;font-weight:800;line-height:1.2;color:var(--c);letter-spacing:-.3px}
@@ -110,8 +110,9 @@ export function getDashboardStyles(): string {
     .ext-count{position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:10px;opacity:.5;pointer-events:none}
     .ext-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px}
     .ext-list{display:flex;flex-direction:column;gap:4px;width:100%;padding:2px 0}
-    .ext-item{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--c,var(--border));border-radius:var(--radius);padding:10px;cursor:pointer;transition:all .2s;width:100%}
-    .ext-item:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+    .ext-item{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;cursor:pointer;transition:all .2s;width:100%}
+    .ext-item.risk-accent{border-left:3px solid var(--c,var(--border))}
+    .ext-item:hover{border-color:var(--c,var(--accent));transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     .ext-item-header{display:flex;align-items:center;gap:10px}
     .ext-icon-wrap{width:26px;height:26px;flex:0 0 26px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center}
     .ext-icon{width:100%;height:100%;object-fit:cover;display:block}
@@ -184,8 +185,7 @@ export function getDashboardStyles(): string {
     .about-title{font-size:11px;font-weight:700;letter-spacing:.2px}
     .about-author{font-size:10px;opacity:.5}
     .about-desc{font-size:10px;opacity:.6;line-height:1.5}
-    #ext-list .ext-item{border-left-width:1px;border-left-color:var(--border)}
-    #ext-list .ext-item:hover{border-left-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+    #ext-list .ext-item:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
     .confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;transition:opacity .2s;backdrop-filter:blur(2px)}
     .confirm-overlay.visible{opacity:1}
@@ -322,7 +322,8 @@ export function getDashboardScript(dateFormattersScript: string): string {
 
       function buildExtItemHtml(r, opts) {
         var cls = r.riskLevel;
-        var h = '<div class="ext-item" ' + (opts.clickAction ? 'data-action="' + opts.clickAction + '" ' : '') + (opts.dataId ? 'data-id="' + opts.dataId + '" ' : '') + 'data-level="' + cls + '">';
+        var itemClass = 'ext-item' + (opts.riskAccent ? ' risk-accent' : '');
+        var h = '<div class="' + itemClass + '" ' + (opts.clickAction ? 'data-action="' + opts.clickAction + '" ' : '') + (opts.dataId ? 'data-id="' + opts.dataId + '" ' : '') + 'data-level="' + cls + '">';
         h += '<div class="ext-item-header' + (opts.toggleAction ? ' history-item-header-toggle" data-action="' + opts.toggleAction + '" data-id="' + opts.toggleId + '"' : '"') + '>';
         h += renderExtensionIcon(r);
         h += '<div class="ext-item-info"><span class="ext-name">' + esc(r.displayName || r.name) + '</span><span class="ext-pub">' + esc(r.publisher) + '</span></div>';
@@ -357,7 +358,8 @@ export function getDashboardScript(dateFormattersScript: string): string {
           var historyId = s.id || s.time;
           var expanded = expandedHistoryEntryId === historyId;
           if (expandedHistoryEntryId && !expanded) continue;
-          h += '<div class="history-item' + (expanded ? ' history-item-expanded' : '') + '"><div class="history-item-top"><div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div></div><div class="history-item-actions"><button class="item-toggle history-arrow" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button><button class="clear-history-entry" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div>';
+          var historyLevel = s.critical > 0 ? 'critical' : s.high > 0 ? 'high' : s.moderate > 0 ? 'moderate' : s.low > 0 ? 'low' : '';
+          h += '<div class="history-item' + (historyLevel ? ' ' + historyLevel : '') + (expanded ? ' history-item-expanded' : '') + '"><div class="history-item-top"><div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div></div><div class="history-item-actions"><button class="item-toggle history-arrow" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button><button class="clear-history-entry" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div>';
           if (expanded && s.summary) h += renderHistoryInlineDetail(s.summary, historyId);
           h += '</div>';
         }
@@ -676,7 +678,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
           if (normalizedSearch && (r.displayName || r.name).toLowerCase().indexOf(normalizedSearch) === -1 && r.publisher.toLowerCase().indexOf(normalizedSearch) === -1) continue;
           var cls = r.riskLevel;
           var safeId = 'history_' + r.id.replace(/[^a-zA-Z0-9]/g, '_');
-          h += buildExtItemHtml(r, { toggleAction: 'toggle-history-detail', toggleId: safeId, showScore: true });
+          h += buildExtItemHtml(r, { toggleAction: 'toggle-history-detail', toggleId: safeId, showScore: true, riskAccent: true });
           h += '<div id="detail-' + safeId + '" class="ext-detail">';
           h += '<div class="detail-row"><span class="detail-label">Version</span><span>' + esc(r.version) + '</span></div>';
           if (r.marketplaceId) h += '<div class="detail-row"><span class="detail-label">ID</span><span>' + esc(r.marketplaceId) + '</span></div>';
