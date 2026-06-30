@@ -25,9 +25,10 @@ export function getDashboardStyles(): string {
     .header-text{min-width:0}
     .header h1{font-size:14px;font-weight:700;letter-spacing:.3px;line-height:1.2}
     .header-slogan{font-size:10px;opacity:.45;letter-spacing:.5px;text-transform:uppercase;display:block}
-    .badge-count{display:flex;align-items:center;gap:4px;background:var(--card-bg);border:1px solid var(--border);padding:3px 8px;border-radius:12px;font-size:10px;opacity:.8}
-    .badge-num{font-weight:700;color:var(--accent);font-size:12px}
-    .badge-label{opacity:.55;font-weight:500}
+    .settings-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 28px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--fg);opacity:.5;transition:all .2s;padding:0}
+    .settings-btn svg{width:14px;height:14px}
+    .settings-btn:hover{opacity:1;border-color:var(--accent);color:var(--accent);transform:rotate(30deg)}
+    .settings-btn.active{opacity:1;border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.08)}
     #progress-section{display:none;margin-bottom:10px}
     #progress-section.visible{display:block}
     .progress-row{display:flex;align-items:center;gap:8px}
@@ -50,9 +51,13 @@ export function getDashboardStyles(): string {
     .btn-export:hover svg{opacity:1}
     .btn-export:disabled{opacity:.35;cursor:not-allowed}
     .nav-tabs{display:flex;gap:2px;background:var(--card-bg);border-radius:var(--radius);padding:3px;margin-bottom:16px;position:relative}
-    .nav-tab{flex:1;text-align:center;padding:6px 4px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--fg);opacity:.45;cursor:pointer;border-radius:6px;transition:all .2s;position:relative;z-index:1}
-    .nav-tab:hover{opacity:.65}
+    .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px 6px;font-size:10px;font-weight:600;border:none;background:transparent;color:var(--fg);opacity:.4;cursor:pointer;border-radius:6px;transition:all .2s;position:relative;z-index:1}
+    .nav-tab svg{width:14px;height:14px;flex:0 0 14px;transition:color .2s}
+    .nav-tab span{line-height:1}
+    .nav-tab:hover{opacity:.65;background:rgba(255,255,255,.03)}
     .nav-tab.active{opacity:1;background:var(--bg);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+    .nav-tab.active svg{color:var(--accent)}
+    .nav-tab.active::after{content:'';position:absolute;bottom:2px;left:25%;width:50%;height:2px;background:var(--accent);border-radius:1px}
     .panel{display:none;height:100%;overflow-y:auto;min-width:0}
     .panel.visible{display:flex;flex:1 1 auto;flex-direction:column;min-height:0}
     .summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;padding-top:2px}
@@ -198,6 +203,24 @@ export function getDashboardStyles(): string {
     .confirm-cancel:hover{opacity:.85}
     .confirm-ok{background:linear-gradient(135deg,var(--accent),#005a9e);color:var(--accent-fg);border:none;padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:700;transition:all .15s}
     .confirm-ok:hover{box-shadow:0 2px 8px var(--accent-glow)}
+    .settings-panel{display:flex;flex-direction:column;gap:12px;padding:2px 0}
+    .settings-section{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .settings-section-title{display:flex;align-items:center;gap:6px;padding:10px 12px;font-size:11px;font-weight:700;letter-spacing:.3px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)}
+    .settings-section-title svg{width:13px;height:13px;opacity:.5;color:var(--accent)}
+    .setting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+    .setting-row:last-child{border-bottom:none}
+    .setting-row:hover{background:rgba(255,255,255,.02)}
+    .setting-info{flex:1;min-width:0}
+    .setting-label{display:block;font-size:11px;font-weight:600}
+    .setting-desc{display:block;font-size:9px;opacity:.4;margin-top:1px;line-height:1.3}
+    .toggle-switch{position:relative;width:32px;height:18px;flex:0 0 32px}
+    .toggle-switch input{opacity:0;width:0;height:0;position:absolute}
+    .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:9px;transition:all .2s}
+    .toggle-slider::before{content:'';position:absolute;left:2px;bottom:2px;width:14px;height:14px;background:var(--fg);border-radius:50%;transition:all .2s}
+    .toggle-switch input:checked + .toggle-slider{background:var(--accent)}
+    .toggle-switch input:checked + .toggle-slider::before{transform:translateX(14px);background:var(--accent-fg)}
+    .setting-select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;outline:none;cursor:pointer;transition:border-color .2s;min-width:90px}
+    .setting-select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
   `;
 }
 
@@ -211,6 +234,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
       var shouldAutoOpenLatestHistory = false;
       var inlineHistorySearch = {};
       var inlineHistoryFilter = {};
+      var currentSettings = {};
 
       function $(id) { return document.getElementById(id); }
       function $$(sel) { return document.querySelectorAll(sel); }
@@ -288,6 +312,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
           if (expandedHistoryEntryId === msg.id) expandedHistoryEntryId = null;
           renderHistory();
         }
+        else if (msg.type === 'settingsData') { currentSettings = msg.settings || {}; applySettings(msg.settings); }
       });
 
       function switchTab(tab) {
@@ -298,8 +323,15 @@ export function getDashboardScript(dateFormattersScript: string): string {
         }
         $$('.panel').forEach(function(p){ p.classList.remove('visible'); });
         $$('.nav-tab').forEach(function(t){ t.classList.remove('active'); });
+        var settingsBtn = q('.settings-btn');
+        if (settingsBtn) settingsBtn.classList.remove('active');
         var panel = $('panel-' + tab); if (panel) panel.classList.add('visible');
-        var tabEl = q('.nav-tab[data-tab="' + tab + '"]'); if (tabEl) tabEl.classList.add('active');
+        if (tab === 'settings') {
+          if (settingsBtn) settingsBtn.classList.add('active');
+          vscode.postMessage({ type: 'requestSettings' });
+        } else {
+          var tabEl = q('.nav-tab[data-tab="' + tab + '"]'); if (tabEl) tabEl.classList.add('active');
+        }
         if (tab === 'extensions') renderExtensions();
         if (tab === 'history') renderHistory();
       }
@@ -403,13 +435,8 @@ export function getDashboardScript(dateFormattersScript: string): string {
             '</div>' +
             '<div style="display:flex;flex-direction:column;gap:4px">' +
               '<span style="font-size:10px;opacity:.65;font-weight:600">Format</span>' +
-              '<select id="export-format-select" style="width:100%;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px;font-size:11px;outline:none">' +
-                '<option value="markdown">Markdown (.md)</option>' +
-                '<option value="json">JSON (.json)</option>' +
-                '<option value="html">HTML (.html)</option>' +
-                '<option value="pdf">PDF (.pdf)</option>' +
-                '<option value="csv">CSV (.csv)</option>' +
-                '<option value="sarif">SARIF (.sarif.json)</option>' +
+               '<select id="export-format-select" style="width:100%;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px;font-size:11px;outline:none">' +
+                buildExportFormatOptions() +
               '</select>' +
             '</div>' +
           '</div>' +
@@ -439,13 +466,11 @@ export function getDashboardScript(dateFormattersScript: string): string {
           $('dist-bar').innerHTML = '';
           if (distSection) distSection.classList.add('hidden');
           $('rec-actions').classList.add('hidden');
-          var badgeNum0 = q('.badge-num'); if (badgeNum0) badgeNum0.textContent = '0';
           $('last-scan').textContent = '';
           return;
         }
         $('empty-state').style.display = 'none';
         if (distSection) distSection.classList.remove('hidden');
-        var badgeNum = q('.badge-num'); if (badgeNum) badgeNum.textContent = scanData.totalExtensions || 0;
         if (scanData.scannedAt) $('last-scan').textContent = 'Last scan: ' + formatRelativeTime(scanData.scannedAt);
         renderSummary();
         renderDistribution();
@@ -741,8 +766,42 @@ ${dateFormattersScript}
           updateInlineHistoryResults(historyId);
           return;
         }
+        if (e.target && e.target.hasAttribute('data-setting')) {
+          var key = e.target.getAttribute('data-setting');
+          var val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
+          vscode.postMessage({ type: 'updateSetting', key: key, value: val });
+          return;
+        }
         if (e.target && e.target.id === 'history-risk-filter' && false) return;
       });
+
+      function buildExportFormatOptions() {
+        var formats = [
+          { value: 'markdown', label: 'Markdown (.md)' },
+          { value: 'json', label: 'JSON (.json)' },
+          { value: 'html', label: 'HTML (.html)' },
+          { value: 'pdf', label: 'PDF (.pdf)' },
+          { value: 'csv', label: 'CSV (.csv)' },
+          { value: 'sarif', label: 'SARIF (.sarif.json)' }
+        ];
+        var selected = (currentSettings && currentSettings.reportFormat) || 'markdown';
+        var h = '';
+        for (var i = 0; i < formats.length; i++) {
+          h += '<option value="' + formats[i].value + '"' + (formats[i].value === selected ? ' selected' : '') + '>' + formats[i].label + '</option>';
+        }
+        return h;
+      }
+
+      function applySettings(settings) {
+        if (!settings) return;
+        var keys = Object.keys(settings);
+        for (var i = 0; i < keys.length; i++) {
+          var el = q('[data-setting="' + keys[i] + '"]');
+          if (!el) continue;
+          if (el.type === 'checkbox') el.checked = !!settings[keys[i]];
+          else el.value = settings[keys[i]];
+        }
+      }
 
       vscode.postMessage({ type: 'ready' });
       renderAll();

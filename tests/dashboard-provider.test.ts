@@ -2,7 +2,25 @@ import { describe, expect, it, vi } from 'vitest';
 import { EXT_CONFIG } from '../src/config';
 import { DashboardProvider } from '../src/dashboard/dashboard-provider';
 
-vi.mock('vscode', () => ({}));
+const mockConfigValues: Record<string, unknown> = {
+  autoScanOnStartup: false,
+  warnOnHighRisk: true,
+  minimumWarningLevel: 'high',
+  scanNodeModules: false,
+  reportFormat: 'markdown',
+  enableOsvScan: true,
+};
+const mockConfigUpdate = vi.fn();
+
+vi.mock('vscode', () => ({
+  workspace: {
+    getConfiguration: () => ({
+      get: (key: string, fallback?: unknown) =>
+        key in mockConfigValues ? mockConfigValues[key] : fallback,
+      update: mockConfigUpdate,
+    }),
+  },
+}));
 
 describe('DashboardProvider', () => {
   function createHarness(historyEntries: any[] = []) {
@@ -136,5 +154,73 @@ describe('DashboardProvider', () => {
       type: 'scanResult',
       data: older.summary,
     });
+  });
+
+  it('sendSettings posts all config keys to webview', () => {
+    const harness = createHarness();
+
+    (harness.provider as any).sendSettings();
+
+    expect(harness.postMessage).toHaveBeenCalledWith({
+      type: 'settingsData',
+      settings: {
+        autoScanOnStartup: false,
+        warnOnHighRisk: true,
+        minimumWarningLevel: 'high',
+        scanNodeModules: false,
+        reportFormat: 'markdown',
+        enableOsvScan: true,
+      },
+    });
+  });
+
+  it('sendSettings includes all six config keys', () => {
+    const harness = createHarness();
+
+    (harness.provider as any).sendSettings();
+
+    const call = harness.postMessage.mock.calls.find(
+      (c: any[]) => c[0]?.type === 'settingsData',
+    );
+    expect(call).toBeTruthy();
+    const settings = call![0].settings;
+    expect(settings).toHaveProperty('autoScanOnStartup');
+    expect(settings).toHaveProperty('warnOnHighRisk');
+    expect(settings).toHaveProperty('minimumWarningLevel');
+    expect(settings).toHaveProperty('scanNodeModules');
+    expect(settings).toHaveProperty('reportFormat');
+    expect(settings).toHaveProperty('enableOsvScan');
+  });
+
+  it('sendSettings does nothing when view is not available', () => {
+    const harness = createHarness();
+    (harness.provider as any)._view = undefined;
+
+    (harness.provider as any).sendSettings();
+
+    expect(harness.postMessage).not.toHaveBeenCalled();
+  });
+
+  it('sendSettings reflects config values correctly', () => {
+    const harness = createHarness();
+
+    mockConfigValues.autoScanOnStartup = true;
+    mockConfigValues.reportFormat = 'json';
+    mockConfigValues.minimumWarningLevel = 'critical';
+
+    (harness.provider as any).sendSettings();
+
+    const call = harness.postMessage.mock.calls.find(
+      (c: any[]) => c[0]?.type === 'settingsData',
+    );
+    const settings = call![0].settings;
+    expect(settings.autoScanOnStartup).toBe(true);
+    expect(settings.reportFormat).toBe('json');
+    expect(settings.minimumWarningLevel).toBe('critical');
+
+    // Reset
+    mockConfigValues.autoScanOnStartup = false;
+    mockConfigValues.reportFormat = 'markdown';
+    mockConfigValues.minimumWarningLevel = 'high';
   });
 });

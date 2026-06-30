@@ -1,4 +1,4 @@
-import { commands } from 'vscode';
+import { commands, workspace } from 'vscode';
 import type {
   WebviewViewProvider,
   ExtensionContext,
@@ -49,6 +49,8 @@ export class DashboardProvider implements WebviewViewProvider {
             type: 'history',
             history,
           });
+
+          this.sendSettings();
 
           const cached =
             this._lastSummary ||
@@ -113,6 +115,19 @@ export class DashboardProvider implements WebviewViewProvider {
             );
           }
           break;
+        case 'requestSettings':
+          this.sendSettings();
+          break;
+        case 'updateSetting':
+          if (message.key) {
+            void workspace
+              .getConfiguration(EXT_CONFIG.name.toLowerCase())
+              .update(message.key, message.value, true)
+              .then(() => {
+                this.sendSettings();
+              });
+          }
+          break;
       }
     });
   }
@@ -150,6 +165,22 @@ export class DashboardProvider implements WebviewViewProvider {
     if (this._view) {
       this._view.webview.postMessage({ type: 'scanCancelled' });
     }
+  }
+
+  private sendSettings(): void {
+    if (!this._view) return;
+    const config = workspace.getConfiguration(EXT_CONFIG.name.toLowerCase());
+    this._view.webview.postMessage({
+      type: 'settingsData',
+      settings: {
+        autoScanOnStartup: config.get<boolean>('autoScanOnStartup', false),
+        warnOnHighRisk: config.get<boolean>('warnOnHighRisk', true),
+        minimumWarningLevel: config.get<string>('minimumWarningLevel', 'high'),
+        scanNodeModules: config.get<boolean>('scanNodeModules', false),
+        reportFormat: config.get<string>('reportFormat', 'markdown'),
+        enableOsvScan: config.get<boolean>('enableOsvScan', true),
+      },
+    });
   }
 
   addHistoryEntry(summary: SecuritySummary): void {

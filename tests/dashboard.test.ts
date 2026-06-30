@@ -40,6 +40,15 @@ describe('Dashboard HTML', () => {
     expect(html).not.toContain('data-action="show-history"');
   });
 
+  it('has settings gear button in header', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('class="settings-btn"');
+    expect(html).toContain('data-tab="settings"');
+    expect(html).toContain('title="Settings"');
+    expect(html).not.toContain('badge-count');
+    expect(html).not.toContain('badge-num');
+  });
+
   it('has VS Code theme CSS variables', () => {
     const html = generateDashboardHtml();
     expect(html).toContain('--vscode-editor-background');
@@ -92,6 +101,89 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('#ext-list .ext-item');
   });
 
+  it('has nav tabs with icons', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('data-tab="overview"');
+    expect(html).toContain('data-tab="extensions"');
+    expect(html).toContain('data-tab="history"');
+    // Each tab should have an SVG and a span label
+    const tabMatches = html.match(/class="nav-tab[^"]*"/g);
+    expect(tabMatches).toBeTruthy();
+    expect(tabMatches!.length).toBeGreaterThanOrEqual(3);
+    expect(html).toContain('>Overview<');
+    expect(html).toContain('>Extensions<');
+    expect(html).toContain('>History<');
+  });
+
+  it('has settings panel with all setting controls', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('id="panel-settings"');
+    expect(html).toContain('class="settings-panel"');
+    expect(html).toContain('class="settings-section"');
+    expect(html).toContain('class="settings-section-title"');
+  });
+
+  it('has auto-scan on startup toggle', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('id="setting-autoScan"');
+    expect(html).toContain('data-setting="autoScanOnStartup"');
+    expect(html).toContain('type="checkbox"');
+    expect(html).toContain('class="toggle-switch"');
+    expect(html).toContain('class="toggle-slider"');
+    expect(html).toContain('Auto-scan on startup');
+  });
+
+  it('has scan node_modules toggle', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('id="setting-scanNodeModules"');
+    expect(html).toContain('data-setting="scanNodeModules"');
+    expect(html).toContain('Scan node_modules');
+  });
+
+  it('has enable OSV scan toggle', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('id="setting-enableOsv"');
+    expect(html).toContain('data-setting="enableOsvScan"');
+    expect(html).toContain('Enable OSV vulnerability scan');
+  });
+
+  it('has warn on high risk toggle', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('id="setting-warnHighRisk"');
+    expect(html).toContain('data-setting="warnOnHighRisk"');
+    expect(html).toContain('Warn on high risk');
+  });
+
+  it('has minimum warning level select', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('id="setting-minWarningLevel"');
+    expect(html).toContain('data-setting="minimumWarningLevel"');
+    expect(html).toContain('class="setting-select"');
+    expect(html).toContain('value="moderate"');
+    expect(html).toContain('value="high"');
+    expect(html).toContain('value="critical"');
+    expect(html).toContain('Minimum warning level');
+  });
+
+  it('has report format select', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('id="setting-reportFormat"');
+    expect(html).toContain('data-setting="reportFormat"');
+    expect(html).toContain('>Markdown<');
+    expect(html).toContain('>JSON<');
+    expect(html).toContain('>HTML<');
+    expect(html).toContain('>PDF<');
+    expect(html).toContain('>CSV<');
+    expect(html).toContain('>SARIF<');
+  });
+
+  it('has settings section titles with icons', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('Scan &amp; Analysis');
+    expect(html).toContain('Notifications');
+    expect(html).toContain('Export');
+  });
+
   it('only saves history from explicit actions', () => {
     const html = generateDashboardHtml();
     expect(html).toContain(
@@ -112,5 +204,42 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('value="moderate"');
     expect(html).toContain('value="high"');
     expect(html).toContain('value="critical"');
+  });
+
+  it('has settings message handlers in script', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain("msg.type === 'settingsData'");
+    expect(html).toContain('applySettings(msg.settings)');
+    expect(html).toContain("type: 'updateSetting'");
+    expect(html).toContain("type: 'requestSettings'");
+    expect(html).toContain('currentSettings');
+  });
+
+  it('has export format builder reading currentSettings', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('buildExportFormatOptions()');
+    expect(html).toContain('currentSettings.reportFormat');
+  });
+
+  it('has settings gear active state in switchTab', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain("tab === 'settings'");
+    expect(html).toContain('.settings-btn');
+  });
+
+  it('has settings CSS styles', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain('.settings-panel');
+    expect(html).toContain('.settings-section');
+    expect(html).toContain('.settings-section-title');
+    expect(html).toContain('.setting-row');
+    expect(html).toContain('.setting-label');
+    expect(html).toContain('.setting-desc');
+    expect(html).toContain('.toggle-switch');
+    expect(html).toContain('.toggle-slider');
+    expect(html).toContain('.setting-select');
+    expect(html).toContain('.settings-btn');
+    expect(html).toContain('.settings-btn.active');
+    expect(html).toContain('.settings-btn:hover');
   });
 });
