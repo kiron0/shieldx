@@ -9,9 +9,8 @@
 </p>
 
 <p align="center">
-  <a href="https://marketplace.visualstudio.com/items?itemName=thk.shieldx"><img src="https://img.shields.io/visual-studio-marketplace/v/thk.shieldx.svg?color=blue&label=VS%20Marketplace" alt="VS Marketplace"></a>
   <a href="https://code.visualstudio.com"><img src="https://img.shields.io/badge/VS%20Code-%3E%3D%201.85.0-blue.svg" alt="VS Code Compatibility"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/kiron0/shieldx.svg?color=green" alt="License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/kiron0/shieldx?color=green" alt="License"></a>
 </p>
 
 ---
@@ -80,6 +79,6 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
 
 ---
 
-## 👥 Authors
+## Authors
 
 Created and maintained by [Toufiq Hasan Kiron](https://github.com/kiron0).
