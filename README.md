@@ -79,6 +79,6 @@ Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
 
 ---
 
-## Authors
+## Author
 
 Created and maintained by [Toufiq Hasan Kiron](https://github.com/kiron0).
