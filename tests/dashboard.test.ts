@@ -41,6 +41,13 @@ describe('Dashboard HTML', () => {
     expect(html).toContain(
       '.history-inline-results{overflow-y:auto;flex:1 1 auto;min-height:0;width:100%;padding-right:2px}',
     );
+    expect(html).toContain('https://kiron.dev');
+    expect(html).toContain(
+      'class="about-author">by <a href="https://kiron.dev" target="_blank" rel="noopener noreferrer">',
+    );
+    expect(html).toContain(
+      '.about-author a:hover{color:var(--accent);opacity:1}',
+    );
   });
 
   it('has scan and export buttons', () => {
@@ -124,7 +131,14 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('#ext-list .ext-item');
     expect(html).toContain('getHistoryRiskCounts(s)');
     expect(html).toContain('getHistoryRiskLevel(historyCounts)');
+    expect(html).toContain('getHistoryAverageScore(s)');
     expect(html).toContain('data-history-level="');
+    expect(html).toContain('class="h-card-head"');
+    expect(html).toContain('class="h-level-chip"');
+    expect(html).toContain('class="h-meta-row"');
+    expect(html).toContain('class="h-stat-row"');
+    expect(html).toContain('class="h-stat-pill');
+    expect(html).toContain('avg</span>');
   });
 
   it('has nav tabs with icons', () => {

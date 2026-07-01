@@ -64,6 +64,7 @@ function buildConfig(
     name,
     version: packageJson.version,
     author: 'Toufiq Hasan Kiron',
+    authorUrl: 'https://kiron.dev',
     description: packageJson.description,
     slogan: getSlogan(packageJson),
     publisher: packageJson.publisher,

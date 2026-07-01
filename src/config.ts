@@ -2,8 +2,8 @@ export const EXT_CONFIG = {
   name: 'ShieldX',
   version: '0.1.2',
   author: 'Toufiq Hasan Kiron',
-  description:
-    'Scan installed extensions for security risks, suspicious behavior, and excessive permissions.',
+  authorUrl: 'https://kiron.dev',
+  description: 'Scan installed extensions for security risks, suspicious behavior, and excessive permissions.',
   slogan: 'Extension Auditor',
   publisher: 'thk',
   displayName: 'ShieldX - Extension Auditor',

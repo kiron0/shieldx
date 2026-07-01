@@ -184,12 +184,13 @@ export function getDashboardStyles(): string {
     #history-content{flex:1 1 auto;min-height:0}
     .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 2px 2px 0}
     .history-list.history-list-expanded{overflow:hidden}
-    .history-item{background:linear-gradient(145deg, var(--card-bg), rgba(255,255,255,.01));border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:var(--radius);padding:12px;font-size:11px;transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
-    .history-item[data-history-level="low"]{border-left-color:var(--low)}
-    .history-item[data-history-level="moderate"]{border-left-color:var(--moderate)}
-    .history-item[data-history-level="high"]{border-left-color:var(--high)}
-    .history-item[data-history-level="critical"]{border-left-color:var(--critical)}
-    .history-item:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15), 0 2px 8px var(--accent-glow)}
+    .history-item{--hc:var(--accent);--hbg:rgba(0,122,204,.1);--hborder:rgba(0,122,204,.35);--hglow:rgba(0,122,204,.22);background:linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,.006));border:1px solid rgba(255,255,255,.08);border-left:4px solid var(--hc);border-radius:16px;padding:10px 12px;font-size:11px;transition:all .22s ease;display:flex;flex-direction:column;gap:8px;margin-bottom:6px;position:relative;overflow:hidden}
+    .history-item::before{content:'';position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,var(--hc),transparent 70%);opacity:.55;pointer-events:none}
+    .history-item[data-history-level="low"]{--hc:var(--low);--hbg:rgba(76,175,80,.1);--hborder:rgba(76,175,80,.35);--hglow:rgba(76,175,80,.18)}
+    .history-item[data-history-level="moderate"]{--hc:var(--moderate);--hbg:rgba(255,152,0,.1);--hborder:rgba(255,152,0,.35);--hglow:rgba(255,152,0,.18)}
+    .history-item[data-history-level="high"]{--hc:var(--high);--hbg:rgba(244,67,54,.1);--hborder:rgba(244,67,54,.35);--hglow:rgba(244,67,54,.2)}
+    .history-item[data-history-level="critical"]{--hc:var(--critical);--hbg:rgba(156,39,176,.1);--hborder:rgba(156,39,176,.35);--hglow:rgba(156,39,176,.2)}
+    .history-item:hover{border-color:var(--hc);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15), 0 2px 8px var(--hglow)}
     .history-item.history-item-expanded{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
     .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;width:100%;overflow:hidden;border-top:1px solid var(--border);padding-top:12px}
     .history-detail{display:none}.history-detail.visible{display:block}
@@ -200,28 +201,40 @@ export function getDashboardStyles(): string {
     .history-tools input{flex:1}
     .history-inline-detail .history-tools{position:sticky;top:0;z-index:2;margin-top:0;padding-bottom:8px;margin-bottom:12px;background:var(--card-bg)}
     .history-inline-results{overflow-y:auto;flex:1 1 auto;min-height:0;width:100%;padding-right:2px}
-    .history-item-top{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%}
-    .history-item-main{flex:1;min-width:0;cursor:pointer}
+    .history-item-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;width:100%}
+    .history-item-main{flex:1;min-width:0;cursor:pointer;display:flex;flex-direction:column;gap:6px}
     .history-item-header-toggle{cursor:pointer}
-    .history-item-actions{display:flex;gap:6px;align-items:center}
-    .history-action-btn{background:transparent;border:1px solid var(--border);color:var(--fg);opacity:.6;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;padding:0}
-    .history-action-btn:hover{opacity:1;border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.08)}
+    .history-item-actions{display:flex;gap:6px;align-items:center;flex:0 0 auto}
+    .history-action-btn{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);color:var(--fg);opacity:.68;width:28px;height:28px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;padding:0}
+    .history-action-btn:hover{opacity:1;border-color:var(--hc);color:var(--hc);background:var(--hbg)}
     .history-action-btn.delete-btn:hover{border-color:var(--high);color:var(--high);background:rgba(244,67,54,.08)}
     .history-action-btn svg{width:13px;height:13px;transition:transform .2s}
     .history-action-btn.expanded svg.chevron-icon{transform:rotate(180deg)}
-    .h-time{font-size:11px;font-weight:600;color:var(--fg);opacity:.85;margin-bottom:4px}
-    .h-stats{display:flex;gap:6px;align-items:center;margin-top:4px}
-    .h-stat-pill{font-size:9.5px;padding:2px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);color:var(--fg);opacity:.8}
-    .h-stat-pill.high{background:rgba(244,67,54,.1);border-color:rgba(244,67,54,.2);color:var(--high);opacity:1;font-weight:600}
-    .h-stat-pill.crit{background:rgba(156,39,176,.1);border-color:rgba(156,39,176,.2);color:var(--critical);opacity:1;font-weight:600}
-    .h-mini-dist{display:flex;height:3px;border-radius:1.5px;overflow:hidden;background:var(--border);margin-top:8px;width:100%}
+    .h-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;min-width:0}
+    .h-time-wrap{display:flex;flex-direction:column;gap:2px;min-width:0}
+    .h-time{font-size:11px;font-weight:750;color:var(--fg);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .h-subtime{font-size:9px;opacity:.5;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .h-level-chip{font-size:9px;padding:4px 8px;border-radius:999px;background:var(--hbg);border:1px solid var(--hborder);color:var(--hc);font-weight:800;text-transform:uppercase;letter-spacing:.45px;white-space:nowrap;line-height:1}
+    .h-meta-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0}
+    .h-stat-row{display:flex;gap:6px;align-items:center;min-width:0;flex-wrap:wrap}
+    .h-stat-pill{font-size:9px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);color:var(--fg);opacity:.82;line-height:1.05;font-weight:650}
+    .h-stat-pill.strong{color:var(--hc);border-color:var(--hborder);background:var(--hbg);opacity:1}
+    .h-stat-pill.high{color:var(--high);border-color:rgba(244,67,54,.35);background:rgba(244,67,54,.1)}
+    .h-stat-pill.critical{color:var(--critical);border-color:rgba(156,39,176,.35);background:rgba(156,39,176,.1)}
+    .h-mini-dist{display:flex;height:8px;border-radius:999px;overflow:hidden;background:rgba(255,255,255,.05);width:100%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
     .h-mini-seg{height:100%;background:var(--c)}
+    .h-mini-seg:first-child{border-radius:999px 0 0 999px}
+    .h-mini-seg:last-child{border-radius:0 999px 999px 0}
+    .h-mini-seg:only-child{border-radius:999px}
     .about-box{border-top:1px solid var(--border);padding:10px;margin-top:2px;background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border)}
     .about-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
     .about-icon{width:28px;height:28px;flex:0 0 28px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#005a9e);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px var(--accent-glow)}
     .about-icon svg{width:15px;height:15px;color:var(--accent-fg)}
     .about-title{font-size:11px;font-weight:700;letter-spacing:.2px}
     .about-author{font-size:10px;opacity:.5}
+    .about-author a{color:var(--vscode-textLink-foreground,var(--accent));text-decoration:none;transition:all .2s;opacity:.85}
+    .about-author a:hover{color:var(--accent);opacity:1}
+    .about-author a:hover{color:var(--vscode-textLink-activeForeground,var(--accent));text-decoration:underline}
     .about-desc{font-size:10px;opacity:.6;line-height:1.5}
     #ext-list .ext-item:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -567,15 +580,23 @@ export function getDashboardScript(dateFormattersScript: string): string {
           if (critPct > 0) miniBar += '<div class="h-mini-seg critical" style="width:' + critPct + '%" title="Critical: ' + historyCounts.critical + '"></div>';
           miniBar += '</div>';
 
+          var priorityCount = historyCounts.high + historyCounts.critical;
+          var relativeTime = formatRelativeTime(s.time);
+          var levelLabel = historyLevel ? titleCase(historyLevel) : 'No Risk';
+          var avgScore = getHistoryAverageScore(s);
           var statsPills = '<span class="h-stat-pill">' + historyCounts.total + ' total</span>';
           if (historyCounts.high > 0) statsPills += '<span class="h-stat-pill high">' + historyCounts.high + ' high</span>';
-          if (historyCounts.critical > 0) statsPills += '<span class="h-stat-pill crit">' + historyCounts.critical + ' crit</span>';
+          if (historyCounts.critical > 0) statsPills += '<span class="h-stat-pill critical">' + historyCounts.critical + ' crit</span>';
+          if (historyCounts.high === 0 && historyCounts.critical === 0) statsPills += '<span class="h-stat-pill">' + avgScore + ' avg</span>';
 
           html.push('<div class="history-item' + (expanded ? ' history-item-expanded' : '') + '"' + (historyLevel ? ' data-history-level="' + historyLevel + '"' : '') + '>');
           html.push('<div class="history-item-top">');
           html.push('<div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '">');
-          html.push('<div class="h-time">' + formattedTime + '</div>');
-          html.push('<div class="h-stats">' + statsPills + '</div>');
+          html.push('<div class="h-card-head">');
+          html.push('<div class="h-time-wrap"><div class="h-time">' + formattedTime + '</div><div class="h-subtime">' + esc(relativeTime) + '</div></div>');
+          html.push('<span class="h-level-chip">' + esc(levelLabel) + '</span>');
+          html.push('</div>');
+          html.push('<div class="h-meta-row"><div class="h-stat-row">' + statsPills + '</div></div>');
           html.push(miniBar);
           html.push('</div>');
           html.push('<div class="history-item-actions">');
@@ -956,6 +977,16 @@ export function getDashboardScript(dateFormattersScript: string): string {
         if (counts.moderate > 0) return 'moderate';
         if (counts.low > 0) return 'low';
         return '';
+      }
+
+      function getHistoryAverageScore(entry) {
+        var reports = entry && entry.summary && entry.summary.reports;
+        if (!reports || !reports.length) return 0;
+        var total = 0;
+        for (var i = 0; i < reports.length; i++) {
+          total += Number(reports[i] && reports[i].riskScore) || 0;
+        }
+        return Math.round(total / reports.length);
       }
 
       function renderHistoryInlineDetail(summary, historyId) {

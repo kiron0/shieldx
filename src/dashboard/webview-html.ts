@@ -11,6 +11,7 @@ export function generateDashboardHtml(cspSource: string): string {
   const title = EXT_CONFIG.name;
   const version = EXT_CONFIG.version;
   const author = EXT_CONFIG.author;
+  const authorUrl = EXT_CONFIG.authorUrl;
   const description = EXT_CONFIG.description;
 
   return `<!DOCTYPE html>
@@ -283,30 +284,78 @@ export function generateDashboardHtml(cspSource: string): string {
           </div>
           <div class="history-list">
             <div class="history-item" style="border-left: 3px solid var(--border); padding: 12px; margin-bottom: 8px">
-              <div class="history-item-top" style="display:flex;align-items:center;justify-content:space-between;width:100%">
+              <div class="history-item-top" style="display:flex;align-items:flex-start;justify-content:space-between;width:100%;gap:10px">
                 <div style="flex:1;display:flex;flex-direction:column;gap:6px">
-                  <div class="skeleton" style="width:120px;height:12px"></div>
-                  <div class="skeleton" style="width:60px;height:9px"></div>
+                  <div style="display:flex;justify-content:space-between;gap:8px">
+                    <div style="display:flex;flex-direction:column;gap:5px;flex:1">
+                      <div class="skeleton" style="width:120px;height:12px"></div>
+                      <div class="skeleton" style="width:70px;height:9px"></div>
+                    </div>
+                    <div class="skeleton" style="width:54px;height:18px;border-radius:999px"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <div class="skeleton" style="width:64px;height:20px;border-radius:999px"></div>
+                      <div class="skeleton" style="width:56px;height:20px;border-radius:999px"></div>
+                    </div>
+                    <div style="display:flex;gap:4px">
+                      <div class="skeleton" style="width:36px;height:18px;border-radius:999px"></div>
+                      <div class="skeleton" style="width:36px;height:18px;border-radius:999px"></div>
+                    </div>
+                  </div>
+                  <div class="skeleton" style="width:100%;height:8px;border-radius:999px"></div>
                 </div>
-                <div class="skeleton" style="width:80px;height:6px;border-radius:3px"></div>
+                <div class="skeleton" style="width:28px;height:28px;border-radius:7px"></div>
               </div>
             </div>
             <div class="history-item" style="border-left: 3px solid var(--border); padding: 12px; margin-bottom: 8px">
-              <div class="history-item-top" style="display:flex;align-items:center;justify-content:space-between;width:100%">
+              <div class="history-item-top" style="display:flex;align-items:flex-start;justify-content:space-between;width:100%;gap:10px">
                 <div style="flex:1;display:flex;flex-direction:column;gap:6px">
-                  <div class="skeleton" style="width:110px;height:12px"></div>
-                  <div class="skeleton" style="width:50px;height:9px"></div>
+                  <div style="display:flex;justify-content:space-between;gap:8px">
+                    <div style="display:flex;flex-direction:column;gap:5px;flex:1">
+                      <div class="skeleton" style="width:110px;height:12px"></div>
+                      <div class="skeleton" style="width:62px;height:9px"></div>
+                    </div>
+                    <div class="skeleton" style="width:54px;height:18px;border-radius:999px"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <div class="skeleton" style="width:64px;height:20px;border-radius:999px"></div>
+                      <div class="skeleton" style="width:56px;height:20px;border-radius:999px"></div>
+                    </div>
+                    <div style="display:flex;gap:4px">
+                      <div class="skeleton" style="width:36px;height:18px;border-radius:999px"></div>
+                      <div class="skeleton" style="width:36px;height:18px;border-radius:999px"></div>
+                    </div>
+                  </div>
+                  <div class="skeleton" style="width:100%;height:8px;border-radius:999px"></div>
                 </div>
-                <div class="skeleton" style="width:80px;height:6px;border-radius:3px"></div>
+                <div class="skeleton" style="width:28px;height:28px;border-radius:7px"></div>
               </div>
             </div>
             <div class="history-item" style="border-left: 3px solid var(--border); padding: 12px; margin-bottom: 8px">
-              <div class="history-item-top" style="display:flex;align-items:center;justify-content:space-between;width:100%">
+              <div class="history-item-top" style="display:flex;align-items:flex-start;justify-content:space-between;width:100%;gap:10px">
                 <div style="flex:1;display:flex;flex-direction:column;gap:6px">
-                  <div class="skeleton" style="width:130px;height:12px"></div>
-                  <div class="skeleton" style="width:70px;height:9px"></div>
+                  <div style="display:flex;justify-content:space-between;gap:8px">
+                    <div style="display:flex;flex-direction:column;gap:5px;flex:1">
+                      <div class="skeleton" style="width:130px;height:12px"></div>
+                      <div class="skeleton" style="width:76px;height:9px"></div>
+                    </div>
+                    <div class="skeleton" style="width:54px;height:18px;border-radius:999px"></div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+                    <div style="display:flex;gap:6px;flex-wrap:wrap">
+                      <div class="skeleton" style="width:64px;height:20px;border-radius:999px"></div>
+                      <div class="skeleton" style="width:56px;height:20px;border-radius:999px"></div>
+                    </div>
+                    <div style="display:flex;gap:4px">
+                      <div class="skeleton" style="width:36px;height:18px;border-radius:999px"></div>
+                      <div class="skeleton" style="width:36px;height:18px;border-radius:999px"></div>
+                    </div>
+                  </div>
+                  <div class="skeleton" style="width:100%;height:8px;border-radius:999px"></div>
                 </div>
-                <div class="skeleton" style="width:80px;height:6px;border-radius:3px"></div>
+                <div class="skeleton" style="width:28px;height:28px;border-radius:7px"></div>
               </div>
             </div>
           </div>
@@ -443,7 +492,7 @@ export function generateDashboardHtml(cspSource: string): string {
           </div>
           <div>
             <div class="about-title">${title} <sub style="font-size:8px;opacity:.45;font-weight:500">v${version}</sub></div>
-            <div class="about-author">by ${author}</div>
+            <div class="about-author">by <a href="${authorUrl}" target="_blank" rel="noopener noreferrer">${author}</a></div>
           </div>
         </div>
         <div class="about-desc">${description}</div>
