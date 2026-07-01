@@ -120,7 +120,14 @@ export function generateDashboardHtml(cspSource: string): string {
       </div>
 
       <div id="panel-history" class="panel">
-        <div id="history-header" class="history-header"><button class="history-back" data-action="history-back">Back</button><button class="history-clear" data-action="clear-history">Clear</button></div>
+        <div id="history-header" class="history-toolbar">
+          <div class="search-bar">
+            <input type="text" id="history-main-search" placeholder="Search history..." />
+            <button class="history-clear-btn" data-action="clear-history" title="Clear All History">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+            </button>
+          </div>
+        </div>
         <div id="history-list" class="history-list"></div>
         <div id="history-detail" class="history-detail"></div>
         <div id="history-empty" class="empty-state">

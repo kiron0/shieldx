@@ -19,8 +19,8 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('id="rec-actions"');
     expect(html).toContain('id="ext-search"');
     expect(html).toContain('id="ext-count"');
-    expect(html).toContain('class="history-clear"');
-    expect(html).toContain('.history-header.has-history .history-clear');
+    expect(html).toContain('class="history-clear-btn"');
+    expect(html).toContain('.history-toolbar.has-history .history-clear-btn');
     expect(html).toContain('id="history-detail"');
     expect(html).toContain('history-tools');
     expect(html).toContain('.ext-icon');
@@ -63,7 +63,7 @@ describe('Dashboard HTML', () => {
     expect(html).toContain("msg.type === 'scanResult'");
     expect(html).not.toContain('addToHistory(msg.data)');
     expect(html).toContain('data-action="select-history"');
-    expect(html).toContain('data-action="history-back"');
+    expect(html).not.toContain('data-action="history-back"');
     expect(html).toContain("type: 'cancelScan'");
     expect(html).toContain("type: 'directExport'");
     expect(html).toContain('history-inline-results');
@@ -97,7 +97,7 @@ describe('Dashboard HTML', () => {
     expect(html).toContain(
       'class="history-item-main history-item-header-toggle" data-action="select-history"',
     );
-    expect(html).toContain('class="item-toggle history-arrow"');
+    expect(html).toContain('class="history-action-btn');
     expect(html).toContain('#ext-list .ext-item');
   });
 

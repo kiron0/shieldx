@@ -2,14 +2,14 @@ export function getDashboardStyles(): string {
   return `
     *{box-sizing:border-box;margin:0;padding:0}
     :root{--bg:var(--vscode-editor-background,#1e1e1e);--fg:var(--vscode-editor-foreground,#d4d4d4);--border:var(--vscode-panel-border,#3c3c3c);--card-bg:var(--vscode-editorWidget-background,#252526);--accent:var(--vscode-button-background,#007acc);--accent-fg:var(--vscode-button-foreground,#fff);--sec-bg:var(--vscode-button-secondaryBackground,#3c3c3c);--sec-fg:var(--vscode-button-secondaryForeground,#ccc);--input-bg:var(--vscode-input-background,#3c3c3c);--input-fg:var(--vscode-input-foreground,#ccc);--input-border:var(--vscode-input-border,#3c3c3c);--input-ph:var(--vscode-input-placeholderForeground,#888);--low:#4caf50;--moderate:#ff9800;--high:#f44336;--critical:#9c27b0;--radius:8px;--pad:12px;--accent-glow:rgba(0,122,204,.25)}
-    .low{--c:var(--low);--bgc:#4caf5018}
-    .moderate{--c:var(--moderate);--bgc:#ff980018}
-    .high{--c:var(--high);--bgc:#f4433618}
-    .critical{--c:var(--critical);--bgc:#9c27b018}
-    [data-level="low"]{--c:var(--low);--bgc:#4caf5018}
-    [data-level="moderate"]{--c:var(--moderate);--bgc:#ff980018}
-    [data-level="high"]{--c:var(--high);--bgc:#f4433618}
-    [data-level="critical"]{--c:var(--critical);--bgc:#9c27b018}
+    .low{--c:var(--low);--bgc:#4caf5018;--glow:rgba(76,175,80,0.12)}
+    .moderate{--c:var(--moderate);--bgc:#ff980018;--glow:rgba(255,152,0,0.12)}
+    .high{--c:var(--high);--bgc:#f4433618;--glow:rgba(244,67,54,0.12)}
+    .critical{--c:var(--critical);--bgc:#9c27b018;--glow:rgba(156,39,176,0.12)}
+    [data-level="low"]{--c:var(--low);--bgc:#4caf5018;--glow:rgba(76,175,80,0.12)}
+    [data-level="moderate"]{--c:var(--moderate);--bgc:#ff980018;--glow:rgba(255,152,0,0.12)}
+    [data-level="high"]{--c:var(--high);--bgc:#f4433618;--glow:rgba(244,67,54,0.12)}
+    [data-level="critical"]{--c:var(--critical);--bgc:#9c27b018;--glow:rgba(156,39,176,0.12)}
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
     @keyframes pulse-ring{0%{box-shadow:0 0 0 0 var(--accent-glow)}70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
     @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
@@ -115,22 +115,23 @@ export function getDashboardStyles(): string {
     .ext-count{position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:10px;opacity:.5;pointer-events:none}
     .ext-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px}
     .ext-list{display:flex;flex-direction:column;gap:4px;width:100%;padding:2px 0}
-    .ext-item{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px;cursor:pointer;transition:all .2s;width:100%}
-    .ext-item.risk-accent{border-left:3px solid var(--c,var(--border))}
-    .ext-item:hover{border-color:var(--c,var(--accent));transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
-    .ext-item-header{display:flex;align-items:center;gap:10px}
-    .ext-icon-wrap{width:26px;height:26px;flex:0 0 26px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center}
+    .ext-item{background:linear-gradient(145deg, var(--card-bg), rgba(255,255,255,.01));border:1px solid var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);width:100%}
+    .ext-item.risk-accent{border-left:4px solid var(--c,var(--border))}
+    .ext-item:hover{border-color:var(--c,var(--accent));transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15), 0 2px 8px var(--glow, var(--accent-glow));background:linear-gradient(145deg, var(--card-bg), rgba(255,255,255,.03))}
+    .ext-item-header{display:flex;align-items:center;gap:12px}
+    .ext-icon-wrap{width:30px;height:30px;flex:0 0 30px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.06);transition:transform .2s}
+    .ext-item:hover .ext-icon-wrap{transform:scale(1.05)}
     .ext-icon{width:100%;height:100%;object-fit:cover;display:block}
-    .ext-icon-fallback{font-size:10px;font-weight:700;opacity:.65;text-transform:uppercase}
-    .ext-item-info{flex:1;min-width:0}
-    .ext-name{font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
-    .ext-pub{font-size:10px;opacity:.45;display:block;margin-top:1px}
-    .ext-version{font-size:11px;font-weight:600;white-space:nowrap;opacity:.7;margin-left:auto}
+    .ext-icon-fallback{font-size:11px;font-weight:700;opacity:.65;text-transform:uppercase}
+    .ext-item-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+    .ext-name{font-weight:600;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;color:var(--fg)}
+    .ext-pub{font-size:10px;opacity:.5;display:block}
+    .ext-version{font-size:10px;font-weight:600;white-space:nowrap;opacity:.6;background:rgba(255,255,255,.05);padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,.03)}
     .ext-score{font-size:12px;font-weight:700;white-space:nowrap}
-    .ext-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;margin-left:auto}
+    .ext-meta{display:flex;align-items:center;gap:8px;margin-left:auto}
     .item-toggle{background:none;border:none;color:var(--fg);opacity:.55;cursor:pointer;font-size:12px;padding:0;line-height:1}
     .item-toggle:hover{opacity:.85}
-    .status-chip{font-size:9px;padding:2px 7px;border-radius:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;white-space:nowrap;background:var(--bgc);color:var(--c)}
+    .status-chip{font-size:9.5px;padding:3px 8px;border-radius:6px;font-weight:600;text-transform:capitalize;letter-spacing:.2px;white-space:nowrap;background:var(--bgc);color:var(--c);border:1px solid var(--c)}
     .ext-detail{display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:11px}
     .ext-detail.open{display:block}
     .detail-row{display:flex;justify-content:space-between;padding:3px 0}
@@ -149,20 +150,25 @@ export function getDashboardStyles(): string {
     .detail-actions{margin-top:10px;display:flex;gap:6px}
     .detail-actions button{background:transparent;color:var(--fg);border:1px solid var(--border);padding:5px 12px;border-radius:var(--radius);font-size:11px;cursor:pointer;transition:all .2s;font-weight:600}
     .detail-actions button:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.06)}
-    .history-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-    .history-header button{background:transparent;border:1px solid var(--border);color:var(--fg);font-size:10px;cursor:pointer;opacity:.6;padding:3px 8px;border-radius:6px;transition:all .2s}
-    .history-header button:hover{opacity:1;border-color:var(--accent);color:var(--accent)}
-    .history-header .history-back{display:none;opacity:.7}
-    .history-header .history-clear{display:none;margin-left:auto}
-    .history-header.has-history .history-clear{display:inline-flex}
-    .history-header.detail .history-back{display:inline-flex}
+    .history-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px}
+    .history-toolbar .search-bar{display:flex;gap:6px;align-items:center;width:100%}
+    .history-toolbar .search-bar input{flex:1;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
+    .history-toolbar .search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
+    .history-clear-btn{display:none;align-items:center;justify-content:center;width:28px;height:28px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;color:var(--fg);opacity:.6;transition:all .2s;padding:0;flex:0 0 28px}
+    .history-toolbar.has-history .history-clear-btn{display:inline-flex}
+    .history-clear-btn:hover{opacity:1;border-color:var(--high);color:var(--high);background:rgba(244,67,54,.08)}
+    .history-clear-btn svg{width:14px;height:14px}
     #panel-history{overflow:hidden}
     .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 2px 2px 0}
     .history-list.history-list-expanded{overflow:hidden}
-    .history-item{background:var(--card-bg);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:var(--radius);padding:10px;font-size:11px;transition:all .2s}
-    .history-item:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+    .history-item{background:linear-gradient(145deg, var(--card-bg), rgba(255,255,255,.01));border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:var(--radius);padding:12px;font-size:11px;transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+    .history-item.low{border-left-color:var(--low)}
+    .history-item.moderate{border-left-color:var(--moderate)}
+    .history-item.high{border-left-color:var(--high)}
+    .history-item.critical{border-left-color:var(--critical)}
+    .history-item:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15), 0 2px 8px var(--accent-glow)}
     .history-item.history-item-expanded{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
-    .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;border-top:1px solid var(--border);padding-top:10px}
+    .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;border-top:1px solid var(--border);padding-top:12px}
     .history-detail{display:none}.history-detail.visible{display:block}
     .history-tools{display:flex;gap:6px;align-items:center;margin:8px 0;margin-bottom:12px}
     .history-tools input,.history-tools select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
@@ -171,18 +177,22 @@ export function getDashboardStyles(): string {
     .history-tools input{flex:1}
     .history-inline-detail .history-tools{position:sticky;top:0;z-index:2;margin-top:0;padding-bottom:8px;margin-bottom:12px;background:var(--card-bg)}
     .history-inline-results{overflow-y:auto;min-height:0;padding-right:2px}
-    .history-item-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
-    .history-item-main{flex:1;min-width:0}
+    .history-item-top{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%}
+    .history-item-main{flex:1;min-width:0;cursor:pointer}
     .history-item-header-toggle{cursor:pointer}
-    .history-item-actions{display:flex;gap:6px}
-    .history-item-actions button{background:none;border:none;color:var(--fg);font-size:10px;cursor:pointer;opacity:.55;transition:opacity .15s}
-    .history-item-actions button:hover{opacity:.85}
-    .history-item-actions .clear-history-entry{padding:0}
-    .history-item-actions .history-arrow{padding:0;font-size:12px}
-    .h-time{font-size:10px;opacity:.45}
-    .h-stats{display:flex;gap:8px;margin-top:4px;width:fit-content}
-    .h-stats span{font-size:10px}
-    .h-stats .h-high{color:var(--high);font-weight:600}.h-stats .h-crit{color:var(--critical);font-weight:600}
+    .history-item-actions{display:flex;gap:6px;align-items:center}
+    .history-action-btn{background:transparent;border:1px solid var(--border);color:var(--fg);opacity:.6;width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s;padding:0}
+    .history-action-btn:hover{opacity:1;border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.08)}
+    .history-action-btn.delete-btn:hover{border-color:var(--high);color:var(--high);background:rgba(244,67,54,.08)}
+    .history-action-btn svg{width:13px;height:13px;transition:transform .2s}
+    .history-action-btn.expanded svg.chevron-icon{transform:rotate(180deg)}
+    .h-time{font-size:11px;font-weight:600;color:var(--fg);opacity:.85;margin-bottom:4px}
+    .h-stats{display:flex;gap:6px;align-items:center;margin-top:4px}
+    .h-stat-pill{font-size:9.5px;padding:2px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);color:var(--fg);opacity:.8}
+    .h-stat-pill.high{background:rgba(244,67,54,.1);border-color:rgba(244,67,54,.2);color:var(--high);opacity:1;font-weight:600}
+    .h-stat-pill.crit{background:rgba(156,39,176,.1);border-color:rgba(156,39,176,.2);color:var(--critical);opacity:1;font-weight:600}
+    .h-mini-dist{display:flex;height:3px;border-radius:1.5px;overflow:hidden;background:var(--border);margin-top:4px;width:100%}
+    .h-mini-seg{height:100%;background:var(--c)}
     .about-box{border-top:1px solid var(--border);padding:10px;margin-top:2px;background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border)}
     .about-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
     .about-icon{width:28px;height:28px;flex:0 0 28px;border-radius:7px;background:linear-gradient(135deg,var(--accent),#005a9e);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px var(--accent-glow)}
@@ -298,6 +308,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
       });
 
       $('ext-search').addEventListener('input', function() { renderExtensions(); });
+      $('history-main-search').addEventListener('input', function() { renderHistory(); });
 
       window.addEventListener('message', function(event) {
         var msg = event.data;
@@ -385,17 +396,71 @@ export function getDashboardScript(dateFormattersScript: string): string {
         if (expandedHistoryEntryId) c.classList.add('history-list-expanded');
         else c.classList.remove('history-list-expanded');
         var h = '';
+        var renderedCount = 0;
+        var mainSearch = $('history-main-search') ? $('history-main-search').value.toLowerCase() : '';
         for (var i = 0; i < scanHistory.length; i++) {
           var s = scanHistory[i];
           var historyId = s.id || s.time;
           var expanded = expandedHistoryEntryId === historyId;
           if (expandedHistoryEntryId && !expanded) continue;
+
+          if (mainSearch) {
+            var dateStr = formatDateTime(s.time).toLowerCase();
+            var matchesDate = dateStr.indexOf(mainSearch) !== -1;
+            var matchesExt = false;
+            if (s.summary && s.summary.reports) {
+              for (var k = 0; k < s.summary.reports.length; k++) {
+                var r = s.summary.reports[k];
+                if ((r.displayName || r.name).toLowerCase().indexOf(mainSearch) !== -1 || r.publisher.toLowerCase().indexOf(mainSearch) !== -1) {
+                  matchesExt = true;
+                  break;
+                }
+              }
+            }
+            if (!matchesDate && !matchesExt) continue;
+          }
+          renderedCount++;
+
           var historyLevel = s.critical > 0 ? 'critical' : s.high > 0 ? 'high' : s.moderate > 0 ? 'moderate' : s.low > 0 ? 'low' : '';
-          h += '<div class="history-item' + (historyLevel ? ' ' + historyLevel : '') + (expanded ? ' history-item-expanded' : '') + '"><div class="history-item-top"><div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '"><div class="h-time">' + formatDateTime(s.time) + '</div><div class="h-stats"><span>' + s.total + ' total</span><span class="h-high">' + s.high + ' high</span><span class="h-crit">' + s.critical + ' crit</span></div></div><div class="history-item-actions"><button class="item-toggle history-arrow" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '">' + (expanded ? '&#9662;' : '&#9656;') + '</button><button class="clear-history-entry" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '">Clear</button></div></div>';
+
+          var totalVal = s.total || 1;
+          var lowPct = Math.round((s.low || 0) / totalVal * 100);
+          var modPct = Math.round((s.moderate || 0) / totalVal * 100);
+          var highPct = Math.round((s.high || 0) / totalVal * 100);
+          var critPct = Math.round((s.critical || 0) / totalVal * 100);
+
+          var miniBar = '<div class="h-mini-dist">';
+          if (lowPct > 0) miniBar += '<div class="h-mini-seg low" style="width:' + lowPct + '%" title="Low: ' + s.low + '"></div>';
+          if (modPct > 0) miniBar += '<div class="h-mini-seg moderate" style="width:' + modPct + '%" title="Moderate: ' + s.moderate + '"></div>';
+          if (highPct > 0) miniBar += '<div class="h-mini-seg high" style="width:' + highPct + '%" title="High: ' + s.high + '"></div>';
+          if (critPct > 0) miniBar += '<div class="h-mini-seg critical" style="width:' + critPct + '%" title="Critical: ' + s.critical + '"></div>';
+          miniBar += '</div>';
+
+          var statsPills = '<span class="h-stat-pill">' + s.total + ' total</span>';
+          if (s.high > 0) statsPills += '<span class="h-stat-pill high">' + s.high + ' high</span>';
+          if (s.critical > 0) statsPills += '<span class="h-stat-pill crit">' + s.critical + ' crit</span>';
+
+          h += '<div class="history-item' + (historyLevel ? ' ' + historyLevel : '') + (expanded ? ' history-item-expanded' : '') + '">';
+          h += '<div class="history-item-top">';
+          h += '<div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '">';
+          h += '<div class="h-time">' + formatDateTime(s.time) + '</div>';
+          h += '<div class="h-stats">' + statsPills + '</div>';
+          h += miniBar;
+          h += '</div>';
+          h += '<div class="history-item-actions">';
+          h += '<button class="history-action-btn' + (expanded ? ' expanded' : '') + '" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon"><polyline points="6 9 12 15 18 9"/></svg></button>';
+          h += '<button class="history-action-btn delete-btn" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '" title="Clear Scan Entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="trash-icon"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
+          h += '</div>';
+          h += '</div>';
+
           if (expanded && s.summary) h += renderHistoryInlineDetail(s.summary, historyId);
           h += '</div>';
         }
-        c.innerHTML = h;
+        if (mainSearch && renderedCount === 0) {
+          c.innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5">No matching scans found</div>';
+        } else {
+          c.innerHTML = h;
+        }
       }
 
       function toggleHistoryEntry(id) {

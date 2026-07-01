@@ -4,23 +4,23 @@ on:
   push:
     branches: [main]
     paths:
-      - "src/**"
-      - "tests/**"
-      - "package.json"
-      - "bun.lock"
-      - "tsconfig.json"
-      - "vitest.config.ts"
-      - ".github/workflows/ci.yml"
+      - 'src/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'tsconfig.json'
+      - 'vitest.config.ts'
+      - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
     paths:
-      - "src/**"
-      - "tests/**"
-      - "package.json"
-      - "bun.lock"
-      - "tsconfig.json"
-      - "vitest.config.ts"
-      - ".github/workflows/ci.yml"
+      - 'src/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'bun.lock'
+      - 'tsconfig.json'
+      - 'vitest.config.ts'
+      - '.github/workflows/ci.yml'
   workflow_dispatch:
 
 concurrency:
