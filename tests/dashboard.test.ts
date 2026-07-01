@@ -18,6 +18,7 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('id="empty-state"');
     expect(html).toContain('id="rec-actions"');
     expect(html).toContain('id="ext-search"');
+    expect(html).toContain('id="ext-toolbar"');
     expect(html).toContain('id="ext-count"');
     expect(html).toContain('class="history-clear-btn"');
     expect(html).toContain('.history-toolbar.has-history .history-clear-btn');
@@ -28,6 +29,9 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('score-explainer');
     expect(html).toContain('ext-toolbar');
     expect(html).toContain('history-inline-results');
+    expect(html).toContain(
+      '#empty-state,#ext-empty,#history-empty{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}',
+    );
   });
 
   it('has scan and export buttons', () => {
@@ -69,6 +73,12 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('history-inline-results');
     expect(html).toContain('renderHistoryInlineDetail(s.summary, historyId)');
     expect(html).toContain('expandedHistoryEntryId === historyId');
+    expect(html).toContain('id="score-explainer-trigger"');
+    expect(html).toContain('updateHistoryDependentUi()');
+    expect(html).toContain("header.style.display = 'none'");
+    expect(html).toContain("empty.style.display = 'flex'");
+    expect(html).toContain("c.style.display = 'none'");
+    expect(html).toContain("if (detail) detail.style.display = 'none'");
     expect(html).toContain('openLatestHistoryEntry()');
     expect(html).toContain("type: 'forceClearHistory'");
     expect(html).toContain("type: 'forceClearHistoryEntry'");
@@ -99,6 +109,9 @@ describe('Dashboard HTML', () => {
     );
     expect(html).toContain('class="history-action-btn');
     expect(html).toContain('#ext-list .ext-item');
+    expect(html).toContain('getHistoryRiskCounts(s)');
+    expect(html).toContain('getHistoryRiskLevel(historyCounts)');
+    expect(html).toContain('data-history-level="');
   });
 
   it('has nav tabs with icons', () => {

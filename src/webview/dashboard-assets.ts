@@ -20,11 +20,15 @@ export function getDashboardStyles(): string {
     .header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border);position:relative}
     .header::after{content:'';position:absolute;bottom:-1px;left:0;width:60px;height:2px;background:linear-gradient(90deg,var(--accent),transparent);border-radius:1px}
     .header-left{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
-    .header-icon{width:28px;height:28px;flex:0 0 28px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#005a9e);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px var(--accent-glow)}
-    .header-icon svg{width:16px;height:16px;color:var(--accent-fg)}
+    .header-icon{width:32px;height:32px;flex:0 0 32px;border-radius:9px;background:linear-gradient(135deg,var(--accent),#005a9e);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px var(--accent-glow)}
+    .header-icon svg{width:18px;height:18px;color:var(--accent-fg)}
     .header-text{min-width:0}
     .header h1{font-size:14px;font-weight:700;letter-spacing:.3px;line-height:1.2}
     .header-slogan{font-size:10px;opacity:.45;letter-spacing:.5px;text-transform:uppercase;display:block}
+    .header-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+    .header-link-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 28px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--fg);opacity:.5;transition:all .2s;padding:0;text-decoration:none}
+    .header-link-btn svg{width:14px;height:14px}
+    .header-link-btn:hover{opacity:1;border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.08)}
     .settings-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 28px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--fg);opacity:.5;transition:all .2s;padding:0}
     .settings-btn svg{width:14px;height:14px}
     .settings-btn:hover{opacity:1;border-color:var(--accent);color:var(--accent);transform:rotate(30deg)}
@@ -102,7 +106,7 @@ export function getDashboardStyles(): string {
     .empty-state-icon svg{width:28px;height:28px;color:var(--accent);opacity:.7}
     .empty-state-title{font-size:14px;font-weight:700;margin-bottom:4px;opacity:.75}
     .empty-state-sub{font-size:11px;opacity:.4;line-height:1.5}
-    #history-empty{flex:1 1 auto;display:flex;align-items:center;justify-content:center}
+    #empty-state,#ext-empty,#history-empty{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
     .empty-state svg{width:36px;height:36px;margin-bottom:8px}
     .empty-state p{font-size:12px}
     .last-scan{font-size:10px;opacity:.4;text-align:center;margin-top:8px;padding:6px 10px;border-radius:var(--radius);background:var(--card-bg);border:1px solid var(--border)}
@@ -162,10 +166,10 @@ export function getDashboardStyles(): string {
     .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 2px 2px 0}
     .history-list.history-list-expanded{overflow:hidden}
     .history-item{background:linear-gradient(145deg, var(--card-bg), rgba(255,255,255,.01));border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:var(--radius);padding:12px;font-size:11px;transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
-    .history-item.low{border-left-color:var(--low)}
-    .history-item.moderate{border-left-color:var(--moderate)}
-    .history-item.high{border-left-color:var(--high)}
-    .history-item.critical{border-left-color:var(--critical)}
+    .history-item[data-history-level="low"]{border-left-color:var(--low)}
+    .history-item[data-history-level="moderate"]{border-left-color:var(--moderate)}
+    .history-item[data-history-level="high"]{border-left-color:var(--high)}
+    .history-item[data-history-level="critical"]{border-left-color:var(--critical)}
     .history-item:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15), 0 2px 8px var(--accent-glow)}
     .history-item.history-item-expanded{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
     .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;border-top:1px solid var(--border);padding-top:12px}
@@ -353,6 +357,14 @@ export function getDashboardScript(dateFormattersScript: string): string {
         else { el.classList.remove('visible'); $('btn-scan').disabled = false; $('progress-fill').style.width = '0%'; }
       }
 
+      function updateHistoryDependentUi() {
+        var hasHistory = !!(scanHistory && scanHistory.length > 0);
+        var extToolbar = $('ext-toolbar');
+        var scoreExplainer = $('score-explainer-trigger');
+        if (extToolbar) extToolbar.style.display = hasHistory ? '' : 'none';
+        if (scoreExplainer) scoreExplainer.style.display = hasHistory ? 'inline-flex' : 'none';
+      }
+
       function updateProgress(pct, text) {
         $('progress-fill').style.width = pct + '%';
         $('progress-text').textContent = text || 'Scanning...';
@@ -380,16 +392,23 @@ export function getDashboardScript(dateFormattersScript: string): string {
       }
 
       function renderHistory() {
-        var c = $('history-list'), empty = $('history-empty'), header = $('history-header');
+        var c = $('history-list'), empty = $('history-empty'), header = $('history-header'), detail = $('history-detail');
+        updateHistoryDependentUi();
         if (!scanHistory || scanHistory.length === 0) {
           c.innerHTML = '';
           c.classList.remove('history-list-expanded');
           expandedHistoryEntryId = null;
           resetHistoryDetail();
+          c.style.display = 'none';
+          if (detail) detail.style.display = 'none';
           if (header) header.classList.remove('has-history');
-          empty.style.display = 'block';
+          if (header) header.style.display = 'none';
+          empty.style.display = 'flex';
           return;
         }
+        c.style.display = '';
+        if (detail) detail.style.display = '';
+        if (header) header.style.display = '';
         empty.style.display = 'none';
         if (header) header.classList.add('has-history');
         resetHistoryDetail();
@@ -421,26 +440,27 @@ export function getDashboardScript(dateFormattersScript: string): string {
           }
           renderedCount++;
 
-          var historyLevel = s.critical > 0 ? 'critical' : s.high > 0 ? 'high' : s.moderate > 0 ? 'moderate' : s.low > 0 ? 'low' : '';
+          var historyCounts = getHistoryRiskCounts(s);
+          var historyLevel = getHistoryRiskLevel(historyCounts);
 
-          var totalVal = s.total || 1;
-          var lowPct = Math.round((s.low || 0) / totalVal * 100);
-          var modPct = Math.round((s.moderate || 0) / totalVal * 100);
-          var highPct = Math.round((s.high || 0) / totalVal * 100);
-          var critPct = Math.round((s.critical || 0) / totalVal * 100);
+          var totalVal = historyCounts.total || 1;
+          var lowPct = Math.round(historyCounts.low / totalVal * 100);
+          var modPct = Math.round(historyCounts.moderate / totalVal * 100);
+          var highPct = Math.round(historyCounts.high / totalVal * 100);
+          var critPct = Math.round(historyCounts.critical / totalVal * 100);
 
           var miniBar = '<div class="h-mini-dist">';
-          if (lowPct > 0) miniBar += '<div class="h-mini-seg low" style="width:' + lowPct + '%" title="Low: ' + s.low + '"></div>';
-          if (modPct > 0) miniBar += '<div class="h-mini-seg moderate" style="width:' + modPct + '%" title="Moderate: ' + s.moderate + '"></div>';
-          if (highPct > 0) miniBar += '<div class="h-mini-seg high" style="width:' + highPct + '%" title="High: ' + s.high + '"></div>';
-          if (critPct > 0) miniBar += '<div class="h-mini-seg critical" style="width:' + critPct + '%" title="Critical: ' + s.critical + '"></div>';
+          if (lowPct > 0) miniBar += '<div class="h-mini-seg low" style="width:' + lowPct + '%" title="Low: ' + historyCounts.low + '"></div>';
+          if (modPct > 0) miniBar += '<div class="h-mini-seg moderate" style="width:' + modPct + '%" title="Moderate: ' + historyCounts.moderate + '"></div>';
+          if (highPct > 0) miniBar += '<div class="h-mini-seg high" style="width:' + highPct + '%" title="High: ' + historyCounts.high + '"></div>';
+          if (critPct > 0) miniBar += '<div class="h-mini-seg critical" style="width:' + critPct + '%" title="Critical: ' + historyCounts.critical + '"></div>';
           miniBar += '</div>';
 
-          var statsPills = '<span class="h-stat-pill">' + s.total + ' total</span>';
-          if (s.high > 0) statsPills += '<span class="h-stat-pill high">' + s.high + ' high</span>';
-          if (s.critical > 0) statsPills += '<span class="h-stat-pill crit">' + s.critical + ' crit</span>';
+          var statsPills = '<span class="h-stat-pill">' + historyCounts.total + ' total</span>';
+          if (historyCounts.high > 0) statsPills += '<span class="h-stat-pill high">' + historyCounts.high + ' high</span>';
+          if (historyCounts.critical > 0) statsPills += '<span class="h-stat-pill crit">' + historyCounts.critical + ' crit</span>';
 
-          h += '<div class="history-item' + (historyLevel ? ' ' + historyLevel : '') + (expanded ? ' history-item-expanded' : '') + '">';
+          h += '<div class="history-item' + (expanded ? ' history-item-expanded' : '') + '"' + (historyLevel ? ' data-history-level="' + historyLevel + '"' : '') + '>';
           h += '<div class="history-item-top">';
           h += '<div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '">';
           h += '<div class="h-time">' + formatDateTime(s.time) + '</div>';
@@ -525,8 +545,9 @@ export function getDashboardScript(dateFormattersScript: string): string {
 
       function renderAll() {
         var distSection = $('dist-section');
+        updateHistoryDependentUi();
         if (!scanData || !scanData.reports) {
-          $('empty-state').style.display = 'block';
+          $('empty-state').style.display = 'flex';
           $('summary-cards').innerHTML = '';
           $('dist-bar').innerHTML = '';
           if (distSection) distSection.classList.add('hidden');
@@ -612,6 +633,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
       }
 
       function renderExtensions() {
+        updateHistoryDependentUi();
         var search = $('ext-search').value.toLowerCase();
         var container = $('ext-list'), empty = $('ext-empty');
         var reports = (scanData && scanData.reports) || [];
@@ -624,7 +646,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
           reports = s;
         }
         $('ext-count').textContent = reports.length;
-        if (reports.length === 0) { container.innerHTML = ''; empty.style.display = 'block'; return; }
+        if (reports.length === 0) { container.innerHTML = ''; empty.style.display = 'flex'; return; }
         empty.style.display = 'none';
         var h = '';
         for (var i = 0; i < reports.length; i++) {
@@ -745,6 +767,40 @@ export function getDashboardScript(dateFormattersScript: string): string {
           if (entryId === historyId) return scanHistory[i];
         }
         return null;
+      }
+
+      function getHistoryRiskCounts(entry) {
+        var counts = {
+          low: Number(entry && entry.low) || 0,
+          moderate: Number(entry && entry.moderate) || 0,
+          high: Number(entry && entry.high) || 0,
+          critical: Number(entry && entry.critical) || 0,
+          total: Number(entry && entry.total) || 0
+        };
+        var reports = entry && entry.summary && entry.summary.reports;
+        if (!reports || !reports.length) return counts;
+
+        counts.low = 0;
+        counts.moderate = 0;
+        counts.high = 0;
+        counts.critical = 0;
+        for (var i = 0; i < reports.length; i++) {
+          var level = reports[i] && reports[i].riskLevel;
+          if (level === 'critical') counts.critical++;
+          else if (level === 'high') counts.high++;
+          else if (level === 'moderate') counts.moderate++;
+          else if (level === 'low') counts.low++;
+        }
+        counts.total = reports.length;
+        return counts;
+      }
+
+      function getHistoryRiskLevel(counts) {
+        if (counts.critical > 0) return 'critical';
+        if (counts.high > 0) return 'high';
+        if (counts.moderate > 0) return 'moderate';
+        if (counts.low > 0) return 'low';
+        return '';
       }
 
       function renderHistoryInlineDetail(summary, historyId) {
