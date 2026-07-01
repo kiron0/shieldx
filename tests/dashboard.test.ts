@@ -46,7 +46,7 @@ describe('Dashboard HTML', () => {
       'class="about-author">by <a href="https://kiron.dev" target="_blank" rel="noopener noreferrer">',
     );
     expect(html).toContain(
-      '.about-author a:hover{color:var(--accent);opacity:1}',
+      '.about-author a:hover{color:#0ea5e9;opacity:1;text-decoration:underline}',
     );
   });
 

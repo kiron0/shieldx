@@ -122,9 +122,17 @@ export function getDashboardStyles(): string {
     .filter-options{display:flex;flex-direction:column;gap:4px}
     .filter-options label{display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;user-select:none;color:var(--fg);opacity:.85}
     .filter-options label:hover{opacity:1}
-    .filter-options input[type="checkbox"]{-webkit-appearance:none;appearance:none;width:14px;height:14px;border:1px solid var(--border);border-radius:4px;outline:none;background:var(--input-bg);cursor:pointer;display:inline-grid;place-content:center;transition:all .2s;position:relative;margin:0}
-    .filter-options input[type="checkbox"]:checked{background:var(--accent);border-color:var(--accent)}
-    .filter-options input[type="checkbox"]:checked::before{content:"";width:8px;height:5px;border-left:2px solid var(--accent-fg);border-bottom:2px solid var(--accent-fg);transform:rotate(-45deg) translate(1px,-1px)}
+    .filter-options-capabilities{gap:4px}
+    .filter-check{position:relative;display:grid !important;grid-template-columns:14px minmax(0,1fr);align-items:center;column-gap:6px;padding:0;border:none;border-radius:0;background:transparent;transition:opacity .2s;font-size:11px;color:var(--fg);opacity:.85;cursor:pointer;user-select:none}
+    .filter-check:hover{opacity:1}
+    .filter-check input[type="checkbox"]{position:absolute;opacity:0;pointer-events:none}
+    .filter-check-box{width:14px;height:14px;border:1px solid color-mix(in srgb, var(--accent) 28%, var(--border));border-radius:4px;background:linear-gradient(180deg,var(--input-bg),color-mix(in srgb, var(--input-bg) 80%, var(--bg)));display:inline-grid;place-items:center;transition:all .2s;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+    .filter-check-box::after{content:"";width:8px;height:5px;border-left:2px solid transparent;border-bottom:2px solid transparent;transform:rotate(-45deg) translate(1px,-1px);transition:border-color .2s,opacity .2s;opacity:0}
+    .filter-check-text{min-width:0;font-size:inherit;font-weight:inherit;letter-spacing:0}
+    .filter-check input[type="checkbox"]:focus-visible + .filter-check-box{box-shadow:0 0 0 2px var(--accent-glow)}
+    .filter-check input[type="checkbox"]:checked + .filter-check-box{background:linear-gradient(180deg,color-mix(in srgb, var(--accent) 88%, white 12%),var(--accent));border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,122,204,.14)}
+    .filter-check input[type="checkbox"]:checked + .filter-check-box::after{border-left-color:var(--accent-fg);border-bottom-color:var(--accent-fg);opacity:1}
+    .filter-check:has(input[type="checkbox"]:checked) .filter-check-text{color:var(--fg);opacity:1}
     .filter-options input[type="radio"]{-webkit-appearance:none;appearance:none;width:14px;height:14px;border:1px solid var(--border);border-radius:50%;outline:none;background:var(--input-bg);cursor:pointer;display:inline-grid;place-content:center;transition:all .2s;position:relative;margin:0}
     .filter-options input[type="radio"]:checked{border-color:var(--accent)}
     .filter-options input[type="radio"]:checked::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
@@ -232,9 +240,8 @@ export function getDashboardStyles(): string {
     .about-icon svg{width:15px;height:15px;color:var(--accent-fg)}
     .about-title{font-size:11px;font-weight:700;letter-spacing:.2px}
     .about-author{font-size:10px;opacity:.5}
-    .about-author a{color:var(--vscode-textLink-foreground,var(--accent));text-decoration:none;transition:all .2s;opacity:.85}
-    .about-author a:hover{color:var(--accent);opacity:1}
-    .about-author a:hover{color:var(--vscode-textLink-activeForeground,var(--accent));text-decoration:underline}
+    .about-author a{color:var(--fg);text-decoration:none;transition:color .2s,opacity .2s;opacity:.85}
+    .about-author a:hover{color:#0ea5e9;opacity:1;text-decoration:underline}
     .about-desc{font-size:10px;opacity:.6;line-height:1.5}
     #ext-list .ext-item:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -253,7 +260,7 @@ export function getDashboardStyles(): string {
     .settings-section{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
     .settings-section-title{display:flex;align-items:center;gap:6px;padding:10px 12px;font-size:11px;font-weight:700;letter-spacing:.3px;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)}
     .settings-section-title svg{width:13px;height:13px;opacity:.5;color:var(--accent)}
-    .setting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+    .setting-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid var(--border);transition:background .15s}
     .setting-row:last-child{border-bottom:none}
     .setting-row:hover{background:rgba(255,255,255,.02)}
     .setting-info{flex:1;min-width:0}
@@ -267,11 +274,12 @@ export function getDashboardStyles(): string {
     .toggle-switch input:checked + .toggle-slider::before{transform:translateX(14px);background:var(--accent-fg)}
     .setting-select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;outline:none;cursor:pointer;transition:border-color .2s;min-width:90px}
     .setting-select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
-    .number-stepper{display:flex;align-items:center;background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius);overflow:hidden;height:24px;width:78px}
+    .number-stepper{display:flex;align-items:center;background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius);overflow:hidden;height:24px;width:88px}
     .stepper-btn{width:24px;height:24px;border:none;background:transparent;color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;transition:all .2s;padding:0}
     .stepper-btn:hover{opacity:1;background:rgba(255,255,255,.05)}
     .stepper-btn:active{background:rgba(255,255,255,.1)}
     .stepper-btn svg{width:10px;height:10px;stroke-width:3px}
+    .stepper-value{flex:1;align-self:stretch;display:flex;align-items:center;justify-content:center;padding:0 6px;background:transparent;color:var(--input-fg);font-size:11px;font-weight:700;text-align:center;letter-spacing:.2px;font-variant-numeric:tabular-nums}
   `;
 }
 
@@ -364,18 +372,18 @@ export function getDashboardScript(dateFormattersScript: string): string {
           showScanConfirm();
         } else if (act === 'dec-history') {
           var input = $('setting-maxHistory');
-          var val = parseInt(input.value, 10) || 10;
+          var val = parseInt(input.textContent, 10) || 10;
           if (val > 5) {
             var newVal = val - 1;
-            input.value = newVal;
+            input.textContent = String(newVal);
             vscode.postMessage({ type: 'updateSetting', key: 'maxHistoryItems', value: newVal });
           }
         } else if (act === 'inc-history') {
           var input = $('setting-maxHistory');
-          var val = parseInt(input.value, 10) || 10;
+          var val = parseInt(input.textContent, 10) || 10;
           if (val < 100) {
             var newVal = val + 1;
-            input.value = newVal;
+            input.textContent = String(newVal);
             vscode.postMessage({ type: 'updateSetting', key: 'maxHistoryItems', value: newVal });
           }
         } else if (act === 'cancel-scan') {
@@ -1161,7 +1169,8 @@ ${dateFormattersScript}
           var el = q('[data-setting="' + keys[i] + '"]');
           if (!el) continue;
           if (el.type === 'checkbox') el.checked = !!settings[keys[i]];
-          else el.value = settings[keys[i]];
+          else if ('value' in el) el.value = settings[keys[i]];
+          else el.textContent = String(settings[keys[i]]);
         }
       }
 

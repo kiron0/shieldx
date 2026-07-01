@@ -254,10 +254,22 @@ export function generateDashboardHtml(cspSource: string): string {
                 </div>
                 <div class="filter-section">
                   <div class="filter-title">Filter by Capability</div>
-                  <div class="filter-options">
-                    <label><input type="checkbox" id="ext-filter-cap-network" value="network" /> Network Access</label>
-                    <label><input type="checkbox" id="ext-filter-cap-child" value="childProcess" /> Child Process</label>
-                    <label><input type="checkbox" id="ext-filter-cap-fs" value="fs" /> Workspace Files</label>
+                  <div class="filter-options filter-options-capabilities">
+                    <label class="filter-check">
+                      <input type="checkbox" id="ext-filter-cap-network" value="network" />
+                      <span class="filter-check-box" aria-hidden="true"></span>
+                      <span class="filter-check-text">Network Access</span>
+                    </label>
+                    <label class="filter-check">
+                      <input type="checkbox" id="ext-filter-cap-child" value="childProcess" />
+                      <span class="filter-check-box" aria-hidden="true"></span>
+                      <span class="filter-check-text">Child Process</span>
+                    </label>
+                    <label class="filter-check">
+                      <input type="checkbox" id="ext-filter-cap-fs" value="fs" />
+                      <span class="filter-check-box" aria-hidden="true"></span>
+                      <span class="filter-check-text">Workspace Files</span>
+                    </label>
                   </div>
                 </div>
               </div>
@@ -493,7 +505,7 @@ export function generateDashboardHtml(cspSource: string): string {
                   <button type="button" class="stepper-btn" id="btn-history-dec" data-action="dec-history" aria-label="Decrease history limit">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   </button>
-                  <input type="number" id="setting-maxHistory" data-setting="maxHistoryItems" min="5" max="100" readonly />
+                  <div id="setting-maxHistory" class="stepper-value" data-setting="maxHistoryItems" role="status" aria-live="polite">10</div>
                   <button type="button" class="stepper-btn" id="btn-history-inc" data-action="inc-history" aria-label="Increase history limit">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                   </button>
