@@ -91,8 +91,7 @@ export function getDashboardStyles(): string {
     .section-card-title{font-size:11px;font-weight:700;opacity:.85}
     .rec-actions{margin-bottom:10px;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card-bg)}.rec-actions.hidden{display:none}
     .rec-list{list-style:none;display:flex;flex-direction:column;gap:4px}
-    .rec-list li{padding:6px 8px;font-size:11px;display:flex;align-items:center;gap:8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid var(--border);transition:border-color .15s}
-    .rec-list li:hover{border-color:var(--accent)}
+    .rec-list li{padding:6px 8px;font-size:11px;display:flex;align-items:center;gap:8px;border-radius:6px;background:rgba(255,255,255,.02);border:1px solid var(--border)}
     .rec-list li .rec-dot{width:6px;height:6px;border-radius:50%}
     .rec-list li .rec-text{flex:1;min-width:0}
     .score-explainer-trigger{display:inline-flex;font-size:0;opacity:.5}
