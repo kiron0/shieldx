@@ -33,6 +33,14 @@ describe('Dashboard HTML', () => {
     expect(html).toContain(
       '#empty-state,#ext-empty,#history-empty{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}',
     );
+    expect(html).toContain('#panel-history{overflow:hidden}');
+    expect(html).toContain('#history-content{flex:1 1 auto;min-height:0}');
+    expect(html).toContain(
+      '.history-list.history-list-expanded{overflow:hidden}',
+    );
+    expect(html).toContain(
+      '.history-inline-results{overflow-y:auto;flex:1 1 auto;min-height:0;width:100%;padding-right:2px}',
+    );
   });
 
   it('has scan and export buttons', () => {

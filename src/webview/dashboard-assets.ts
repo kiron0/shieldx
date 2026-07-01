@@ -164,6 +164,7 @@ export function getDashboardStyles(): string {
     .history-clear-btn:hover{opacity:1;border-color:var(--high);color:var(--high);background:rgba(244,67,54,.08)}
     .history-clear-btn svg{width:14px;height:14px}
     #panel-history{overflow:hidden}
+    #history-content{flex:1 1 auto;min-height:0}
     .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 2px 2px 0}
     .history-list.history-list-expanded{overflow:hidden}
     .history-item{background:linear-gradient(145deg, var(--card-bg), rgba(255,255,255,.01));border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:var(--radius);padding:12px;font-size:11px;transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
@@ -172,8 +173,8 @@ export function getDashboardStyles(): string {
     .history-item[data-history-level="high"]{border-left-color:var(--high)}
     .history-item[data-history-level="critical"]{border-left-color:var(--critical)}
     .history-item:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15), 0 2px 8px var(--accent-glow)}
-    .history-item.history-item-expanded{display:flex;flex-direction:column;flex:1 1 auto;min-height:0}
-    .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;border-top:1px solid var(--border);padding-top:12px}
+    .history-item.history-item-expanded{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
+    .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;width:100%;overflow:hidden;border-top:1px solid var(--border);padding-top:12px}
     .history-detail{display:none}.history-detail.visible{display:block}
     .history-tools{display:flex;gap:6px;align-items:center;margin:8px 0;margin-bottom:12px}
     .history-tools input,.history-tools select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
@@ -181,7 +182,7 @@ export function getDashboardStyles(): string {
     .history-tools input::placeholder{color:var(--input-ph)}
     .history-tools input{flex:1}
     .history-inline-detail .history-tools{position:sticky;top:0;z-index:2;margin-top:0;padding-bottom:8px;margin-bottom:12px;background:var(--card-bg)}
-    .history-inline-results{overflow-y:auto;min-height:0;padding-right:2px}
+    .history-inline-results{overflow-y:auto;flex:1 1 auto;min-height:0;width:100%;padding-right:2px}
     .history-item-top{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%}
     .history-item-main{flex:1;min-width:0;cursor:pointer}
     .history-item-header-toggle{cursor:pointer}
@@ -538,7 +539,6 @@ export function getDashboardScript(dateFormattersScript: string): string {
         if (!id) return;
         expandedHistoryEntryId = expandedHistoryEntryId === id ? null : id;
         renderHistory();
-        if (expandedHistoryEntryId) scrollHistoryItemIntoView(expandedHistoryEntryId);
       }
 
       function clearHistoryEntry(id) {
