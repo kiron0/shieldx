@@ -241,7 +241,7 @@ export function getDashboardStyles(): string {
     .about-title{font-size:11px;font-weight:700;letter-spacing:.2px}
     .about-author{font-size:10px;opacity:.5}
     .about-author a{color:var(--fg);text-decoration:none;transition:color .2s,opacity .2s;opacity:.85}
-    .about-author a:hover{color:#0ea5e9;opacity:1;text-decoration:underline}
+    .about-author a:hover{text-decoration:underline}
     .about-desc{font-size:10px;opacity:.6;line-height:1.5}
     #ext-list .ext-item:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
@@ -447,14 +447,14 @@ export function getDashboardScript(dateFormattersScript: string): string {
           e.stopPropagation();
           extFilterPanel.classList.toggle('open');
         });
-        
+
         document.addEventListener('click', function(e) {
           if (!extFilterPanel.contains(e.target) && e.target !== extFilterBtn && !extFilterBtn.contains(e.target)) {
             extFilterPanel.classList.remove('open');
           }
         });
       }
-      
+
       var extFilterInputs = $$('#ext-filter-panel input');
       for (var i = 0; i < extFilterInputs.length; i++) {
         extFilterInputs[i].addEventListener('change', function() {
@@ -812,37 +812,37 @@ export function getDashboardScript(dateFormattersScript: string): string {
         var search = $('ext-search').value.toLowerCase();
         var container = $('ext-list'), empty = $('ext-empty');
         var reports = (scanData && scanData.reports) || [];
-        
+
         // 1. Filter reports
         var filtered = [];
-        
+
         var netEl = $('ext-filter-cap-network'),
             chEl = $('ext-filter-cap-child'),
             fsEl = $('ext-filter-cap-fs');
-            
+
         var filterNetwork = netEl ? netEl.checked : false;
         var filterChild = chEl ? chEl.checked : false;
         var filterFs = fsEl ? fsEl.checked : false;
-        
+
         for (var i = 0; i < reports.length; i++) {
           var r = reports[i];
           if (search && !matchesReportSearch(r, search)) {
             continue;
           }
-          
+
           var caps = r.detectedCapabilities || {};
           if (filterNetwork && !caps.usesNetworkRequests) continue;
           if (filterChild && !caps.usesChildProcess) continue;
           if (filterFs && !caps.accessesWorkspaceFiles) continue;
-          
+
           filtered.push(r);
         }
         reports = filtered;
-        
+
         // 2. Sort reports (by default alphabetically)
         var orderEl = q('input[name="ext-order"]:checked');
         var sortOrder = orderEl ? orderEl.value : 'asc';
-        
+
         reports.sort(function(a, b) {
           var nameA = (a.displayName || a.name || '').toLowerCase();
           var nameB = (b.displayName || b.name || '').toLowerCase();
@@ -861,7 +861,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
             filterBtn.classList.add('active');
           }
         }
-        
+
         $('ext-count').textContent = reports.length;
         if (reports.length === 0) { container.innerHTML = ''; empty.style.display = 'flex'; return; }
         empty.style.display = 'none';
