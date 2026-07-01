@@ -806,7 +806,6 @@ export function getDashboardScript(dateFormattersScript: string): string {
               '<div><strong style="color:var(--high)">High</strong> <span style="opacity:.9">Strong warning signs or multiple combined risks. Audit soon. Limit trust until you understand why it scored high.</span></div>' +
               '<div><strong style="color:var(--critical)">Critical</strong> <span style="opacity:.9">Severe indicators, stacked risky behavior, or serious vulnerability evidence. Treat as highest priority. Consider disabling until reviewed.</span></div>' +
             '</div>' +
-            '<div style="margin-top:12px">Best workflow: open highest score first, read Risk Factors, check recommendation, then inspect permissions, scripts, dependencies, and publisher details.</div>' +
           '</div>' +
           '<div class="confirm-actions">' +
             '<button class="confirm-cancel" style="width:100%">Close</button>' +
