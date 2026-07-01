@@ -241,7 +241,7 @@ export function getDashboardStyles(): string {
     .about-title{font-size:11px;font-weight:700;letter-spacing:.2px}
     .about-author{font-size:10px;opacity:.5}
     .about-author a{color:var(--fg);text-decoration:none;transition:color .2s,opacity .2s;opacity:.85}
-    .about-author a:hover{text-decoration:underline}
+    .about-author a:hover{opacity: 1;text-decoration:underline;text-underline-offset: 3px}
     .about-desc{font-size:10px;opacity:.6;line-height:1.5}
     #ext-list .ext-item:hover{border-color:var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.15)}
     ::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}

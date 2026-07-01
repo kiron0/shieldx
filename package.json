@@ -15,7 +15,7 @@
     "url": "https://github.com/kiron0/shieldx/issues"
   },
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.105.0"
   },
   "categories": [
     "Other"
@@ -155,7 +155,7 @@
     "build": "npm run compile && vsce package --no-yarn",
     "package": "vsce package --no-yarn",
     "lint": "eslint src --ext ts",
-    "format": "prettier --write .",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "test": "vitest run",
     "test:watch": "vitest watch",
     "check-all": "bun run lint && bun run test && bun run build && bun run format"
@@ -163,7 +163,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.0.1",
-    "@types/vscode": "1.85.0",
+    "@types/vscode": "1.105.0",
     "@vscode/vsce": "^3.9.2",
     "eslint": "^10.6.0",
     "globals": "^17.7.0",

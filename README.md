@@ -9,9 +9,9 @@
 </p>
 
 <p align="center">
-  <a href="https://code.visualstudio.com"><img src="https://img.shields.io/badge/VS%20Code-%3E%3D%201.85.0-blue.svg" alt="VS Code Compatibility"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/kiron0/shieldx?color=green" alt="License"></a>
-</p>
+   <img src="https://img.shields.io/badge/VS%20Code-1.105.0%2B-0ea5e9?style=for-the-badge&logo=visualstudiocode&logoColor=white" />
+    <img src="https://img.shields.io/badge/License-MIT-16a34a?style=for-the-badge" />
+  </p>
 
 ---
 
