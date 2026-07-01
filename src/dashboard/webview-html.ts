@@ -233,8 +233,34 @@ export function generateDashboardHtml(cspSource: string): string {
         <!-- Extensions Content -->
         <div id="extensions-content" style="display: none; flex-direction: column; gap: 10px; width: 100%;">
           <div id="ext-toolbar" class="ext-toolbar">
-            <div class="search-bar"><input type="text" id="ext-search" placeholder="Search extensions..." /><span id="ext-count" class="ext-count">0</span></div>
-            <div class="filter-bar"></div>
+            <div class="search-bar">
+              <input type="text" id="ext-search" placeholder="Search extensions..." />
+              <span id="ext-count" class="ext-count">0</span>
+            </div>
+            <div class="filter-dropdown-container">
+              <button class="icon-btn" id="ext-filter-btn" title="Sort & Filter">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px">
+                  <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+              </button>
+              <div class="filter-dropdown-panel" id="ext-filter-panel">
+                <div class="filter-section">
+                  <div class="filter-title">Order</div>
+                  <div class="filter-options">
+                    <label><input type="radio" name="ext-order" value="asc" checked /> Ascending</label>
+                    <label><input type="radio" name="ext-order" value="desc" /> Descending</label>
+                  </div>
+                </div>
+                <div class="filter-section">
+                  <div class="filter-title">Filter by Capability</div>
+                  <div class="filter-options">
+                    <label><input type="checkbox" id="ext-filter-cap-network" value="network" /> Network Access</label>
+                    <label><input type="checkbox" id="ext-filter-cap-child" value="childProcess" /> Child Process</label>
+                    <label><input type="checkbox" id="ext-filter-cap-fs" value="fs" /> Workspace Files</label>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div id="ext-list" class="ext-list"></div>
           <div id="ext-empty" class="empty-state">

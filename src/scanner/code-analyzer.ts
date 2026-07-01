@@ -1,20 +1,22 @@
 import * as path from 'path';
 import { DetectedCapabilities, RiskFactor, TrustSignal } from '../types';
 import { SUSPICIOUS_PATTERNS } from '../rules/suspicious-patterns';
-import { findFiles, readFileContent } from '../utils/file-utils';
+import { findFilesAsync, readFileContentAsync } from '../utils/file-utils';
 
-export function analyzeCode(
+const FILE_SCAN_CONCURRENCY = 8;
+
+export async function analyzeCode(
   extDir: string,
   detectedCapabilities: DetectedCapabilities,
-): {
+): Promise<{
   riskFactors: RiskFactor[];
   trustSignals: TrustSignal[];
   detectedCapabilities: DetectedCapabilities;
-} {
+}> {
   const riskFactors: RiskFactor[] = [];
   const trustSignals: TrustSignal[] = [];
 
-  const jsFiles = findFiles(
+  const jsFiles = await findFilesAsync(
     extDir,
     ['.js', '.ts', '.mjs', '.cjs'],
     1024 * 1024,
@@ -33,23 +35,41 @@ export function analyzeCode(
   const foundPatterns = new Set<string>();
   const evidence: Map<string, string[]> = new Map();
 
-  for (const file of jsFiles) {
-    const content = readFileContent(file);
-    if (!content) continue;
+  async function scanFile(file: string): Promise<void> {
+    const content = await readFileContentAsync(file);
+    if (!content) return;
 
     for (const pattern of SUSPICIOUS_PATTERNS) {
-      if (foundPatterns.has(pattern.id)) continue;
-
       for (const regex of pattern.patterns) {
+        regex.lastIndex = 0;
         if (regex.test(content)) {
           foundPatterns.add(pattern.id);
-          if (!evidence.has(pattern.id)) evidence.set(pattern.id, []);
-          evidence.get(pattern.id)!.push(path.relative(extDir, file));
+          const matches = evidence.get(pattern.id) ?? [];
+          const relativePath = path.relative(extDir, file);
+          if (!matches.includes(relativePath)) {
+            matches.push(relativePath);
+            evidence.set(pattern.id, matches);
+          }
           break;
         }
       }
     }
   }
+
+  const workerCount = Math.min(FILE_SCAN_CONCURRENCY, jsFiles.length);
+  const workers = Array.from(
+    { length: workerCount },
+    async (_, workerIndex) => {
+      for (
+        let fileIndex = workerIndex;
+        fileIndex < jsFiles.length;
+        fileIndex += workerCount
+      ) {
+        await scanFile(jsFiles[fileIndex]);
+      }
+    },
+  );
+  await Promise.all(workers);
 
   for (const pattern of SUSPICIOUS_PATTERNS) {
     if (foundPatterns.has(pattern.id)) {

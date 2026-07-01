@@ -114,6 +114,22 @@ export function getDashboardStyles(): string {
     .search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
     .search-bar input::placeholder{color:var(--input-ph)}
     .filter-bar{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:8px}
+    .filter-dropdown-container{position:relative;display:inline-block}
+    .filter-dropdown-panel{position:absolute;top:calc(100% + 6px);right:0;width:200px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 4px 12px rgba(0,0,0,0.25),0 2px 4px var(--accent-glow);padding:12px;z-index:10;display:none;flex-direction:column;gap:10px}
+    .filter-dropdown-panel.open{display:flex}
+    .filter-section{display:flex;flex-direction:column;gap:4px}
+    .filter-title{font-size:9px;font-weight:700;text-transform:uppercase;opacity:.55;letter-spacing:.5px;border-bottom:1px solid rgba(255,255,255,0.05);padding-bottom:2px;margin-bottom:2px}
+    .filter-options{display:flex;flex-direction:column;gap:4px}
+    .filter-options label{display:flex;align-items:center;gap:6px;font-size:11px;cursor:pointer;user-select:none;color:var(--fg);opacity:.85}
+    .filter-options label:hover{opacity:1}
+    .filter-options input[type="checkbox"]{-webkit-appearance:none;appearance:none;width:14px;height:14px;border:1px solid var(--border);border-radius:4px;outline:none;background:var(--input-bg);cursor:pointer;display:inline-grid;place-content:center;transition:all .2s;position:relative;margin:0}
+    .filter-options input[type="checkbox"]:checked{background:var(--accent);border-color:var(--accent)}
+    .filter-options input[type="checkbox"]:checked::before{content:"";width:8px;height:5px;border-left:2px solid var(--accent-fg);border-bottom:2px solid var(--accent-fg);transform:rotate(-45deg) translate(1px,-1px)}
+    .filter-options input[type="radio"]{-webkit-appearance:none;appearance:none;width:14px;height:14px;border:1px solid var(--border);border-radius:50%;outline:none;background:var(--input-bg);cursor:pointer;display:inline-grid;place-content:center;transition:all .2s;position:relative;margin:0}
+    .filter-options input[type="radio"]:checked{border-color:var(--accent)}
+    .filter-options input[type="radio"]:checked::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
+    #ext-filter-btn:hover{transform:none !important}
+    .icon-btn.active{opacity:1;border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,0.12)}
     .ext-count{position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:10px;opacity:.5;pointer-events:none}
     .ext-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px;display:flex;align-items:center;gap:8px}
     .ext-toolbar .search-bar{flex:1;margin-bottom:0}
@@ -245,6 +261,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
       var vscode = acquireVsCodeApi();
       var scanData = null;
       var scanHistory = [];
+      var scanHistoryById = {};
       var expandedHistoryEntryId = null;
       var shouldAutoOpenLatestHistory = false;
       var inlineHistorySearch = {};
@@ -253,6 +270,8 @@ export function getDashboardScript(dateFormattersScript: string): string {
       var loadedScan = false;
       var loadedHistory = false;
       var loadedSettings = false;
+      var historyMainSearchTimer = null;
+      var inlineHistorySearchTimers = {};
 
       function updateScanLoadedState(loaded) {
         loadedScan = loaded;
@@ -302,6 +321,18 @@ export function getDashboardScript(dateFormattersScript: string): string {
       function $(id) { return document.getElementById(id); }
       function $$(sel) { return document.querySelectorAll(sel); }
       function q(sel) { return document.querySelector(sel); }
+      function matchesReportSearch(report, search) {
+        if (!search) return true;
+        return (report.displayName || report.name).toLowerCase().indexOf(search) !== -1 || report.publisher.toLowerCase().indexOf(search) !== -1;
+      }
+      function rebuildHistoryIndex() {
+        scanHistoryById = {};
+        for (var i = 0; i < scanHistory.length; i++) {
+          var entry = scanHistory[i];
+          var entryId = entry.id || entry.time;
+          if (entryId) scanHistoryById[entryId] = entry;
+        }
+      }
 
       document.addEventListener('click', function(e) {
         var el = e.target.closest('[data-action]');
@@ -361,7 +392,33 @@ export function getDashboardScript(dateFormattersScript: string): string {
       });
 
       $('ext-search').addEventListener('input', function() { renderExtensions(); });
-      $('history-main-search').addEventListener('input', function() { renderHistory(); });
+
+      // Filter dropdown toggle and interaction
+      var extFilterBtn = $('ext-filter-btn');
+      var extFilterPanel = $('ext-filter-panel');
+      if (extFilterBtn && extFilterPanel) {
+        extFilterBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          extFilterPanel.classList.toggle('open');
+        });
+        
+        document.addEventListener('click', function(e) {
+          if (!extFilterPanel.contains(e.target) && e.target !== extFilterBtn && !extFilterBtn.contains(e.target)) {
+            extFilterPanel.classList.remove('open');
+          }
+        });
+      }
+      
+      var extFilterInputs = $$('#ext-filter-panel input');
+      for (var i = 0; i < extFilterInputs.length; i++) {
+        extFilterInputs[i].addEventListener('change', function() {
+          renderExtensions();
+        });
+      }
+      $('history-main-search').addEventListener('input', function() {
+        clearTimeout(historyMainSearchTimer);
+        historyMainSearchTimer = setTimeout(function() { renderHistory(); }, 120);
+      });
 
       window.addEventListener('message', function(event) {
         var msg = event.data;
@@ -370,7 +427,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
         else if (msg.type === 'scanStart') { shouldAutoOpenLatestHistory = true; showProgress(true); }
         else if (msg.type === 'scanCancelled') { shouldAutoOpenLatestHistory = false; }
         else if (msg.type === 'scanEnd') { showProgress(false); if (shouldAutoOpenLatestHistory) openLatestHistoryEntry(); shouldAutoOpenLatestHistory = false; }
-        else if (msg.type === 'history') { scanHistory = msg.history || []; expandedHistoryEntryId = null; updateHistoryLoadedState(true); renderHistory(); }
+        else if (msg.type === 'history') { scanHistory = msg.history || []; rebuildHistoryIndex(); expandedHistoryEntryId = null; updateHistoryLoadedState(true); renderHistory(); }
         else if (msg.type === 'scanCleared') { scanData = null; expandedHistoryEntryId = null; updateScanLoadedState(true); renderAll(); renderHistory(); }
         else if (msg.type === 'historyEntryCleared') {
           if (expandedHistoryEntryId === msg.id) expandedHistoryEntryId = null;
@@ -465,23 +522,24 @@ export function getDashboardScript(dateFormattersScript: string): string {
         resetHistoryDetail();
         if (expandedHistoryEntryId) c.classList.add('history-list-expanded');
         else c.classList.remove('history-list-expanded');
-        var h = '';
+        var html = [];
         var renderedCount = 0;
         var mainSearch = $('history-main-search') ? $('history-main-search').value.toLowerCase() : '';
         for (var i = 0; i < scanHistory.length; i++) {
           var s = scanHistory[i];
           var historyId = s.id || s.time;
           var expanded = expandedHistoryEntryId === historyId;
+          var formattedTime = formatDateTime(s.time);
           if (expandedHistoryEntryId && !expanded) continue;
 
           if (mainSearch) {
-            var dateStr = formatDateTime(s.time).toLowerCase();
+            var dateStr = formattedTime.toLowerCase();
             var matchesDate = dateStr.indexOf(mainSearch) !== -1;
             var matchesExt = false;
             if (s.summary && s.summary.reports) {
               for (var k = 0; k < s.summary.reports.length; k++) {
                 var r = s.summary.reports[k];
-                if ((r.displayName || r.name).toLowerCase().indexOf(mainSearch) !== -1 || r.publisher.toLowerCase().indexOf(mainSearch) !== -1) {
+                if (matchesReportSearch(r, mainSearch)) {
                   matchesExt = true;
                   break;
                 }
@@ -511,26 +569,26 @@ export function getDashboardScript(dateFormattersScript: string): string {
           if (historyCounts.high > 0) statsPills += '<span class="h-stat-pill high">' + historyCounts.high + ' high</span>';
           if (historyCounts.critical > 0) statsPills += '<span class="h-stat-pill crit">' + historyCounts.critical + ' crit</span>';
 
-          h += '<div class="history-item' + (expanded ? ' history-item-expanded' : '') + '"' + (historyLevel ? ' data-history-level="' + historyLevel + '"' : '') + '>';
-          h += '<div class="history-item-top">';
-          h += '<div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '">';
-          h += '<div class="h-time">' + formatDateTime(s.time) + '</div>';
-          h += '<div class="h-stats">' + statsPills + '</div>';
-          h += miniBar;
-          h += '</div>';
-          h += '<div class="history-item-actions">';
-          h += '<button class="history-action-btn' + (expanded ? ' expanded' : '') + '" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon"><polyline points="6 9 12 15 18 9"/></svg></button>';
-          h += '<button class="history-action-btn delete-btn" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '" title="Clear Scan Entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="trash-icon"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>';
-          h += '</div>';
-          h += '</div>';
+          html.push('<div class="history-item' + (expanded ? ' history-item-expanded' : '') + '"' + (historyLevel ? ' data-history-level="' + historyLevel + '"' : '') + '>');
+          html.push('<div class="history-item-top">');
+          html.push('<div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '">');
+          html.push('<div class="h-time">' + formattedTime + '</div>');
+          html.push('<div class="h-stats">' + statsPills + '</div>');
+          html.push(miniBar);
+          html.push('</div>');
+          html.push('<div class="history-item-actions">');
+          html.push('<button class="history-action-btn' + (expanded ? ' expanded' : '') + '" data-action="select-history" data-id="' + escAttr(historyId) + '" aria-label="' + (expanded ? 'Collapse history item' : 'Expand history item') + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="chevron-icon"><polyline points="6 9 12 15 18 9"/></svg></button>');
+          html.push('<button class="history-action-btn delete-btn" data-action="clear-history-entry" data-id="' + escAttr(historyId) + '" title="Clear Scan Entry"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="trash-icon"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button>');
+          html.push('</div>');
+          html.push('</div>');
 
-          if (expanded && s.summary) h += renderHistoryInlineDetail(s.summary, historyId);
-          h += '</div>';
+          if (expanded && s.summary) html.push(renderHistoryInlineDetail(s.summary, historyId));
+          html.push('</div>');
         }
         if (mainSearch && renderedCount === 0) {
           c.innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5">No matching scans found</div>';
         } else {
-          c.innerHTML = h;
+          c.innerHTML = html.join('');
         }
       }
 
@@ -629,13 +687,13 @@ export function getDashboardScript(dateFormattersScript: string): string {
           { l: 'High', c: d.highRisk, k: 'high', cls: 'high' },
           { l: 'Critical', c: d.criticalRisk, k: 'critical', cls: 'critical' }
         ];
-        var h = '';
+        var html = [];
         for (var i = 0; i < cards.length; i++) {
           var c = cards[i];
           var filterVal = c.k === 'total' ? 'all' : c.k;
-          h += '<div class="card ' + c.cls + '" data-action="card-filter" data-filter="' + filterVal + '"><div class="card-icon">' + icons[c.k] + '</div><div class="count">' + c.c + '</div><div class="label">' + c.l + '</div></div>';
+          html.push('<div class="card ' + c.cls + '" data-action="card-filter" data-filter="' + filterVal + '"><div class="card-icon">' + icons[c.k] + '</div><div class="count">' + c.c + '</div><div class="label">' + c.l + '</div></div>');
         }
-        $('summary-cards').innerHTML = h;
+        $('summary-cards').innerHTML = html.join('');
       }
 
       function renderDistribution() {
@@ -646,15 +704,15 @@ export function getDashboardScript(dateFormattersScript: string): string {
           { k: 'high', label: 'High', count: d.highRisk, pct: Math.round(d.highRisk / t * 100) },
           { k: 'critical', label: 'Critical', count: d.criticalRisk, pct: Math.round(d.criticalRisk / t * 100) }
         ];
-        var barH = '';
-        var legH = '';
+        var barHtml = [];
+        var legendHtml = [];
         for (var i = 0; i < segs.length; i++) {
-          if (segs[i].pct > 0) barH += '<div class="dist-seg ' + segs[i].k + '" style="width:' + segs[i].pct + '%" title="' + segs[i].label + ': ' + segs[i].count + ' (' + segs[i].pct + '%)"></div>';
-          legH += '<span class="dist-legend-item ' + segs[i].k + '"><span class="dist-legend-dot"></span>' + segs[i].label + ' ' + segs[i].pct + '%</span>';
+          if (segs[i].pct > 0) barHtml.push('<div class="dist-seg ' + segs[i].k + '" style="width:' + segs[i].pct + '%" title="' + segs[i].label + ': ' + segs[i].count + ' (' + segs[i].pct + '%)"></div>');
+          legendHtml.push('<span class="dist-legend-item ' + segs[i].k + '"><span class="dist-legend-dot"></span>' + segs[i].label + ' ' + segs[i].pct + '%</span>');
         }
-        $('dist-bar').innerHTML = barH;
+        $('dist-bar').innerHTML = barHtml.join('');
         var legend = $('dist-legend');
-        if (legend) legend.innerHTML = legH;
+        if (legend) legend.innerHTML = legendHtml.join('');
       }
 
       function renderRecActions() {
@@ -677,9 +735,9 @@ export function getDashboardScript(dateFormattersScript: string): string {
         if (noRepo > 0) actions.push({ text: noRepo + ' extension' + (noRepo > 1 ? 's' : '') + ' lack repo url', color: 'var(--moderate)' });
         if (actions.length === 0) { c.classList.add('hidden'); return; }
         c.classList.remove('hidden');
-        var h = '';
-        for (var i = 0; i < actions.length; i++) h += '<li><span class="rec-dot" style="background:' + actions[i].color + '"></span><span class="rec-text">' + actions[i].text + '</span></li>';
-        list.innerHTML = h;
+        var html = [];
+        for (var i = 0; i < actions.length; i++) html.push('<li><span class="rec-dot" style="background:' + actions[i].color + '"></span><span class="rec-text">' + actions[i].text + '</span></li>');
+        list.innerHTML = html.join('');
       }
 
       function renderExtensions() {
@@ -687,22 +745,64 @@ export function getDashboardScript(dateFormattersScript: string): string {
         var search = $('ext-search').value.toLowerCase();
         var container = $('ext-list'), empty = $('ext-empty');
         var reports = (scanData && scanData.reports) || [];
-        if (search) {
-          var s = [];
-          for (var i = 0; i < reports.length; i++) {
-            var r = reports[i];
-            if ((r.displayName || r.name).toLowerCase().indexOf(search) !== -1 || r.publisher.toLowerCase().indexOf(search) !== -1) s.push(r);
+        
+        // 1. Filter reports
+        var filtered = [];
+        
+        var netEl = $('ext-filter-cap-network'),
+            chEl = $('ext-filter-cap-child'),
+            fsEl = $('ext-filter-cap-fs');
+            
+        var filterNetwork = netEl ? netEl.checked : false;
+        var filterChild = chEl ? chEl.checked : false;
+        var filterFs = fsEl ? fsEl.checked : false;
+        
+        for (var i = 0; i < reports.length; i++) {
+          var r = reports[i];
+          if (search && !matchesReportSearch(r, search)) {
+            continue;
           }
-          reports = s;
+          
+          var caps = r.detectedCapabilities || {};
+          if (filterNetwork && !caps.usesNetworkRequests) continue;
+          if (filterChild && !caps.usesChildProcess) continue;
+          if (filterFs && !caps.accessesWorkspaceFiles) continue;
+          
+          filtered.push(r);
         }
+        reports = filtered;
+        
+        // 2. Sort reports (by default alphabetically)
+        var orderEl = q('input[name="ext-order"]:checked');
+        var sortOrder = orderEl ? orderEl.value : 'asc';
+        
+        reports.sort(function(a, b) {
+          var nameA = (a.displayName || a.name || '').toLowerCase();
+          var nameB = (b.displayName || b.name || '').toLowerCase();
+          var res = nameA.localeCompare(nameB);
+          return sortOrder === 'asc' ? res : -res;
+        });
+
+        // 3. Update filter button active indicator
+        var filterBtn = $('ext-filter-btn');
+        if (filterBtn) {
+          var isDefault = sortOrder === 'asc' &&
+                          !filterNetwork && !filterChild && !filterFs;
+          if (isDefault) {
+            filterBtn.classList.remove('active');
+          } else {
+            filterBtn.classList.add('active');
+          }
+        }
+        
         $('ext-count').textContent = reports.length;
         if (reports.length === 0) { container.innerHTML = ''; empty.style.display = 'flex'; return; }
         empty.style.display = 'none';
-        var h = '';
+        var html = [];
         for (var i = 0; i < reports.length; i++) {
-          h += buildExtItemHtml(reports[i], { clickAction: 'open-extension', dataId: reports[i].id, showScore: false }) + '</div>';
+          html.push(buildExtItemHtml(reports[i], { clickAction: 'open-extension', dataId: reports[i].id, showScore: false }) + '</div>');
         }
-        container.innerHTML = h;
+        container.innerHTML = html.join('');
       }
 
       function toggleDetail(id) {
@@ -818,12 +918,8 @@ export function getDashboardScript(dateFormattersScript: string): string {
       }
 
       function getHistoryEntry(historyId) {
-        if (!scanHistory) return null;
-        for (var i = 0; i < scanHistory.length; i++) {
-          var entryId = scanHistory[i].id || scanHistory[i].time;
-          if (entryId === historyId) return scanHistory[i];
-        }
-        return null;
+        if (!historyId) return null;
+        return scanHistoryById[historyId] || null;
       }
 
       function getHistoryRiskCounts(entry) {
@@ -874,28 +970,28 @@ export function getDashboardScript(dateFormattersScript: string): string {
       function renderHistoryDetailResults(summary, filterValue, searchValue) {
         var reports = (summary && summary.reports) || [];
         var normalizedSearch = (searchValue || '').toLowerCase();
-        var h = '<div class="ext-list">';
+        var html = ['<div class="ext-list">'];
         for (var i = 0; i < reports.length; i++) {
           var r = reports[i];
           if (filterValue !== 'all' && r.riskLevel !== filterValue) continue;
-          if (normalizedSearch && (r.displayName || r.name).toLowerCase().indexOf(normalizedSearch) === -1 && r.publisher.toLowerCase().indexOf(normalizedSearch) === -1) continue;
+          if (!matchesReportSearch(r, normalizedSearch)) continue;
           var cls = r.riskLevel;
           var safeId = 'history_' + r.id.replace(/[^a-zA-Z0-9]/g, '_');
-          h += buildExtItemHtml(r, { toggleAction: 'toggle-history-detail', toggleId: safeId, showScore: true, riskAccent: true });
-          h += '<div id="detail-' + safeId + '" class="ext-detail">';
-          h += '<div class="detail-row"><span class="detail-label">Version</span><span>' + esc(r.version) + '</span></div>';
-          if (r.marketplaceId) h += '<div class="detail-row"><span class="detail-label">ID</span><span>' + esc(r.marketplaceId) + '</span></div>';
-          if (r.category) h += '<div class="detail-row"><span class="detail-label">Category</span><span>' + esc(r.category) + '</span></div>';
-          h += '<div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:' + r.riskScore + '%;background:var(--' + cls + ')"></div></div><span class="score-num" style="color:var(--' + cls + ')">' + r.riskScore + '/100</span></div>';
-          if (r.riskFactors && r.riskFactors.length) h += renderExpandableList('history-rf-' + safeId, 'Risk Factors', 'factor', r.riskFactors, 5);
-          if (r.trustSignals && r.trustSignals.length) h += renderExpandableList('history-ts-' + safeId, 'Trust Signals', 'signal', r.trustSignals, 5);
+          html.push(buildExtItemHtml(r, { toggleAction: 'toggle-history-detail', toggleId: safeId, showScore: true, riskAccent: true }));
+          html.push('<div id="detail-' + safeId + '" class="ext-detail">');
+          html.push('<div class="detail-row"><span class="detail-label">Version</span><span>' + esc(r.version) + '</span></div>');
+          if (r.marketplaceId) html.push('<div class="detail-row"><span class="detail-label">ID</span><span>' + esc(r.marketplaceId) + '</span></div>');
+          if (r.category) html.push('<div class="detail-row"><span class="detail-label">Category</span><span>' + esc(r.category) + '</span></div>');
+          html.push('<div class="score-wrap"><div class="score-bar"><div class="score-fill" style="width:' + r.riskScore + '%;background:var(--' + cls + ')"></div></div><span class="score-num" style="color:var(--' + cls + ')">' + r.riskScore + '/100</span></div>');
+          if (r.riskFactors && r.riskFactors.length) html.push(renderExpandableList('history-rf-' + safeId, 'Risk Factors', 'factor', r.riskFactors, 5));
+          if (r.trustSignals && r.trustSignals.length) html.push(renderExpandableList('history-ts-' + safeId, 'Trust Signals', 'signal', r.trustSignals, 5));
           var recCls = (cls === 'low' || cls === 'moderate') ? ' safe' : '';
-          h += '<div class="rec-box' + recCls + '">' + esc(r.recommendation) + '</div>';
-          h += '<div class="detail-actions"><button data-action="navigate" data-id="' + r.id + '">Open in Extensions</button></div>';
-          h += '</div></div>';
+          html.push('<div class="rec-box' + recCls + '">' + esc(r.recommendation) + '</div>');
+          html.push('<div class="detail-actions"><button data-action="navigate" data-id="' + r.id + '">Open in Extensions</button></div>');
+          html.push('</div></div>');
         }
-        h += '</div>';
-        return h;
+        html.push('</div>');
+        return html.join('');
       }
 
       function renderExpandableList(id, label, className, items, max) {
@@ -931,7 +1027,10 @@ ${dateFormattersScript}
         if (e.target && e.target.hasAttribute('data-history-search-id')) {
           var historyId = e.target.getAttribute('data-history-search-id');
           inlineHistorySearch[historyId] = e.target.value || '';
-          updateInlineHistoryResults(historyId);
+          clearTimeout(inlineHistorySearchTimers[historyId]);
+          inlineHistorySearchTimers[historyId] = setTimeout(function() {
+            updateInlineHistoryResults(historyId);
+          }, 120);
           return;
         }
         if (e.target && e.target.id === 'history-search' && false) return;
@@ -963,11 +1062,11 @@ ${dateFormattersScript}
           { value: 'sarif', label: 'SARIF (.sarif.json)' }
         ];
         var selected = (currentSettings && currentSettings.reportFormat) || 'markdown';
-        var h = '';
+        var html = [];
         for (var i = 0; i < formats.length; i++) {
-          h += '<option value="' + formats[i].value + '"' + (formats[i].value === selected ? ' selected' : '') + '>' + formats[i].label + '</option>';
+          html.push('<option value="' + formats[i].value + '"' + (formats[i].value === selected ? ' selected' : '') + '>' + formats[i].label + '</option>');
         }
-        return h;
+        return html.join('');
       }
 
       function applySettings(settings) {

@@ -32,6 +32,7 @@ function makeTempExtDir(files: Record<string, string> = {}): string {
   );
   tempDirs.push(dir);
   for (const [name, content] of Object.entries(files)) {
+    fs.mkdirSync(path.dirname(path.join(dir, name)), { recursive: true });
     fs.writeFileSync(path.join(dir, name), content, 'utf8');
   }
   return dir;
@@ -48,7 +49,7 @@ afterEach(() => {
 });
 
 describe('Package Analyzer', () => {
-  it('does not flag missing license when pkg.licenses array exists', () => {
+  it('does not flag missing license when pkg.licenses array exists', async () => {
     const installPath = makeTempExtDir();
     const ext = makeExtension(
       {
@@ -60,13 +61,13 @@ describe('Package Analyzer', () => {
       installPath,
     );
 
-    const result = analyzePackage(ext);
+    const result = await analyzePackage(ext);
     expect(
       result.riskFactors.some((factor) => factor.id === 'no-license'),
     ).toBe(false);
   });
 
-  it('does not flag missing license when LICENSE file exists', () => {
+  it('does not flag missing license when LICENSE file exists', async () => {
     const installPath = makeTempExtDir({ LICENSE: 'MIT License' });
     const ext = makeExtension(
       {
@@ -77,13 +78,13 @@ describe('Package Analyzer', () => {
       installPath,
     );
 
-    const result = analyzePackage(ext);
+    const result = await analyzePackage(ext);
     expect(
       result.riskFactors.some((factor) => factor.id === 'no-license'),
     ).toBe(false);
   });
 
-  it('still flags missing license when metadata and file both absent', () => {
+  it('still flags missing license when metadata and file both absent', async () => {
     const installPath = makeTempExtDir();
     const ext = makeExtension(
       {
@@ -94,9 +95,29 @@ describe('Package Analyzer', () => {
       installPath,
     );
 
-    const result = analyzePackage(ext);
+    const result = await analyzePackage(ext);
     expect(
       result.riskFactors.some((factor) => factor.id === 'no-license'),
+    ).toBe(true);
+  });
+
+  it('flags long mostly single-line bundled main file', async () => {
+    const installPath = makeTempExtDir({
+      'dist/main.js': `${'a'.repeat(900)}\n${'b'.repeat(900)}`,
+    });
+    const ext = makeExtension(
+      {
+        name: 'test-ext',
+        publisher: 'test',
+        version: '1.0.0',
+        main: 'dist/main.js',
+      },
+      installPath,
+    );
+
+    const result = await analyzePackage(ext);
+    expect(
+      result.riskFactors.some((factor) => factor.id === 'minified-file'),
     ).toBe(true);
   });
 });

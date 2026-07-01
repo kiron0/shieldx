@@ -1,6 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { fileExists, readFileContent } from './file-utils';
+import {
+  fileExists,
+  fileExistsAsync,
+  readFileContent,
+  readFileContentAsync,
+} from './file-utils';
 
 export interface KnownVulnerability {
   name: string;
@@ -99,6 +104,28 @@ export function hasLicenseMetadataOrFile(
   }
 }
 
+export async function hasLicenseMetadataOrFileAsync(
+  pkg: any,
+  installPath?: string,
+): Promise<boolean> {
+  if (hasDeclaredLicense(pkg)) return true;
+  if (!installPath) return false;
+  try {
+    const entries = await fs.promises.readdir(installPath);
+    return entries.some((f) => {
+      const u = f.toUpperCase();
+      return (
+        u.startsWith('LICENSE') ||
+        u.startsWith('LICENCE') ||
+        u.startsWith('COPYING') ||
+        u === 'UNLICENSE'
+      );
+    });
+  } catch {
+    return false;
+  }
+}
+
 export function isVersionVulnerable(version: string, range: string): boolean {
   const cleaned = version.replace(/^[\^~>=<]+/, '');
   const rangeCleaned = range.replace(/^[\^~>=<]+/, '');
@@ -121,9 +148,29 @@ export function getLockfileSignal(extDir: string): string | null {
   return null;
 }
 
+export async function getLockfileSignalAsync(
+  extDir: string,
+): Promise<string | null> {
+  for (const name of ['package-lock.json', 'yarn.lock', 'pnpm-lock.yaml']) {
+    if (await fileExistsAsync(path.join(extDir, name))) return name;
+  }
+  return null;
+}
+
 export function parseYarnLock(lockPath: string): number {
   try {
     const content = readFileContent(lockPath);
+    if (!content) return 0;
+    const matches = content.match(/^"(.+?)@[^"]+",?\s*$/gm);
+    return matches ? matches.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export async function parseYarnLockAsync(lockPath: string): Promise<number> {
+  try {
+    const content = await readFileContentAsync(lockPath);
     if (!content) return 0;
     const matches = content.match(/^"(.+?)@[^"]+",?\s*$/gm);
     return matches ? matches.length : 0;
@@ -143,9 +190,30 @@ export function parsePnpmLock(lockPath: string): number {
   }
 }
 
+export async function parsePnpmLockAsync(lockPath: string): Promise<number> {
+  try {
+    const content = await readFileContentAsync(lockPath);
+    if (!content) return 0;
+    const matches = content.match(/^\s{2,4}\S.*?:\n\s+resolution:\s+\{.+\}/gm);
+    return matches ? matches.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function checkForNativeModules(extDir: string): boolean {
   try {
     return walkForExtension(extDir, '.node', 0);
+  } catch {
+    return false;
+  }
+}
+
+export async function checkForNativeModulesAsync(
+  extDir: string,
+): Promise<boolean> {
+  try {
+    return await walkForExtensionAsync(extDir, '.node', 0);
   } catch {
     return false;
   }
@@ -174,6 +242,31 @@ function walkForExtension(
       const fullPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         if (walkForExtension(fullPath, targetExt, depth + 1)) return true;
+      } else if (entry.isFile() && entry.name.endsWith(targetExt)) {
+        return true;
+      }
+    }
+  } catch {
+    void 0;
+  }
+  return false;
+}
+
+async function walkForExtensionAsync(
+  dir: string,
+  targetExt: string,
+  depth: number,
+): Promise<boolean> {
+  if (depth > 5) return false;
+  try {
+    const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name.startsWith('.')) continue;
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        if (await walkForExtensionAsync(fullPath, targetExt, depth + 1)) {
+          return true;
+        }
       } else if (entry.isFile() && entry.name.endsWith(targetExt)) {
         return true;
       }

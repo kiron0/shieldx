@@ -18,22 +18,19 @@ export async function scanExtension(
   info(`Scanning: ${ext.id}`);
   throwIfCancelled(token);
 
-  const packageResult = analyzePackage(ext);
+  const packageResult = await analyzePackage(ext);
   throwIfCancelled(token);
 
-  const codeResult = analyzeCode(
+  const codeResult = await analyzeCode(
     ext.installPath,
     packageResult.detectedCapabilities,
   );
   throwIfCancelled(token);
 
-  const depResult = analyzeDependencies(
-    ext.installPath,
-    packageResult.extensionDependencies,
-  );
-  throwIfCancelled(token);
-
-  const pubResult = await checkPublisherReputation(ext, token);
+  const [depResult, pubResult] = await Promise.all([
+    analyzeDependencies(ext.installPath, packageResult.extensionDependencies),
+    checkPublisherReputation(ext, token),
+  ]);
   throwIfCancelled(token);
 
   const osvEnabled = vscode.workspace
@@ -127,12 +124,23 @@ export async function scanAllExtensions(
 
   reports.sort((a, b) => b.riskScore - a.riskScore);
 
+  let lowRisk = 0;
+  let moderateRisk = 0;
+  let highRisk = 0;
+  let criticalRisk = 0;
+  for (const report of reports) {
+    if (report.riskLevel === 'critical') criticalRisk++;
+    else if (report.riskLevel === 'high') highRisk++;
+    else if (report.riskLevel === 'moderate') moderateRisk++;
+    else lowRisk++;
+  }
+
   const summary: SecuritySummary = {
     totalExtensions: reports.length,
-    lowRisk: reports.filter((r) => r.riskLevel === 'low').length,
-    moderateRisk: reports.filter((r) => r.riskLevel === 'moderate').length,
-    highRisk: reports.filter((r) => r.riskLevel === 'high').length,
-    criticalRisk: reports.filter((r) => r.riskLevel === 'critical').length,
+    lowRisk,
+    moderateRisk,
+    highRisk,
+    criticalRisk,
     reports,
     scannedAt: new Date().toISOString(),
     vscodeVersion: vscode.version,

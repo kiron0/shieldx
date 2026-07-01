@@ -20,6 +20,7 @@ interface GithubRepoInfo {
 }
 
 const githubCache = new Map<string, GithubRepoInfo | null>();
+const TRUSTED_GITHUB_OWNERS = new Set(['microsoft', 'github']);
 
 const VERIFIED_EXT_REPOS: Record<string, string> = {
   'ms-python.python': 'microsoft/vscode-python',
@@ -39,23 +40,19 @@ const VERIFIED_EXT_REPOS: Record<string, string> = {
 
 function getVerifiedRepo(ext: InstalledExtension): string | null {
   const extId = `${ext.publisher}.${ext.name}`.toLowerCase();
-
-  if (VERIFIED_EXT_REPOS[extId]) {
-    return VERIFIED_EXT_REPOS[extId];
-  }
+  const verifiedRepo = VERIFIED_EXT_REPOS[extId];
+  if (verifiedRepo) return verifiedRepo;
 
   const repoUrl = extractGithubRepo(ext.packageJSON);
   if (repoUrl) {
     const [owner] = repoUrl.toLowerCase().split('/');
     const pubLower = ext.publisher.toLowerCase();
+    const ownerMatchesPublisher =
+      owner === pubLower ||
+      (pubLower.startsWith('ms-') && owner === 'microsoft') ||
+      TRUSTED_GITHUB_OWNERS.has(owner);
 
-    if (
-      isWellKnownPublisher(ext.publisher) &&
-      (owner === pubLower ||
-        owner === 'microsoft' ||
-        owner === 'github' ||
-        (pubLower.startsWith('ms-') && owner === 'microsoft'))
-    ) {
+    if (isWellKnownPublisher(ext.publisher) && ownerMatchesPublisher) {
       return repoUrl;
     }
   }

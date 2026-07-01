@@ -10,6 +10,17 @@ export function readJsonFile<T>(filePath: string): T | null {
   }
 }
 
+export async function readJsonFileAsync<T>(
+  filePath: string,
+): Promise<T | null> {
+  try {
+    const content = await fs.promises.readFile(filePath, 'utf-8');
+    return JSON.parse(content) as T;
+  } catch {
+    return null;
+  }
+}
+
 export function writeJsonFile(filePath: string, data: unknown): void {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
@@ -18,8 +29,26 @@ export function writeJsonFile(filePath: string, data: unknown): void {
   fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
+export async function writeJsonFileAsync(
+  filePath: string,
+  data: unknown,
+): Promise<void> {
+  const dir = path.dirname(filePath);
+  await fs.promises.mkdir(dir, { recursive: true });
+  await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
 export function fileExists(filePath: string): boolean {
   return fs.existsSync(filePath);
+}
+
+export async function fileExistsAsync(filePath: string): Promise<boolean> {
+  try {
+    await fs.promises.access(filePath, fs.constants.F_OK);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function isDirectory(dirPath: string): boolean {
@@ -38,12 +67,23 @@ export function readFileContent(filePath: string): string | null {
   }
 }
 
+export async function readFileContentAsync(
+  filePath: string,
+): Promise<string | null> {
+  try {
+    return await fs.promises.readFile(filePath, 'utf-8');
+  } catch {
+    return null;
+  }
+}
+
 export function findFiles(
   dir: string,
   extensions: string[],
   maxSizeBytes?: number,
 ): string[] {
   const results: string[] = [];
+  const extensionSet = new Set(extensions.map((ext) => ext.toLowerCase()));
 
   function walk(currentDir: string, depth: number = 0): void {
     if (depth > 15) return;
@@ -58,7 +98,7 @@ export function findFiles(
           walk(fullPath, depth + 1);
         } else if (entry.isFile()) {
           const ext = path.extname(entry.name).toLowerCase();
-          if (extensions.includes(ext)) {
+          if (extensionSet.has(ext)) {
             if (maxSizeBytes) {
               const stat = fs.statSync(fullPath);
               if (stat.size > maxSizeBytes) continue;
@@ -73,5 +113,45 @@ export function findFiles(
   }
 
   walk(dir);
+  return results;
+}
+
+export async function findFilesAsync(
+  dir: string,
+  extensions: string[],
+  maxSizeBytes?: number,
+): Promise<string[]> {
+  const results: string[] = [];
+  const extensionSet = new Set(extensions.map((ext) => ext.toLowerCase()));
+
+  async function walk(currentDir: string, depth: number = 0): Promise<void> {
+    if (depth > 15) return;
+    try {
+      const entries = await fs.promises.readdir(currentDir, {
+        withFileTypes: true,
+      });
+      for (const entry of entries) {
+        if (entry.name.startsWith('.')) continue;
+        if (entry.name === 'node_modules') continue;
+
+        const fullPath = path.join(currentDir, entry.name);
+        if (entry.isDirectory()) {
+          await walk(fullPath, depth + 1);
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name).toLowerCase();
+          if (!extensionSet.has(ext)) continue;
+          if (maxSizeBytes) {
+            const stat = await fs.promises.stat(fullPath);
+            if (stat.size > maxSizeBytes) continue;
+          }
+          results.push(fullPath);
+        }
+      }
+    } catch {
+      void 0;
+    }
+  }
+
+  await walk(dir);
   return results;
 }

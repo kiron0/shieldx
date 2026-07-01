@@ -1,19 +1,18 @@
 import * as path from 'path';
 import { ExtensionDependency, RiskFactor, TrustSignal } from '../types';
-import { fileExists } from '../utils/file-utils';
 import {
-  checkForNativeModules,
-  getLockfileSignal,
+  checkForNativeModulesAsync,
+  getLockfileSignalAsync,
   isVersionVulnerable,
   KNOWN_VULNERABLE_DEPS,
-  parsePnpmLock,
-  parseYarnLock,
+  parsePnpmLockAsync,
+  parseYarnLockAsync,
 } from '../utils/scanner-helpers';
 
-export function analyzeDependencies(
+export async function analyzeDependencies(
   extDir: string,
   deps: ExtensionDependency[],
-): { riskFactors: RiskFactor[]; trustSignals: TrustSignal[] } {
+): Promise<{ riskFactors: RiskFactor[]; trustSignals: TrustSignal[] }> {
   const riskFactors: RiskFactor[] = [];
   const trustSignals: TrustSignal[] = [];
 
@@ -40,7 +39,7 @@ export function analyzeDependencies(
     }
   }
 
-  const lockFileType = getLockfileSignal(extDir);
+  const lockFileType = await getLockfileSignalAsync(extDir);
   if (lockFileType) {
     trustSignals.push({
       id: 'has-lock-file',
@@ -51,32 +50,28 @@ export function analyzeDependencies(
   }
 
   const yarnLockPath = path.join(extDir, 'yarn.lock');
-  if (fileExists(yarnLockPath)) {
-    const yarnDeps = parseYarnLock(yarnLockPath);
-    if (yarnDeps > 0) {
-      trustSignals.push({
-        id: 'yarn-lock-parsed',
-        title: 'Yarn lock file parsed',
-        description: `Parsed ${yarnDeps} resolved packages from yarn.lock.`,
-        points: -2,
-      });
-    }
+  const yarnDeps = await parseYarnLockAsync(yarnLockPath);
+  if (yarnDeps > 0) {
+    trustSignals.push({
+      id: 'yarn-lock-parsed',
+      title: 'Yarn lock file parsed',
+      description: `Parsed ${yarnDeps} resolved packages from yarn.lock.`,
+      points: -2,
+    });
   }
 
   const pnpmLockPath = path.join(extDir, 'pnpm-lock.yaml');
-  if (fileExists(pnpmLockPath)) {
-    const pnpmDeps = parsePnpmLock(pnpmLockPath);
-    if (pnpmDeps > 0) {
-      trustSignals.push({
-        id: 'pnpm-lock-parsed',
-        title: 'pnpm lock file parsed',
-        description: `Parsed ${pnpmDeps} resolved packages from pnpm-lock.yaml.`,
-        points: -2,
-      });
-    }
+  const pnpmDeps = await parsePnpmLockAsync(pnpmLockPath);
+  if (pnpmDeps > 0) {
+    trustSignals.push({
+      id: 'pnpm-lock-parsed',
+      title: 'pnpm lock file parsed',
+      description: `Parsed ${pnpmDeps} resolved packages from pnpm-lock.yaml.`,
+      points: -2,
+    });
   }
 
-  const hasNativeModules = checkForNativeModules(extDir);
+  const hasNativeModules = await checkForNativeModulesAsync(extDir);
   if (hasNativeModules) {
     riskFactors.push({
       id: 'native-modules',

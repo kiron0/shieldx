@@ -84,20 +84,24 @@ const WELL_KNOWN_PUBLISHERS = new Set([
   'ms-azuretools',
   'ms-kubernetes-tools',
 ]);
+const CATEGORY_CACHE = new WeakMap<object, string>();
 
 export function getInstalledExtensions(): InstalledExtension[] {
   return vscode.extensions.all
     .filter((ext) => !ext.id.startsWith('vscode.'))
     .map((ext) => {
       const pkg = ext.packageJSON || {};
+      const [publisherFromId = '', nameFromId = ''] = ext.id.split('.');
+      const publisher = pkg.publisher || publisherFromId;
+      const name = pkg.name || nameFromId;
       return {
         id: ext.id,
-        name: pkg.name || ext.id.split('.').pop() || '',
-        publisher: pkg.publisher || ext.id.split('.')[0] || '',
+        name,
+        publisher,
         version: pkg.version || 'unknown',
         displayName: pkg.displayName,
         description: pkg.description,
-        marketplaceId: `${pkg.publisher || ext.id.split('.')[0]}.${pkg.name || ext.id.split('.').pop()}`,
+        marketplaceId: `${publisher}.${name}`,
         category: detectCategory(pkg),
         installPath: ext.extensionPath,
         iconDataUrl: getExtensionIconDataUrl(ext.extensionPath, pkg),
@@ -140,45 +144,59 @@ export function getExtensionDir(ext: InstalledExtension): string {
 }
 
 export function detectCategory(pkg: any): string {
-  const keywords: string[] = (pkg?.keywords || []).map((k: string) =>
-    k.toLowerCase(),
-  );
-  const categories: string[] = pkg?.categories || [];
+  if (pkg && typeof pkg === 'object') {
+    const cached = CATEGORY_CACHE.get(pkg);
+    if (cached) return cached;
+  }
+  const keywordSource: unknown[] = Array.isArray(pkg?.keywords)
+    ? pkg.keywords
+    : [];
+  const categorySource: unknown[] = Array.isArray(pkg?.categories)
+    ? pkg.categories
+    : [];
   const allWords = [
-    ...keywords,
-    ...categories.map((c: string) => c.toLowerCase()),
-    (pkg?.displayName || '').toLowerCase(),
-    (pkg?.description || '').toLowerCase(),
-    (pkg?.name || '').toLowerCase(),
-  ].join(' ');
+    ...keywordSource,
+    ...categorySource,
+    pkg?.displayName,
+    pkg?.description,
+    pkg?.name,
+  ]
+    .filter((value): value is string => typeof value === 'string')
+    .join(' ')
+    .toLowerCase();
 
   for (const [category, patterns] of Object.entries(WELL_KNOWN_CATEGORIES)) {
     for (const pattern of patterns) {
       if (allWords.includes(pattern)) {
+        if (pkg && typeof pkg === 'object') CATEGORY_CACHE.set(pkg, category);
         return category;
       }
     }
   }
 
+  if (pkg && typeof pkg === 'object') CATEGORY_CACHE.set(pkg, 'other');
   return 'other';
 }
 
 export function getExtensionDependencies(pkg: any): ExtensionDependency[] {
-  const deps: ExtensionDependency[] = [];
-  const allDeps = {
-    ...(pkg?.dependencies || {}),
-    ...(pkg?.peerDependencies || {}),
-  };
-  const devDeps = pkg?.devDependencies || {};
+  const deps = new Map<string, ExtensionDependency>();
+  const runtimeDeps = [
+    ...(Object.entries(pkg?.dependencies || {}) as Array<[string, string]>),
+    ...(Object.entries(pkg?.peerDependencies || {}) as Array<[string, string]>),
+  ];
+  const devDeps = Object.entries(pkg?.devDependencies || {}) as Array<
+    [string, string]
+  >;
 
-  for (const [name, version] of Object.entries(allDeps)) {
-    deps.push({ name, version: version as string, isDev: false });
+  for (const [name, version] of runtimeDeps) {
+    deps.set(name, { name, version, isDev: false });
   }
-  for (const [name, version] of Object.entries(devDeps)) {
-    deps.push({ name, version: version as string, isDev: true });
+  for (const [name, version] of devDeps) {
+    if (deps.has(name)) continue;
+    deps.set(name, { name, version, isDev: true });
   }
 
-  return deps;
+  return [...deps.values()];
 }
 
 export function isWellKnownPublisher(publisher: string): boolean {

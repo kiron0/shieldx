@@ -29,13 +29,19 @@ export function fetchJson<T>(
       cancelDisposable?.dispose();
       resolve(value);
     };
-    const timer = setTimeout(() => finish(null), opts.timeout ?? 5000);
+    const timer = setTimeout(() => {
+      req.destroy();
+      cache.set(cacheKey, null);
+      finish(null);
+    }, opts.timeout ?? 5000);
     const req = https.get(
       url,
       { headers: { Accept: 'application/json', ...opts.headers } },
       (res) => {
         if (res.statusCode !== 200) {
+          res.resume();
           cache.set(cacheKey, null);
+          req.destroy();
           finish(null);
           return;
         }
@@ -83,7 +89,10 @@ export function postJson<T>(
       cancelDisposable?.dispose();
       resolve(value);
     };
-    const timer = setTimeout(() => finish(null), opts.timeout ?? 3000);
+    const timer = setTimeout(() => {
+      req.destroy();
+      finish(null);
+    }, opts.timeout ?? 3000);
     const payload = JSON.stringify(body);
     const req = https.request(
       url,
@@ -96,9 +105,19 @@ export function postJson<T>(
         },
       },
       (res) => {
+        if ((res.statusCode ?? 500) < 200 || (res.statusCode ?? 500) >= 300) {
+          res.resume();
+          req.destroy();
+          finish(null);
+          return;
+        }
         let data = '';
         res.on('data', (chunk) => (data += chunk));
         res.on('end', () => {
+          if (!data.trim()) {
+            finish(null);
+            return;
+          }
           try {
             finish(JSON.parse(data) as T);
           } catch {

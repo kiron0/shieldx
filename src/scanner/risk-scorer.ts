@@ -15,17 +15,17 @@ export function calculateRisk(
   trustSignals: TrustSignal[],
 ): { riskScore: number; riskLevel: RiskLevel } {
   let score = 0;
-
+  let highCritCount = 0;
+  const categories = new Set<string>();
   for (const factor of riskFactors) {
     score += factor.points;
+    categories.add(factor.id.split('-')[0]);
+    if (factor.severity === 'high' || factor.severity === 'critical') {
+      highCritCount++;
+    }
   }
 
-  const categories = new Set(riskFactors.map((f) => f.id.split('-')[0]));
   score += highestApplicableBonus(categories.size, CATEGORY_BONUS_BY_SIZE);
-
-  const highCritCount = riskFactors.filter(
-    (f) => f.severity === 'high' || f.severity === 'critical',
-  ).length;
   score += highestApplicableBonus(highCritCount, HIGH_CRIT_BONUS_BY_COUNT);
 
   const sortedSignals = [...trustSignals].sort(
@@ -73,10 +73,12 @@ export function generateRecommendation(
       return 'This extension uses some sensitive APIs. Review the findings and verify the publisher is trusted.';
 
     case 'high': {
-      const reasons = riskFactors
-        .filter((f) => f.severity === 'high' || f.severity === 'critical')
-        .map((f) => f.title.toLowerCase())
-        .join(', ');
+      const reasons: string[] = [];
+      for (const factor of riskFactors) {
+        if (factor.severity === 'high' || factor.severity === 'critical') {
+          reasons.push(factor.title.toLowerCase());
+        }
+      }
       return `This extension shows high-risk behavior (${reasons}). Review carefully before using in sensitive workspaces. Disable if not essential.`;
     }
 

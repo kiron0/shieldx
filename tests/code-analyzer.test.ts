@@ -1,4 +1,8 @@
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { describe, it, expect } from 'vitest';
+import { analyzeCode } from '../src/scanner/code-analyzer';
 import { SUSPICIOUS_PATTERNS } from '../src/rules/suspicious-patterns';
 
 function getPatterns(id: string): RegExp[] {
@@ -12,6 +16,40 @@ function matchesAny(content: string, patterns: RegExp[]): boolean {
 }
 
 describe('Code Analyzer Pattern Detection', () => {
+  it('keeps evidence from multiple files for same finding', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shieldx-code-'));
+    fs.writeFileSync(
+      path.join(dir, 'one.js'),
+      'fetch("https://api.example.com/one")',
+      'utf8',
+    );
+    fs.writeFileSync(
+      path.join(dir, 'two.js'),
+      'fetch("https://api.example.com/two")',
+      'utf8',
+    );
+
+    const result = await analyzeCode(dir, {
+      usesChildProcess: false,
+      usesNetworkRequests: false,
+      readsEnvironmentVariables: false,
+      accessesWorkspaceFiles: false,
+      hasInstallScripts: false,
+      hasObfuscatedCode: false,
+      declaresBroadActivationEvents: false,
+      usesDynamicExecution: false,
+      downloadsRemoteExecutables: false,
+      usesSuspiciousDomains: false,
+    });
+
+    expect(
+      result.riskFactors
+        .find((entry) => entry.id === 'network-access')
+        ?.evidence?.slice()
+        .sort(),
+    ).toEqual(['one.js', 'two.js']);
+  });
+
   describe('Network patterns', () => {
     const patterns = getPatterns('network-access');
 

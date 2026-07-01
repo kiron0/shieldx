@@ -10,8 +10,8 @@ import {
   isWellKnownCategory,
   getExtensionDependencies,
 } from '../utils/extension-utils';
-import { readFileContent } from '../utils/file-utils';
-import { hasLicenseMetadataOrFile } from '../utils/scanner-helpers';
+import { readFileContentAsync } from '../utils/file-utils';
+import { hasLicenseMetadataOrFileAsync } from '../utils/scanner-helpers';
 import * as path from 'path';
 
 export interface PackageAnalysisResult {
@@ -21,7 +21,9 @@ export interface PackageAnalysisResult {
   extensionDependencies: ExtensionDependency[];
 }
 
-export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
+export async function analyzePackage(
+  ext: InstalledExtension,
+): Promise<PackageAnalysisResult> {
   const riskFactors: RiskFactor[] = [];
   const trustSignals: TrustSignal[] = [];
   const pkg = ext.packageJSON;
@@ -109,7 +111,7 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     });
   }
 
-  if (!hasLicenseMetadataOrFile(pkg, ext.installPath)) {
+  if (!(await hasLicenseMetadataOrFileAsync(pkg, ext.installPath))) {
     riskFactors.push({
       id: 'no-license',
       title: 'No license',
@@ -175,7 +177,7 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
   const mainFile = pkg?.main;
   if (mainFile && ext.installPath) {
     const mainPath = path.join(ext.installPath, mainFile);
-    checkMainFileSize(mainPath, riskFactors);
+    await checkMainFileSize(mainPath, riskFactors);
   }
 
   return {
@@ -186,12 +188,28 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
   };
 }
 
-function checkMainFileSize(mainPath: string, riskFactors: RiskFactor[]): void {
-  const content = readFileContent(mainPath);
+async function checkMainFileSize(
+  mainPath: string,
+  riskFactors: RiskFactor[],
+): Promise<void> {
+  const content = await readFileContentAsync(mainPath);
   if (!content) return;
 
-  const lineCount = content.split('\n').length;
-  const hasLongLines = content.split('\n').some((line) => line.length > 800);
+  let lineCount = 1;
+  let currentLineLength = 0;
+  let hasLongLines = false;
+  for (let i = 0; i < content.length; i++) {
+    const ch = content.charCodeAt(i);
+    if (ch === 10) {
+      lineCount++;
+      currentLineLength = 0;
+      continue;
+    }
+    currentLineLength++;
+    if (currentLineLength > 800) {
+      hasLongLines = true;
+    }
+  }
 
   if (lineCount === 1 && content.length > 50000) {
     riskFactors.push({

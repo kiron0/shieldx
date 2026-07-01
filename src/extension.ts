@@ -22,10 +22,13 @@ import {
   InstalledExtension,
 } from './utils/extension-utils';
 import { formatDateStamp, formatDateTime } from './utils/date-format';
-import { fileExists, readJsonFile, writeJsonFile } from './utils/file-utils';
+import {
+  fileExistsAsync,
+  readJsonFileAsync,
+  writeJsonFileAsync,
+} from './utils/file-utils';
 import { info, warn } from './utils/logger';
 import { EXT_CONFIG } from './config';
-import * as fs from 'fs';
 
 let dashboardProvider: DashboardProvider;
 let previousExtensionIds: Set<string> = new Set();
@@ -68,7 +71,9 @@ function updateMetrics(
   context.globalState.update(METRICS_KEY, metrics);
 }
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(
+  context: vscode.ExtensionContext,
+): Promise<void> {
   info(`${EXT_CONFIG.name} activated`);
 
   const welcomeShown = context.globalState.get<boolean>(
@@ -114,7 +119,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand(
       `${EXT_CONFIG.name.toLowerCase()}.exportReport`,
       async (format?: string) => {
-        const summary = loadFromCache(context)?.summary;
+        const summary = (await loadFromCache(context))?.summary;
         if (!summary) {
           const fallback = context.globalState.get<SecuritySummary>(CACHE_KEY);
           if (!fallback) {
@@ -212,11 +217,11 @@ export function activate(context: vscode.ExtensionContext): void {
       async () => {
         const ext = await pickExtension();
         if (!ext) return;
-        const policy = loadPolicy() || { allowedExtensions: [] };
+        const policy = (await loadPolicy()) || { allowedExtensions: [] };
         if (!policy.allowedExtensions) policy.allowedExtensions = [];
         if (!policy.allowedExtensions.includes(ext.id)) {
           policy.allowedExtensions.push(ext.id);
-          writePolicy(policy);
+          await writePolicy(policy);
           vscode.window.showInformationMessage(
             `${EXT_CONFIG.name}: Added "${ext.displayName || ext.name}" to allowlist.`,
           );
@@ -235,11 +240,11 @@ export function activate(context: vscode.ExtensionContext): void {
       async () => {
         const ext = await pickExtension();
         if (!ext) return;
-        const policy = loadPolicy() || { blockedExtensions: [] };
+        const policy = (await loadPolicy()) || { blockedExtensions: [] };
         if (!policy.blockedExtensions) policy.blockedExtensions = [];
         if (!policy.blockedExtensions.includes(ext.id)) {
           policy.blockedExtensions.push(ext.id);
-          writePolicy(policy);
+          await writePolicy(policy);
           vscode.window.showWarningMessage(
             `${EXT_CONFIG.name}: Added "${ext.displayName || ext.name}" to blocklist.`,
           );
@@ -255,8 +260,8 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.commands.registerCommand(
       `${EXT_CONFIG.name.toLowerCase()}.showPolicy`,
-      () => {
-        const policy = loadPolicy();
+      async () => {
+        const policy = await loadPolicy();
         if (!policy) {
           vscode.window.showInformationMessage(
             `${EXT_CONFIG.name}: No policy file (.${EXT_CONFIG.name.toLowerCase()}.json) found in workspace.`,
@@ -286,7 +291,7 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
   );
 
-  const cached = loadFromCache(context);
+  const cached = await loadFromCache(context);
   if (cached) {
     previousExtensionIds = new Set(cached.previousIds);
   }
@@ -371,9 +376,9 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
         const extensions = getInstalledExtensions();
         info(`Found ${extensions.length} installed extensions`);
 
-        const prevSummary = loadFromCache(context)?.summary || null;
+        const prevSummary = (await loadFromCache(context))?.summary || null;
 
-        const policy = loadPolicy();
+        const policy = await loadPolicy();
 
         const summary = await scanAllExtensions(
           extensions,
@@ -398,7 +403,7 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
           checkPolicyCompliance(summary, policy);
         }
 
-        saveToCache(context, summary);
+        await saveToCache(context, summary);
         context.globalState.update(CACHE_KEY, summary);
         dashboardProvider.addHistoryEntry(summary);
 
@@ -496,7 +501,7 @@ async function checkForNewExtensions(
       `Extension changes detected: ${newIds.length} new, ${removedIds.length} removed.`,
     );
 
-    const stored = loadFromCache(context);
+    const stored = await loadFromCache(context);
     const summary = stored ? stored.summary : null;
 
     if (summary) {
@@ -557,7 +562,7 @@ async function checkForNewExtensions(
       summary.scannedAt = new Date().toISOString();
       summary.reports.sort((a, b) => b.riskScore - a.riskScore);
 
-      saveToCache(context, summary);
+      await saveToCache(context, summary);
       dashboardProvider.updateResult(summary);
 
       const config = vscode.workspace.getConfiguration(
@@ -752,7 +757,7 @@ async function pickHistorySummary(
   const history = context.globalState.get<ScanHistoryEntry[]>(HISTORY_KEY, []);
   if (history.length === 0) {
     return (
-      loadFromCache(context)?.summary ||
+      (await loadFromCache(context))?.summary ||
       context.globalState.get<SecuritySummary>(CACHE_KEY)
     );
   }
@@ -777,7 +782,7 @@ function formatHistoryLabel(entry: ScanHistoryEntry): string {
   return formatDateTime(entry.time);
 }
 
-function loadPolicy(): ShieldXPolicy | null {
+async function loadPolicy(): Promise<ShieldXPolicy | null> {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) return null;
 
@@ -786,7 +791,7 @@ function loadPolicy(): ShieldXPolicy | null {
       folder.uri.fsPath,
       `.${EXT_CONFIG.name.toLowerCase()}.json`,
     );
-    const policy = readJsonFile<ShieldXPolicy>(policyPath);
+    const policy = await readJsonFileAsync<ShieldXPolicy>(policyPath);
     if (policy) return policy;
   }
 
@@ -809,7 +814,7 @@ async function pickExtension(): Promise<InstalledExtension | undefined> {
   return picked?.extension;
 }
 
-function writePolicy(policy: ShieldXPolicy): void {
+async function writePolicy(policy: ShieldXPolicy): Promise<void> {
   const workspaceFolders = vscode.workspace.workspaceFolders;
   if (!workspaceFolders || workspaceFolders.length === 0) {
     vscode.window.showErrorMessage(
@@ -821,7 +826,7 @@ function writePolicy(policy: ShieldXPolicy): void {
     workspaceFolders[0].uri.fsPath,
     `.${EXT_CONFIG.name.toLowerCase()}.json`,
   );
-  writeJsonFile(policyPath, policy);
+  await writeJsonFileAsync(policyPath, policy);
   vscode.window.showInformationMessage(`Policy saved to ${policyPath}`);
 }
 
@@ -897,7 +902,7 @@ async function checkWorkspaceTrust(
 
   for (const folder of workspaceFolders) {
     for (const sf of sensitiveFiles) {
-      if (fileExists(path.join(folder.uri.fsPath, sf))) {
+      if (await fileExistsAsync(path.join(folder.uri.fsPath, sf))) {
         hasSensitiveFiles = true;
         break;
       }
@@ -907,7 +912,7 @@ async function checkWorkspaceTrust(
 
   if (hasSensitiveFiles) {
     const summary =
-      loadFromCache(context)?.summary ||
+      (await loadFromCache(context))?.summary ||
       context.globalState.get<SecuritySummary>(CACHE_KEY);
 
     if (summary) {
@@ -931,23 +936,23 @@ async function checkWorkspaceTrust(
   }
 }
 
-function saveToCache(
+async function saveToCache(
   context: vscode.ExtensionContext,
   summary: SecuritySummary,
-): void {
+): Promise<void> {
   const stored: StoredScan = {
     summary,
     previousIds: [...previousExtensionIds],
     version: CACHE_VERSION,
   };
-  context.globalState.update(CACHE_KEY, summary);
+  await context.globalState.update(CACHE_KEY, summary);
 
   try {
     const cachePath = path.join(
       context.globalStorageUri.fsPath,
       'scan-cache.json',
     );
-    writeJsonFile(cachePath, stored);
+    await writeJsonFileAsync(cachePath, stored);
   } catch {
     void 0;
   }
@@ -962,8 +967,8 @@ async function clearPersistedScanState(
       context.globalStorageUri.fsPath,
       'scan-cache.json',
     );
-    if (fileExists(cachePath)) {
-      fs.unlinkSync(cachePath);
+    if (await fileExistsAsync(cachePath)) {
+      await vscode.workspace.fs.delete(vscode.Uri.file(cachePath));
     }
   } catch {
     void 0;
@@ -974,14 +979,16 @@ function toTitleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
-function loadFromCache(context: vscode.ExtensionContext): StoredScan | null {
+async function loadFromCache(
+  context: vscode.ExtensionContext,
+): Promise<StoredScan | null> {
   try {
     const cachePath = path.join(
       context.globalStorageUri.fsPath,
       'scan-cache.json',
     );
-    if (fileExists(cachePath)) {
-      const cached = readJsonFile<StoredScan>(cachePath);
+    if (await fileExistsAsync(cachePath)) {
+      const cached = await readJsonFileAsync<StoredScan>(cachePath);
       if (cached && cached.version === CACHE_VERSION) {
         return cached;
       }

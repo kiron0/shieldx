@@ -15,6 +15,7 @@ out/**/*.spec.js
 esbuild.config.ts
 bun.lock
 node_modules/.cache/**
+.github/**
 .gitignore
 .prettierignore
 plan.md

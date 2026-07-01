@@ -1,8 +1,11 @@
-import * as cp from 'child_process';
+import { execFile } from 'child_process';
 import * as path from 'path';
+import { promisify } from 'util';
 import { RiskFactor } from '../types';
-import { fileExists } from '../utils/file-utils';
+import { fileExistsAsync } from '../utils/file-utils';
 import { warn } from '../utils/logger';
+
+const execFileAsync = promisify(execFile);
 
 interface NpmAuditResult {
   vulnerabilities: Record<
@@ -21,19 +24,18 @@ interface NpmAuditResult {
   };
 }
 
-export function runNpmAudit(extDir: string): RiskFactor[] {
+export async function runNpmAudit(extDir: string): Promise<RiskFactor[]> {
   const lockFile = path.join(extDir, 'package-lock.json');
-  if (!fileExists(lockFile)) return [];
+  if (!(await fileExistsAsync(lockFile))) return [];
 
   try {
-    const result = cp.execSync('npm audit --json', {
+    const { stdout } = await execFileAsync('npm', ['audit', '--json'], {
       cwd: extDir,
       timeout: 15000,
       encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
     });
 
-    const audit: NpmAuditResult = JSON.parse(result);
+    const audit: NpmAuditResult = JSON.parse(stdout);
     return parseAuditResult(audit);
   } catch (err: any) {
     if (err.stdout) {
