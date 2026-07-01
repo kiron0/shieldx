@@ -211,7 +211,7 @@ export function generateDashboardHtml(cspSource: string): string {
           </div>
           <div>
             <div class="about-title">${title} <sub style="font-size:8px;opacity:.45;font-weight:500">v${version}</sub></div>
-            <div class="about-author">${author}</div>
+            <div class="about-author">by ${author}</div>
           </div>
         </div>
         <div class="about-desc">${description}</div>
