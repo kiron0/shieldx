@@ -184,7 +184,7 @@ export function getDashboardStyles(): string {
     #history-content{flex:1 1 auto;min-height:0}
     .history-list{display:flex;flex-direction:column;gap:4px;flex:1 1 auto;min-height:0;overflow-y:auto;padding:2px 2px 2px 0}
     .history-list.history-list-expanded{overflow:hidden}
-    .history-item{--hc:var(--accent);--hbg:rgba(0,122,204,.1);--hborder:rgba(0,122,204,.35);--hglow:rgba(0,122,204,.22);background:linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,.006));border:1px solid rgba(255,255,255,.08);border-left:4px solid var(--hc);border-radius:16px;padding:10px 12px;font-size:11px;transition:all .22s ease;display:flex;flex-direction:column;gap:8px;margin-bottom:6px;position:relative;overflow:hidden}
+    .history-item{--hc:var(--accent);--hbg:rgba(0,122,204,.1);--hborder:rgba(0,122,204,.35);--hglow:rgba(0,122,204,.22);background:linear-gradient(180deg, rgba(255,255,255,.018), rgba(255,255,255,.006));border:1px solid rgba(255,255,255,.08);border-left:4px solid var(--hc);border-radius:var(--radius);padding:10px 12px;font-size:11px;transition:all .22s ease;display:flex;flex-direction:column;gap:8px;margin-bottom:6px;position:relative;overflow:hidden;flex-shrink:0}
     .history-item::before{content:'';position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,var(--hc),transparent 70%);opacity:.55;pointer-events:none}
     .history-item[data-history-level="low"]{--hc:var(--low);--hbg:rgba(76,175,80,.1);--hborder:rgba(76,175,80,.35);--hglow:rgba(76,175,80,.18)}
     .history-item[data-history-level="moderate"]{--hc:var(--moderate);--hbg:rgba(255,152,0,.1);--hborder:rgba(255,152,0,.35);--hglow:rgba(255,152,0,.18)}
