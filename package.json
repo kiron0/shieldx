@@ -145,7 +145,7 @@
     "vscode:prepublish": "npm run compile",
     "compile": "npm run clean && tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "build": "npm run compile && npx @vscode/vsce package",
+    "build": "npm run compile && vsce package --no-yarn",
     "lint": "eslint src --ext ts",
     "format": "prettier --write .",
     "test": "vitest run",
@@ -155,13 +155,14 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.0.1",
-    "@types/vscode": "^1.85.0",
-    "eslint": "^9.39.4",
+    "@types/vscode": "1.85.0",
+    "@vscode/vsce": "^3.9.2",
+    "eslint": "^10.6.0",
     "globals": "^17.7.0",
     "jiti": "^2.7.0",
-    "prettier": "^3.8.4",
+    "prettier": "^3.9.4",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.0",
+    "typescript-eslint": "^8.62.1",
     "vitest": "^4.1.9"
   }
 }

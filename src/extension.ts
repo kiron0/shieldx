@@ -9,7 +9,7 @@ import {
   generateSarifReport,
 } from './reports/markdown-report';
 import { isPdfExportAvailable, renderHtmlToPdf } from './reports/pdf-report';
-import { scanAllExtensions } from './scanner/extension-scanner';
+import { scanAllExtensions, scanExtension } from './scanner/extension-scanner';
 import { compareScans } from './scanner/history-comparison';
 import {
   ScanHistoryEntry,
@@ -292,7 +292,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   const autoScan = vscode.workspace
     .getConfiguration(EXT_CONFIG.name.toLowerCase())
-    .get<boolean>('autoScanOnStartup', true);
+    .get<boolean>('autoScanOnStartup', false);
   if (autoScan) {
     setTimeout(async () => {
       await runScan(context);
@@ -466,7 +466,7 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
 }
 
 async function checkForNewExtensions(
-  context: vscode.ExtensionContext,
+  _context: vscode.ExtensionContext,
 ): Promise<void> {
   const currentIds = new Set(getInstalledExtensions().map((e) => e.id));
 
@@ -486,9 +486,12 @@ async function checkForNewExtensions(
     const warnOnHigh = config.get<boolean>('warnOnHighRisk', true);
 
     if (warnOnHigh) {
-      const summary = await scanAllExtensions(getInstalledExtensions());
-
-      const newReports = summary.reports.filter((r) => newIds.includes(r.id));
+      const extensions = getInstalledExtensions();
+      const newReports = await Promise.all(
+        extensions
+          .filter((ext) => newIds.includes(ext.id))
+          .map((ext) => scanExtension(ext)),
+      );
       const riskyNew = newReports.filter(
         (r) => r.riskLevel === 'high' || r.riskLevel === 'critical',
       );
@@ -505,11 +508,6 @@ async function checkForNewExtensions(
           }
         }
       }
-
-      saveToCache(context, summary);
-      context.globalState.update(CACHE_KEY, summary);
-      dashboardProvider.addHistoryEntry(summary);
-      dashboardProvider.updateResult(summary);
     }
 
     previousExtensionIds = currentIds;
