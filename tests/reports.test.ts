@@ -211,7 +211,7 @@ describe('CSV Report', () => {
     expect(lines[0]).toBe(
       'Extension,Publisher,Version,MarketplaceID,MarketplaceUrl,Category,RiskScore,RiskLevel,RiskFactors,Recommendation',
     );
-    expect(lines.length).toBe(4); // header + 3 data rows
+    expect(lines.length).toBe(4);
   });
 
   it('escapes CSV values with commas', () => {
@@ -250,7 +250,7 @@ describe('SARIF Report', () => {
   it('maps risk factors to results', () => {
     const sarif = generateSarifReport(mockSummary as any);
     const results = sarif.runs[0].results;
-    // moderate-ext: 1 factor (network), risky-ext: 3 factors (child-process, install-script, no-repo)
+
     expect(results.length).toBe(4);
   });
 
@@ -266,7 +266,7 @@ describe('SARIF Report', () => {
   it('maps severity levels correctly', () => {
     const sarif = generateSarifReport(mockSummary as any);
     const levels = sarif.runs[0].results.map((r: any) => r.level);
-    expect(levels).toContain('error'); // high severity
-    expect(levels).toContain('warning'); // medium severity
+    expect(levels).toContain('error');
+    expect(levels).toContain('warning');
   });
 });

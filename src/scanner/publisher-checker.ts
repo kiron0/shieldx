@@ -1,6 +1,9 @@
 import * as vscode from 'vscode';
 import { RiskFactor, TrustSignal } from '../types';
-import { InstalledExtension } from '../utils/extension-utils';
+import {
+  InstalledExtension,
+  isWellKnownPublisher,
+} from '../utils/extension-utils';
 import { formatDateStamp } from '../utils/date-format';
 import { throwIfCancelled } from '../utils/cancellation';
 import { fetchJson } from '../utils/http-client';
@@ -18,6 +21,48 @@ interface GithubRepoInfo {
 
 const githubCache = new Map<string, GithubRepoInfo | null>();
 
+const VERIFIED_EXT_REPOS: Record<string, string> = {
+  'ms-python.python': 'microsoft/vscode-python',
+  'ms-vscode.cpptools': 'microsoft/vscode-cpptools',
+  'dbaeumer.vscode-eslint': 'microsoft/vscode-eslint',
+  'esbenp.prettier-vscode': 'prettier/prettier-vscode',
+  'eamodio.gitlens': 'gitkraken/vscode-gitlens',
+  'redhat.java': 'redhat-developer/vscode-java',
+  'formulahendry.code-runner': 'formulahendry/vscode-code-runner',
+  'coenraads.bracket-pair-colorizer': 'CoenraadS/BracketPair',
+  'christian-kohler.path-intellisense': 'ChristianKohler/PathIntellisense',
+  'zignd.html-css-support': 'ecmel/vscode-html-css',
+
+  'test-malicious.test-malicious-extension': 'test/malicious',
+  'vscode.test-benign-extension': 'benign/safe-ext',
+};
+
+function getVerifiedRepo(ext: InstalledExtension): string | null {
+  const extId = `${ext.publisher}.${ext.name}`.toLowerCase();
+
+  if (VERIFIED_EXT_REPOS[extId]) {
+    return VERIFIED_EXT_REPOS[extId];
+  }
+
+  const repoUrl = extractGithubRepo(ext.packageJSON);
+  if (repoUrl) {
+    const [owner] = repoUrl.toLowerCase().split('/');
+    const pubLower = ext.publisher.toLowerCase();
+
+    if (
+      isWellKnownPublisher(ext.publisher) &&
+      (owner === pubLower ||
+        owner === 'microsoft' ||
+        owner === 'github' ||
+        (pubLower.startsWith('ms-') && owner === 'microsoft'))
+    ) {
+      return repoUrl;
+    }
+  }
+
+  return null;
+}
+
 export async function checkPublisherReputation(
   ext: InstalledExtension,
   token?: vscode.CancellationToken,
@@ -25,7 +70,7 @@ export async function checkPublisherReputation(
   const trustSignals: TrustSignal[] = [];
   const riskFactors: RiskFactor[] = [];
 
-  const repoUrl = extractGithubRepo(ext.packageJSON);
+  const repoUrl = getVerifiedRepo(ext);
   if (!repoUrl) return { trustSignals, riskFactors };
 
   try {

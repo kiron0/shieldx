@@ -106,7 +106,7 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('data-tab="overview"');
     expect(html).toContain('data-tab="extensions"');
     expect(html).toContain('data-tab="history"');
-    // Each tab should have an SVG and a span label
+
     const tabMatches = html.match(/class="nav-tab[^"]*"/g);
     expect(tabMatches).toBeTruthy();
     expect(tabMatches!.length).toBeGreaterThanOrEqual(3);

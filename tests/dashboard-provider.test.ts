@@ -218,7 +218,6 @@ describe('DashboardProvider', () => {
     expect(settings.reportFormat).toBe('json');
     expect(settings.minimumWarningLevel).toBe('critical');
 
-    // Reset
     mockConfigValues.autoScanOnStartup = false;
     mockConfigValues.reportFormat = 'markdown';
     mockConfigValues.minimumWarningLevel = 'high';

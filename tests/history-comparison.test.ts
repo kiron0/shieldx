@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { ScanDiff } from '../scanner/history-comparison';
 import { SecuritySummary, ExtensionSecurityReport } from '../types';
 
-// Inline compareScans logic for testing
 function compareScans(
   previous: SecuritySummary | null,
   current: SecuritySummary,

@@ -30,6 +30,7 @@ import * as fs from 'fs';
 let dashboardProvider: DashboardProvider;
 let previousExtensionIds: Set<string> = new Set();
 let activeScanCancellation: vscode.CancellationTokenSource | undefined;
+let extensionChangeTimeout: NodeJS.Timeout | undefined;
 
 function focusSidebar(): void {
   vscode.commands.executeCommand(
@@ -306,7 +307,12 @@ export function activate(context: vscode.ExtensionContext): void {
 
   context.subscriptions.push(
     vscode.extensions.onDidChange(() => {
-      checkForNewExtensions(context);
+      if (extensionChangeTimeout) {
+        clearTimeout(extensionChangeTimeout);
+      }
+      extensionChangeTimeout = setTimeout(() => {
+        checkForNewExtensions(context);
+      }, 1000);
     }),
   );
 
@@ -466,9 +472,10 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
 }
 
 async function checkForNewExtensions(
-  _context: vscode.ExtensionContext,
+  context: vscode.ExtensionContext,
 ): Promise<void> {
-  const currentIds = new Set(getInstalledExtensions().map((e) => e.id));
+  const currentExtensions = getInstalledExtensions();
+  const currentIds = new Set(currentExtensions.map((e) => e.id));
 
   const newIds: string[] = [];
   for (const id of currentIds) {
@@ -477,26 +484,90 @@ async function checkForNewExtensions(
     }
   }
 
-  if (newIds.length > 0) {
-    info(`New extensions detected: ${newIds.join(', ')}`);
+  const removedIds: string[] = [];
+  for (const id of previousExtensionIds) {
+    if (!currentIds.has(id)) {
+      removedIds.push(id);
+    }
+  }
 
-    const config = vscode.workspace.getConfiguration(
-      EXT_CONFIG.name.toLowerCase(),
+  if (newIds.length > 0 || removedIds.length > 0) {
+    info(
+      `Extension changes detected: ${newIds.length} new, ${removedIds.length} removed.`,
     );
-    const warnOnHigh = config.get<boolean>('warnOnHighRisk', true);
 
-    if (warnOnHigh) {
-      const extensions = getInstalledExtensions();
-      const newReports = await Promise.all(
-        extensions
-          .filter((ext) => newIds.includes(ext.id))
-          .map((ext) => scanExtension(ext)),
-      );
-      const riskyNew = newReports.filter(
-        (r) => r.riskLevel === 'high' || r.riskLevel === 'critical',
-      );
+    const stored = loadFromCache(context);
+    const summary = stored ? stored.summary : null;
 
-      if (riskyNew.length > 0) {
+    if (summary) {
+      let newReports: import('./types').ExtensionSecurityReport[] = [];
+      if (newIds.length > 0) {
+        try {
+          await vscode.window.withProgress(
+            {
+              location: vscode.ProgressLocation.Notification,
+              title: `${EXT_CONFIG.name}: Scanning new extensions...`,
+              cancellable: true,
+            },
+            async (_progress, token) => {
+              const scanPromise = Promise.all(
+                currentExtensions
+                  .filter((ext) => newIds.includes(ext.id))
+                  .map((ext) => scanExtension(ext, token)),
+              );
+              newReports = await scanPromise;
+            },
+          );
+        } catch (err) {
+          if (err instanceof vscode.CancellationError) {
+            info(`${EXT_CONFIG.name}: Incremental scan cancelled.`);
+            return;
+          }
+          throw err;
+        }
+      }
+
+      if (removedIds.length > 0) {
+        summary.reports = summary.reports.filter(
+          (r) => !removedIds.includes(r.id),
+        );
+      }
+
+      if (newReports.length > 0) {
+        const newReportIds = new Set(newReports.map((r) => r.id));
+        summary.reports = [
+          ...newReports,
+          ...summary.reports.filter((r) => !newReportIds.has(r.id)),
+        ];
+      }
+
+      summary.totalExtensions = summary.reports.length;
+      summary.lowRisk = summary.reports.filter(
+        (r) => r.riskLevel === 'low',
+      ).length;
+      summary.moderateRisk = summary.reports.filter(
+        (r) => r.riskLevel === 'moderate',
+      ).length;
+      summary.highRisk = summary.reports.filter(
+        (r) => r.riskLevel === 'high',
+      ).length;
+      summary.criticalRisk = summary.reports.filter(
+        (r) => r.riskLevel === 'critical',
+      ).length;
+      summary.scannedAt = new Date().toISOString();
+      summary.reports.sort((a, b) => b.riskScore - a.riskScore);
+
+      saveToCache(context, summary);
+      dashboardProvider.updateResult(summary);
+
+      const config = vscode.workspace.getConfiguration(
+        EXT_CONFIG.name.toLowerCase(),
+      );
+      const warnOnHigh = config.get<boolean>('warnOnHighRisk', true);
+      if (warnOnHigh && newReports.length > 0) {
+        const riskyNew = newReports.filter(
+          (r) => r.riskLevel === 'high' || r.riskLevel === 'critical',
+        );
         for (const ext of riskyNew) {
           const action = await vscode.window.showWarningMessage(
             `${EXT_CONFIG.name}: New extension "${ext.displayName || ext.name}" is ${toTitleCase(ext.riskLevel)} risk (score: ${ext.riskScore}). ${ext.recommendation}`,
@@ -508,6 +579,8 @@ async function checkForNewExtensions(
           }
         }
       }
+    } else {
+      await runScan(context);
     }
 
     previousExtensionIds = currentIds;

@@ -18,10 +18,10 @@ export function daysAgo(date: Date): number {
 export function extractGithubRepo(npmData: RegistryRepoSource): string | null {
   const sources = [
     npmData.repository?.url?.match(
-      /github\.com[/:]([\\w-]+\/[\\w.-]+?)(?:\.git)?$/,
+      /github\.com[/:]([\w-]+\/[\w.-]+?)(?:\.git)?$/,
     ),
-    npmData.bugs?.url?.match(/github\.com\/([\\w-]+\/[\\w.-]+?)\//),
-    npmData.homepage?.match(/github\.com\/([\\w-]+\/[\\w.-]+?)(?:\/|$)/),
+    npmData.bugs?.url?.match(/github\.com\/([\w-]+\/[\w.-]+?)\//),
+    npmData.homepage?.match(/github\.com\/([\w-]+\/[\w.-]+?)(?:\/|$)/),
   ];
   for (const m of sources) if (m) return m[1];
   return null;

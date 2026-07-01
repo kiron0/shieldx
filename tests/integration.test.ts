@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { RiskFactor, TrustSignal } from '../types';
 
-// Inline pattern matching logic from code-analyzer for isolated testing
-
 interface Pattern {
   id: string;
   name: string;
@@ -123,10 +121,9 @@ describe('Problem Statement Detection', () => {
   it('does not false-positive on safe code', () => {
     const code =
       'const fs = require("fs"); fs.readFileSync("data.txt", "utf8"); console.log(data)';
-    // None of the API key, exfil, or config patterns should match
+
     for (const pattern of PROBLEM_PATTERNS) {
       if (pattern.id === 'file-mod') {
-        // file-mod has writeFile patterns, should not match read-only code
         expect(matchesAny(code, pattern.patterns)).toBe(false);
       }
     }
@@ -136,7 +133,7 @@ describe('Problem Statement Detection', () => {
 describe('Marketplace Reputation Detection (unit)', () => {
   it('detects version jumps: major jump 5+', () => {
     const versions = ['1.0.0', '2.0.0', '10.0.0'];
-    // Inline the function
+
     const jumps: string[] = [];
     for (let i = 1; i < versions.length; i++) {
       const prevP = versions[i - 1].split('.').map(Number);
@@ -162,7 +159,6 @@ describe('Marketplace Reputation Detection (unit)', () => {
   });
 
   it('high install count trust signal threshold', () => {
-    // Test threshold logic
     const downloads = 1500000;
     expect(downloads > 1000000).toBe(true);
   });
@@ -176,7 +172,7 @@ describe('Marketplace Reputation Detection (unit)', () => {
     const time: Record<string, string> = {
       '1.0.0': '2020-01-01',
       '1.1.0': '2020-06-01',
-      '2.0.0': '2025-01-01', // 4.5 year gap
+      '2.0.0': '2025-01-01',
     };
     const versions = Object.keys(time)
       .filter((k) => k !== 'created' && k !== 'modified')
@@ -195,7 +191,6 @@ describe('Marketplace Reputation Detection (unit)', () => {
 
 describe('Integration: Scan lifecycle', () => {
   it('full scan lifecycle: get extensions → scan → reports', async () => {
-    // Simulate the scan pipeline with mock data
     const mockFactors: RiskFactor[] = [
       {
         id: 'child-process',
@@ -226,9 +221,8 @@ describe('Integration: Scan lifecycle', () => {
     for (const s of mockSignals) totalScore += s.points;
     totalScore = Math.max(0, Math.min(100, totalScore));
 
-    expect(totalScore).toBe(25); // 20 + 15 - 10 = 25
+    expect(totalScore).toBe(25);
 
-    // Generate mock report
     const mockReport = {
       id: 'test.ext',
       name: 'Test Extension',
@@ -274,7 +268,6 @@ describe('Integration: Scan lifecycle', () => {
   });
 
   it('export format routing (simulated)', () => {
-    // Simulate format routing
     const formats = ['markdown', 'json', 'html', 'csv', 'sarif'];
 
     for (const format of formats) {

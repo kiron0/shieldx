@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 
-// Test version comparison logic used in dependency-analyzer
 function isVersionVulnerable(version: string, range: string): boolean {
   const cleaned = version.replace(/^[\^~>=<]+/, '');
   const rangeCleaned = range.replace(/^[\^~>=<]+/, '');
