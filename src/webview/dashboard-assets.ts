@@ -792,13 +792,21 @@ export function getDashboardScript(dateFormattersScript: string): string {
             '<span>How scores work</span>' +
           '</div>' +
           '<div class="confirm-body" style="font-size:11px;opacity:.7;line-height:1.5;margin-bottom:14px">' +
-            'Lower score = safer. Higher score = more risky signals found. Treat high and critical first.' +
+            '<div style="margin-bottom:10px">ShieldX combines trust signals, risky behavior, package reputation, permissions, scripts, and known vulnerabilities into one score from 0 to 100.</div>' +
+            '<div style="margin-bottom:10px">Lower score = fewer warning signs. Higher score = stronger or more numerous risk signals. Score is guide for review priority, not proof that extension is safe or malicious.</div>' +
             '<div class="score-explainer-scale">' +
               '<span class="score-band low"><span class="score-band-dot"></span>0-25 Low</span>' +
               '<span class="score-band moderate"><span class="score-band-dot"></span>26-50 Moderate</span>' +
               '<span class="score-band high"><span class="score-band-dot"></span>51-75 High</span>' +
               '<span class="score-band critical"><span class="score-band-dot"></span>76-100 Critical</span>' +
             '</div>' +
+            '<div style="margin-top:12px;display:grid;gap:8px">' +
+              '<div><strong style="color:var(--low)">Low</strong> <span style="opacity:.9">Minor or few concerns. Usually OK to keep, but still read details if extension has broad permissions or install scripts.</span></div>' +
+              '<div><strong style="color:var(--moderate)">Moderate</strong> <span style="opacity:.9">Some notable signals. Review risk factors, publisher trust, and capabilities before relying on it in sensitive work.</span></div>' +
+              '<div><strong style="color:var(--high)">High</strong> <span style="opacity:.9">Strong warning signs or multiple combined risks. Audit soon. Limit trust until you understand why it scored high.</span></div>' +
+              '<div><strong style="color:var(--critical)">Critical</strong> <span style="opacity:.9">Severe indicators, stacked risky behavior, or serious vulnerability evidence. Treat as highest priority. Consider disabling until reviewed.</span></div>' +
+            '</div>' +
+            '<div style="margin-top:12px">Best workflow: open highest score first, read Risk Factors, check recommendation, then inspect permissions, scripts, dependencies, and publisher details.</div>' +
           '</div>' +
           '<div class="confirm-actions">' +
             '<button class="confirm-cancel" style="width:100%">Close</button>' +
