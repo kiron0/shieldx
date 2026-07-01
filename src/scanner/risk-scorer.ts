@@ -1,6 +1,7 @@
 import { RiskFactor, TrustSignal, RiskLevel } from '../types';
 
 const MAX_SCORE = 100;
+const TRUST_DISCOUNT_LIMIT = 0.25;
 const CATEGORY_BONUS_BY_SIZE: Array<[number, number]> = [
   [4, 3],
   [6, 4],
@@ -9,6 +10,50 @@ const HIGH_CRIT_BONUS_BY_COUNT: Array<[number, number]> = [
   [4, 3],
   [6, 4],
 ];
+const SEVERITY_FLOOR: Record<RiskFactor['severity'], number> = {
+  low: 0,
+  medium: 26,
+  high: 51,
+  critical: 76,
+};
+const SEVERITY_RANK: Record<RiskFactor['severity'], number> = {
+  low: 0,
+  medium: 1,
+  high: 2,
+  critical: 3,
+};
+
+const RISK_CATEGORY_BY_ID: Record<string, string> = {
+  'child-process': 'execution',
+  'dynamic-exec': 'execution',
+  'download-exec': 'execution',
+  'install-script': 'execution',
+  'network-access': 'network',
+  'suspicious-domains': 'network',
+  'api-key-steal': 'data-exfiltration',
+  'code-exfil': 'data-exfiltration',
+  'config-exfil': 'data-access',
+  'env-access': 'data-access',
+  'filesystem-access': 'data-access',
+  'file-mod': 'data-access',
+  obfuscation: 'obfuscation',
+  'packed-js': 'obfuscation',
+  'string-decode': 'obfuscation',
+  'encoded-payload': 'obfuscation',
+  'suspicious-version-jump': 'metadata',
+  'broad-activation': 'permissions',
+  'suspicious-command': 'permissions',
+  'many-capabilities': 'permissions',
+  'no-repo': 'reputation',
+  'no-license': 'reputation',
+  'unknown-publisher': 'reputation',
+  'many-open-issues': 'reputation',
+  'inactive-repo': 'reputation',
+  'many-deps': 'supply-chain',
+  'native-modules': 'supply-chain',
+  'single-line-file': 'packaging',
+  'minified-file': 'packaging',
+};
 
 export function calculateRisk(
   riskFactors: RiskFactor[],
@@ -16,10 +61,14 @@ export function calculateRisk(
 ): { riskScore: number; riskLevel: RiskLevel } {
   let score = 0;
   let highCritCount = 0;
+  let severityFloor = 0;
+  let maxSeverityRank = 0;
   const categories = new Set<string>();
   for (const factor of riskFactors) {
     score += factor.points;
-    categories.add(factor.id.split('-')[0]);
+    categories.add(getRiskCategory(factor.id));
+    severityFloor = Math.max(severityFloor, SEVERITY_FLOOR[factor.severity]);
+    maxSeverityRank = Math.max(maxSeverityRank, SEVERITY_RANK[factor.severity]);
     if (factor.severity === 'high' || factor.severity === 'critical') {
       highCritCount++;
     }
@@ -31,11 +80,25 @@ export function calculateRisk(
   const sortedSignals = [...trustSignals].sort(
     (a, b) => Math.abs(b.points) - Math.abs(a.points),
   );
+  let trustAdjustment = 0;
   for (let i = 0; i < sortedSignals.length; i++) {
     const decay = Math.pow(0.8, i);
-    score += sortedSignals[i].points * decay;
+    trustAdjustment += sortedSignals[i].points * decay;
+  }
+  if (trustAdjustment > 0) {
+    score += trustAdjustment;
+  } else {
+    score -= Math.min(
+      Math.abs(trustAdjustment),
+      Math.max(0, score - severityFloor),
+      score * TRUST_DISCOUNT_LIMIT,
+    );
   }
 
+  score = Math.max(score, severityFloor);
+  if (maxSeverityRank < SEVERITY_RANK.high) {
+    score = Math.min(score, 50);
+  }
   score = Math.max(0, Math.min(MAX_SCORE, score));
   score = Math.round(score);
 
@@ -46,6 +109,14 @@ export function calculateRisk(
   else riskLevel = 'critical';
 
   return { riskScore: score, riskLevel };
+}
+
+function getRiskCategory(id: string): string {
+  if (RISK_CATEGORY_BY_ID[id]) return RISK_CATEGORY_BY_ID[id];
+  if (id.startsWith('vuln-') || id.startsWith('npm-audit-')) {
+    return 'supply-chain';
+  }
+  return `custom:${id}`;
 }
 
 function highestApplicableBonus(
