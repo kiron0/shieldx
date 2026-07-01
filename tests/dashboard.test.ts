@@ -20,6 +20,7 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('id="ext-search"');
     expect(html).toContain('id="ext-toolbar"');
     expect(html).toContain('id="ext-count"');
+    expect(html).toContain('ext-toolbar-actions');
     expect(html).toContain('class="history-clear-btn"');
     expect(html).toContain('.history-toolbar.has-history .history-clear-btn');
     expect(html).toContain('id="history-detail"');
@@ -46,7 +47,7 @@ describe('Dashboard HTML', () => {
 
   it('has settings gear button in header', () => {
     const html = generateDashboardHtml();
-    expect(html).toContain('class="settings-btn"');
+    expect(html).toContain('class="icon-btn settings-btn"');
     expect(html).toContain('data-tab="settings"');
     expect(html).toContain('title="Settings"');
     expect(html).not.toContain('badge-count');
@@ -75,6 +76,10 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('expandedHistoryEntryId === historyId');
     expect(html).toContain('id="score-explainer-trigger"');
     expect(html).toContain('updateHistoryDependentUi()');
+    expect(html).toContain(
+      "extSearch.style.display = hasHistory ? '' : 'none'",
+    );
+    expect(html).toContain("scoreExplainer.style.display = 'inline-flex'");
     expect(html).toContain("header.style.display = 'none'");
     expect(html).toContain("empty.style.display = 'flex'");
     expect(html).toContain("c.style.display = 'none'");
@@ -251,8 +256,12 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('.toggle-switch');
     expect(html).toContain('.toggle-slider');
     expect(html).toContain('.setting-select');
+    expect(html).toContain('.icon-btn');
     expect(html).toContain('.settings-btn');
     expect(html).toContain('.settings-btn.active');
-    expect(html).toContain('.settings-btn:hover');
+    expect(html).toContain('.icon-btn:hover');
+    expect(html).toContain(
+      '.score-explainer-trigger{display:inline-flex;font-size:0;opacity:.5}',
+    );
   });
 });

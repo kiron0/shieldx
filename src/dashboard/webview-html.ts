@@ -36,10 +36,13 @@ export function generateDashboardHtml(cspSource: string): string {
           </div>
         </div>
         <div class="header-actions">
-          <a class="header-link-btn" href="https://shieldx.js.org" target="_blank" rel="noopener noreferrer" title="Detailed docs">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M21 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/></svg>
+          <button id="score-explainer-trigger" class="icon-btn score-explainer-trigger" data-action="show-score-explainer" title="How scores work">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          </button>
+          <a class="icon-btn" href="https://shieldx.js.org" target="_blank" rel="noopener noreferrer" title="Detailed docs">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
           </a>
-          <button class="settings-btn" data-action="tab" data-tab="settings" title="Settings">
+          <button class="icon-btn settings-btn" data-action="tab" data-tab="settings" title="Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
           </button>
         </div>
@@ -82,122 +85,325 @@ export function generateDashboardHtml(cspSource: string): string {
 
     <div class="app-main">
       <div id="panel-overview" class="panel visible">
-        <div id="summary-cards" class="summary-cards"></div>
-        <div class="dist-section hidden" id="dist-section">
-          <div class="dist-header"><span class="dist-title">Risk Distribution</span></div>
-          <div id="dist-bar" class="dist-bar"></div>
-          <div id="dist-legend" class="dist-legend"></div>
-        </div>
-        <div id="rec-actions" class="rec-actions hidden">
-          <div class="section-card-header">
-            <svg class="section-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-            <span class="section-card-title">Recommended Actions</span>
+        <!-- Overview Skeleton -->
+        <div id="overview-skeleton" class="skeleton-view">
+          <div class="summary-cards">
+            <div class="card skeleton-card">
+              <div class="card-icon"><div class="skeleton skeleton-inline" style="width:14px;height:14px;border-radius:50%"></div></div>
+              <div class="count"><div class="skeleton skeleton-inline" style="width:28px;height:18px;margin-top:2px"></div></div>
+              <div class="label"><div class="skeleton skeleton-inline" style="width:32px;height:7px;margin-top:4px"></div></div>
+            </div>
+            <div class="card skeleton-card">
+              <div class="card-icon"><div class="skeleton skeleton-inline" style="width:14px;height:14px;border-radius:50%"></div></div>
+              <div class="count"><div class="skeleton skeleton-inline" style="width:28px;height:18px;margin-top:2px"></div></div>
+              <div class="label"><div class="skeleton skeleton-inline" style="width:32px;height:7px;margin-top:4px"></div></div>
+            </div>
+            <div class="card skeleton-card">
+              <div class="card-icon"><div class="skeleton skeleton-inline" style="width:14px;height:14px;border-radius:50%"></div></div>
+              <div class="count"><div class="skeleton skeleton-inline" style="width:28px;height:18px;margin-top:2px"></div></div>
+              <div class="label"><div class="skeleton skeleton-inline" style="width:32px;height:7px;margin-top:4px"></div></div>
+            </div>
+            <div class="card skeleton-card">
+              <div class="card-icon"><div class="skeleton skeleton-inline" style="width:14px;height:14px;border-radius:50%"></div></div>
+              <div class="count"><div class="skeleton skeleton-inline" style="width:28px;height:18px;margin-top:2px"></div></div>
+              <div class="label"><div class="skeleton skeleton-inline" style="width:32px;height:7px;margin-top:4px"></div></div>
+            </div>
+            <div class="card skeleton-card">
+              <div class="card-icon"><div class="skeleton skeleton-inline" style="width:14px;height:14px;border-radius:50%"></div></div>
+              <div class="count"><div class="skeleton skeleton-inline" style="width:28px;height:18px;margin-top:2px"></div></div>
+              <div class="label"><div class="skeleton skeleton-inline" style="width:32px;height:7px;margin-top:4px"></div></div>
+            </div>
           </div>
-          <ul id="rec-list" class="rec-list"></ul>
-        </div>
-        <button id="score-explainer-trigger" class="score-explainer-trigger" data-action="show-score-explainer" style="align-self:flex-start">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-          <span style="text-decoration:underline">How scores work</span>
-        </button>
-        <div id="empty-state" class="empty-state">
-          <div class="empty-state-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/><polyline points="9 12 11 14 15 10"/></svg>
+          <div class="dist-section">
+            <div class="dist-header"><span class="dist-title">Risk Distribution</span></div>
+            <div class="dist-bar"><div class="skeleton" style="width:100%;height:100%;border-radius:2px"></div></div>
+            <div class="dist-legend" style="display:flex;gap:12px;margin-top:8px">
+              <span class="dist-legend-item"><span class="dist-legend-dot skeleton" style="border-radius:50%;width:8px;height:8px"></span><div class="skeleton skeleton-inline" style="width:40px;height:10px"></div></span>
+              <span class="dist-legend-item"><span class="dist-legend-dot skeleton" style="border-radius:50%;width:8px;height:8px"></span><div class="skeleton skeleton-inline" style="width:40px;height:10px"></div></span>
+              <span class="dist-legend-item"><span class="dist-legend-dot skeleton" style="border-radius:50%;width:8px;height:8px"></span><div class="skeleton skeleton-inline" style="width:40px;height:10px"></div></span>
+              <span class="dist-legend-item"><span class="dist-legend-dot skeleton" style="border-radius:50%;width:8px;height:8px"></span><div class="skeleton skeleton-inline" style="width:40px;height:10px"></div></span>
+            </div>
           </div>
-          <p class="empty-state-title">Ready to Scan</p>
-          <p class="empty-state-sub">Click <strong>Scan Now</strong> to analyze your extensions for security risks.</p>
+          <div class="rec-actions" style="margin-top:12px">
+            <div class="section-card-header">
+              <div class="skeleton skeleton-inline" style="width:14px;height:14px;border-radius:3px;margin-right:6px"></div>
+              <div class="skeleton skeleton-inline" style="width:120px;height:11px"></div>
+            </div>
+            <ul class="rec-list" style="list-style:none;padding:0">
+              <li style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+                <span class="rec-dot skeleton" style="border-radius:50%;width:6px;height:6px"></span>
+                <div class="skeleton skeleton-inline" style="width:180px;height:10px"></div>
+              </li>
+              <li style="display:flex;align-items:center;gap:8px">
+                <span class="rec-dot skeleton" style="border-radius:50%;width:6px;height:6px"></span>
+                <div class="skeleton skeleton-inline" style="width:140px;height:10px"></div>
+              </li>
+            </ul>
+          </div>
         </div>
-        <div id="last-scan" class="last-scan"></div>
+
+        <!-- Overview Content -->
+        <div id="overview-content" style="display: none; flex-direction: column; gap: 10px; width: 100%;">
+          <div id="summary-cards" class="summary-cards"></div>
+          <div class="dist-section hidden" id="dist-section">
+            <div class="dist-header"><span class="dist-title">Risk Distribution</span></div>
+            <div id="dist-bar" class="dist-bar"></div>
+            <div id="dist-legend" class="dist-legend"></div>
+          </div>
+          <div id="rec-actions" class="rec-actions hidden">
+            <div class="section-card-header">
+              <svg class="section-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              <span class="section-card-title">Recommended Actions</span>
+            </div>
+            <ul id="rec-list" class="rec-list"></ul>
+          </div>
+          <div id="empty-state" class="empty-state">
+            <div class="empty-state-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/><polyline points="9 12 11 14 15 10"/></svg>
+            </div>
+            <p class="empty-state-title">Ready to Scan</p>
+            <p class="empty-state-sub">Click <strong>Scan Now</strong> to analyze your extensions for security risks.</p>
+          </div>
+          <div id="last-scan" class="last-scan"></div>
+        </div>
       </div>
 
       <div id="panel-extensions" class="panel">
-        <div id="ext-toolbar" class="ext-toolbar">
-          <div class="search-bar"><input type="text" id="ext-search" placeholder="Search extensions..." /><span id="ext-count" class="ext-count">0</span></div>
-          <div class="filter-bar"></div>
-        </div>
-        <div id="ext-list" class="ext-list"></div>
-        <div id="ext-empty" class="empty-state">
-          <div class="empty-state-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <!-- Extensions Skeleton -->
+        <div id="extensions-skeleton" class="skeleton-view">
+          <div class="ext-toolbar">
+            <div class="search-bar">
+              <div class="skeleton" style="width:100%;height:28px;border-radius:var(--radius)"></div>
+            </div>
           </div>
-          <p class="empty-state-title">No Extensions Found</p>
-          <p class="empty-state-sub">Try adjusting your search query.</p>
+          <div class="ext-list">
+            <div class="ext-item" style="border-left: 3px solid var(--border)">
+              <div class="ext-item-header" style="display:flex;align-items:center;gap:10px;width:100%">
+                <div class="skeleton" style="width:28px;height:28px;border-radius:6px;flex-shrink:0"></div>
+                <div class="ext-item-info" style="flex:1">
+                  <div class="skeleton" style="width:120px;height:12px;margin-bottom:6px"></div>
+                  <div class="skeleton" style="width:80px;height:8px"></div>
+                </div>
+                <div class="skeleton" style="width:30px;height:12px;border-radius:4px"></div>
+              </div>
+            </div>
+            <div class="ext-item" style="border-left: 3px solid var(--border)">
+              <div class="ext-item-header" style="display:flex;align-items:center;gap:10px;width:100%">
+                <div class="skeleton" style="width:28px;height:28px;border-radius:6px;flex-shrink:0"></div>
+                <div class="ext-item-info" style="flex:1">
+                  <div class="skeleton" style="width:140px;height:12px;margin-bottom:6px"></div>
+                  <div class="skeleton" style="width:90px;height:8px"></div>
+                </div>
+                <div class="skeleton" style="width:30px;height:12px;border-radius:4px"></div>
+              </div>
+            </div>
+            <div class="ext-item" style="border-left: 3px solid var(--border)">
+              <div class="ext-item-header" style="display:flex;align-items:center;gap:10px;width:100%">
+                <div class="skeleton" style="width:28px;height:28px;border-radius:6px;flex-shrink:0"></div>
+                <div class="ext-item-info" style="flex:1">
+                  <div class="skeleton" style="width:100px;height:12px;margin-bottom:6px"></div>
+                  <div class="skeleton" style="width:70px;height:8px"></div>
+                </div>
+                <div class="skeleton" style="width:30px;height:12px;border-radius:4px"></div>
+              </div>
+            </div>
+            <div class="ext-item" style="border-left: 3px solid var(--border)">
+              <div class="ext-item-header" style="display:flex;align-items:center;gap:10px;width:100%">
+                <div class="skeleton" style="width:28px;height:28px;border-radius:6px;flex-shrink:0"></div>
+                <div class="ext-item-info" style="flex:1">
+                  <div class="skeleton" style="width:130px;height:12px;margin-bottom:6px"></div>
+                  <div class="skeleton" style="width:85px;height:8px"></div>
+                </div>
+                <div class="skeleton" style="width:30px;height:12px;border-radius:4px"></div>
+              </div>
+            </div>
+            <div class="ext-item" style="border-left: 3px solid var(--border)">
+              <div class="ext-item-header" style="display:flex;align-items:center;gap:10px;width:100%">
+                <div class="skeleton" style="width:28px;height:28px;border-radius:6px;flex-shrink:0"></div>
+                <div class="ext-item-info" style="flex:1">
+                  <div class="skeleton" style="width:110px;height:12px;margin-bottom:6px"></div>
+                  <div class="skeleton" style="width:75px;height:8px"></div>
+                </div>
+                <div class="skeleton" style="width:30px;height:12px;border-radius:4px"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Extensions Content -->
+        <div id="extensions-content" style="display: none; flex-direction: column; gap: 10px; width: 100%;">
+          <div id="ext-toolbar" class="ext-toolbar">
+            <div class="search-bar"><input type="text" id="ext-search" placeholder="Search extensions..." /><span id="ext-count" class="ext-count">0</span></div>
+            <div class="filter-bar"></div>
+          </div>
+          <div id="ext-list" class="ext-list"></div>
+          <div id="ext-empty" class="empty-state">
+            <div class="empty-state-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            </div>
+            <p class="empty-state-title">No Extensions Found</p>
+            <p class="empty-state-sub">Try adjusting your search query.</p>
+          </div>
         </div>
       </div>
 
       <div id="panel-history" class="panel">
-        <div id="history-header" class="history-toolbar">
-          <div class="search-bar">
-            <input type="text" id="history-main-search" placeholder="Search history..." />
-            <button class="history-clear-btn" data-action="clear-history" title="Clear All History">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-            </button>
+        <!-- History Skeleton -->
+        <div id="history-skeleton" class="skeleton-view">
+          <div class="history-toolbar">
+            <div class="search-bar">
+              <div class="skeleton" style="width:100%;height:28px;border-radius:var(--radius)"></div>
+            </div>
+          </div>
+          <div class="history-list">
+            <div class="history-item" style="border-left: 3px solid var(--border); padding: 12px; margin-bottom: 8px">
+              <div class="history-item-top" style="display:flex;align-items:center;justify-content:space-between;width:100%">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                  <div class="skeleton" style="width:120px;height:12px"></div>
+                  <div class="skeleton" style="width:60px;height:9px"></div>
+                </div>
+                <div class="skeleton" style="width:80px;height:6px;border-radius:3px"></div>
+              </div>
+            </div>
+            <div class="history-item" style="border-left: 3px solid var(--border); padding: 12px; margin-bottom: 8px">
+              <div class="history-item-top" style="display:flex;align-items:center;justify-content:space-between;width:100%">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                  <div class="skeleton" style="width:110px;height:12px"></div>
+                  <div class="skeleton" style="width:50px;height:9px"></div>
+                </div>
+                <div class="skeleton" style="width:80px;height:6px;border-radius:3px"></div>
+              </div>
+            </div>
+            <div class="history-item" style="border-left: 3px solid var(--border); padding: 12px; margin-bottom: 8px">
+              <div class="history-item-top" style="display:flex;align-items:center;justify-content:space-between;width:100%">
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                  <div class="skeleton" style="width:130px;height:12px"></div>
+                  <div class="skeleton" style="width:70px;height:9px"></div>
+                </div>
+                <div class="skeleton" style="width:80px;height:6px;border-radius:3px"></div>
+              </div>
+            </div>
           </div>
         </div>
-        <div id="history-list" class="history-list"></div>
-        <div id="history-detail" class="history-detail"></div>
-        <div id="history-empty" class="empty-state">
-          <div class="empty-state-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+
+        <!-- History Content -->
+        <div id="history-content" style="display: none; flex-direction: column; gap: 10px; width: 100%;">
+          <div id="history-header" class="history-toolbar">
+            <div class="search-bar">
+              <input type="text" id="history-main-search" placeholder="Search history..." />
+              <button class="history-clear-btn" data-action="clear-history" title="Clear All History">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+              </button>
+            </div>
           </div>
-          <p class="empty-state-title">No History Yet</p>
-          <p class="empty-state-sub">Scan results will appear here after your first scan.</p>
+          <div id="history-list" class="history-list"></div>
+          <div id="history-detail" class="history-detail"></div>
+          <div id="history-empty" class="empty-state">
+            <div class="empty-state-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <p class="empty-state-title">No History Yet</p>
+            <p class="empty-state-sub">Scan results will appear here after your first scan.</p>
+          </div>
         </div>
       </div>
 
       <div id="panel-settings" class="panel">
-        <div class="settings-panel">
-          <div class="settings-section">
-            <div class="settings-section-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/></svg>
-              <span>Scan &amp; Analysis</span>
+        <!-- Settings Skeleton -->
+        <div id="settings-skeleton" class="skeleton-view">
+          <div class="settings-panel">
+            <div class="settings-section" style="margin-bottom:12px">
+              <div class="settings-section-title" style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+                <div class="skeleton skeleton-inline" style="width:14px;height:14px;border-radius:3px"></div>
+                <div class="skeleton skeleton-inline" style="width:120px;height:12px"></div>
+              </div>
+              <div class="setting-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+                <div class="setting-info" style="flex:1">
+                  <div class="skeleton" style="width:150px;height:12px;margin-bottom:6px"></div>
+                  <div class="skeleton" style="width:220px;height:8px"></div>
+                </div>
+                <div class="skeleton" style="width:34px;height:18px;border-radius:9px"></div>
+              </div>
+              <div class="setting-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+                <div class="setting-info" style="flex:1">
+                  <div class="skeleton" style="width:120px;height:12px;margin-bottom:6px"></div>
+                  <div class="skeleton" style="width:180px;height:8px"></div>
+                </div>
+                <div class="skeleton" style="width:34px;height:18px;border-radius:9px"></div>
+              </div>
             </div>
-            <label class="setting-row" for="setting-autoScan">
-              <div class="setting-info"><span class="setting-label">Auto-scan on startup</span><span class="setting-desc">Automatically scan extensions when VS Code starts</span></div>
-              <div class="toggle-switch"><input type="checkbox" id="setting-autoScan" data-setting="autoScanOnStartup" /><span class="toggle-slider"></span></div>
-            </label>
-            <label class="setting-row" for="setting-scanNodeModules">
-              <div class="setting-info"><span class="setting-label">Scan node_modules</span><span class="setting-desc">Deep scan node_modules inside extensions (slower)</span></div>
-              <div class="toggle-switch"><input type="checkbox" id="setting-scanNodeModules" data-setting="scanNodeModules" /><span class="toggle-slider"></span></div>
-            </label>
-            <label class="setting-row" for="setting-enableOsv">
-              <div class="setting-info"><span class="setting-label">Enable OSV vulnerability scan</span><span class="setting-desc">Runtime vulnerability scanning via OSV.dev API</span></div>
-              <div class="toggle-switch"><input type="checkbox" id="setting-enableOsv" data-setting="enableOsvScan" /><span class="toggle-slider"></span></div>
-            </label>
+            <div class="settings-section">
+              <div class="settings-section-title" style="display:flex;align-items:center;gap:6px;margin-bottom:10px">
+                <div class="skeleton skeleton-inline" style="width:14px;height:14px;border-radius:3px"></div>
+                <div class="skeleton skeleton-inline" style="width:100px;height:12px"></div>
+              </div>
+              <div class="setting-row" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+                <div class="setting-info" style="flex:1">
+                  <div class="skeleton" style="width:130px;height:12px;margin-bottom:6px"></div>
+                  <div class="skeleton" style="width:190px;height:8px"></div>
+                </div>
+                <div class="skeleton" style="width:34px;height:18px;border-radius:9px"></div>
+              </div>
+            </div>
           </div>
-          <div class="settings-section">
-            <div class="settings-section-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
-              <span>Notifications</span>
+        </div>
+
+        <!-- Settings Content -->
+        <div id="settings-content" style="display: none; flex-direction: column; gap: 10px; width: 100%;">
+          <div class="settings-panel">
+            <div class="settings-section">
+              <div class="settings-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.25 9 11.5 5.25-1.25 9-6.25 9-11.5V7l-9-5z"/></svg>
+                <span>Scan &amp; Analysis</span>
+              </div>
+              <label class="setting-row" for="setting-autoScan">
+                <div class="setting-info"><span class="setting-label">Auto-scan on startup</span><span class="setting-desc">Automatically scan extensions when VS Code starts</span></div>
+                <div class="toggle-switch"><input type="checkbox" id="setting-autoScan" data-setting="autoScanOnStartup" /><span class="toggle-slider"></span></div>
+              </label>
+              <label class="setting-row" for="setting-scanNodeModules">
+                <div class="setting-info"><span class="setting-label">Scan node_modules</span><span class="setting-desc">Deep scan node_modules inside extensions (slower)</span></div>
+                <div class="toggle-switch"><input type="checkbox" id="setting-scanNodeModules" data-setting="scanNodeModules" /><span class="toggle-slider"></span></div>
+              </label>
+              <label class="setting-row" for="setting-enableOsv">
+                <div class="setting-info"><span class="setting-label">Enable OSV vulnerability scan</span><span class="setting-desc">Runtime vulnerability scanning via OSV.dev API</span></div>
+                <div class="toggle-switch"><input type="checkbox" id="setting-enableOsv" data-setting="enableOsvScan" /><span class="toggle-slider"></span></div>
+              </label>
             </div>
-            <label class="setting-row" for="setting-warnHighRisk">
-              <div class="setting-info"><span class="setting-label">Warn on high risk</span><span class="setting-desc">Show warning when high-risk extensions are detected</span></div>
-              <div class="toggle-switch"><input type="checkbox" id="setting-warnHighRisk" data-setting="warnOnHighRisk" /><span class="toggle-slider"></span></div>
-            </label>
-            <label class="setting-row" for="setting-minWarningLevel">
-              <div class="setting-info"><span class="setting-label">Minimum warning level</span><span class="setting-desc">Minimum risk level to trigger a notification</span></div>
-              <select class="setting-select" id="setting-minWarningLevel" data-setting="minimumWarningLevel">
-                <option value="moderate">Moderate</option>
-                <option value="high">High</option>
-                <option value="critical">Critical</option>
-              </select>
-            </label>
-          </div>
-          <div class="settings-section">
-            <div class="settings-section-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span>Export</span>
+            <div class="settings-section">
+              <div class="settings-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                <span>Notifications</span>
+              </div>
+              <label class="setting-row" for="setting-warnHighRisk">
+                <div class="setting-info"><span class="setting-label">Warn on high risk</span><span class="setting-desc">Show warning when high-risk extensions are detected</span></div>
+                <div class="toggle-switch"><input type="checkbox" id="setting-warnHighRisk" data-setting="warnOnHighRisk" /><span class="toggle-slider"></span></div>
+              </label>
+              <label class="setting-row" for="setting-minWarningLevel">
+                <div class="setting-info"><span class="setting-label">Minimum warning level</span><span class="setting-desc">Minimum risk level to trigger a notification</span></div>
+                <select class="setting-select" id="setting-minWarningLevel" data-setting="minimumWarningLevel">
+                  <option value="moderate">Moderate</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </label>
             </div>
-            <label class="setting-row" for="setting-reportFormat">
-              <div class="setting-info"><span class="setting-label">Default report format</span><span class="setting-desc">Format used when exporting security reports</span></div>
-              <select class="setting-select" id="setting-reportFormat" data-setting="reportFormat">
-                <option value="markdown">Markdown</option>
-                <option value="json">JSON</option>
-                <option value="html">HTML</option>
-                <option value="pdf">PDF</option>
-                <option value="csv">CSV</option>
-                <option value="sarif">SARIF</option>
-              </select>
-            </label>
+            <div class="settings-section">
+              <div class="settings-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Export</span>
+              </div>
+              <label class="setting-row" for="setting-reportFormat">
+                <div class="setting-info"><span class="setting-label">Default report format</span><span class="setting-desc">Format used when exporting security reports</span></div>
+                <select class="setting-select" id="setting-reportFormat" data-setting="reportFormat">
+                  <option value="markdown">Markdown</option>
+                  <option value="json">JSON</option>
+                  <option value="html">HTML</option>
+                  <option value="pdf">PDF</option>
+                  <option value="csv">CSV</option>
+                  <option value="sarif">SARIF</option>
+                </select>
+              </label>
+            </div>
           </div>
         </div>
       </div>

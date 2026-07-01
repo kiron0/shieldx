@@ -13,6 +13,10 @@ export function getDashboardStyles(): string {
     @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
     @keyframes pulse-ring{0%{box-shadow:0 0 0 0 var(--accent-glow)}70%{box-shadow:0 0 0 6px transparent}100%{box-shadow:0 0 0 0 transparent}}
     @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    .skeleton{background:linear-gradient(90deg,var(--card-bg) 25%,var(--border) 50%,var(--card-bg) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite linear;border-radius:var(--radius)}
+    .skeleton-inline{display:inline-block;vertical-align:middle}
+    .skeleton-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:10px 8px;text-align:center;height:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+    .skeleton-view{width:100%;display:flex;flex-direction:column;gap:10px}
     body{font-family:var(--vscode-font-family,-apple-system,BlinkMacSystemFont,sans-serif);font-size:13px;background:var(--bg);color:var(--fg);line-height:1.5;overflow:hidden;height:100vh}
     .app-shell{height:100%;display:flex;flex-direction:column;padding:var(--pad);gap:10px}
     .app-top,.app-bottom{flex:0 0 auto}
@@ -26,12 +30,9 @@ export function getDashboardStyles(): string {
     .header h1{font-size:14px;font-weight:700;letter-spacing:.3px;line-height:1.2}
     .header-slogan{font-size:10px;opacity:.45;letter-spacing:.5px;text-transform:uppercase;display:block}
     .header-actions{display:flex;align-items:center;gap:8px;flex:0 0 auto}
-    .header-link-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 28px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--fg);opacity:.5;transition:all .2s;padding:0;text-decoration:none}
-    .header-link-btn svg{width:14px;height:14px}
-    .header-link-btn:hover{opacity:1;border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.08)}
-    .settings-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 28px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--fg);opacity:.5;transition:all .2s;padding:0}
-    .settings-btn svg{width:14px;height:14px}
-    .settings-btn:hover{opacity:1;border-color:var(--accent);color:var(--accent);transform:rotate(30deg)}
+    .icon-btn{display:flex;align-items:center;justify-content:center;width:28px;height:28px;flex:0 0 28px;background:var(--card-bg);border:1px solid var(--border);border-radius:8px;cursor:pointer;color:var(--fg);opacity:.5;transition:all .2s;padding:0;text-decoration:none}
+    .icon-btn svg{width:14px;height:14px}
+    .icon-btn:hover{opacity:1;border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.08);transform:rotate(30deg)}
     .settings-btn.active{opacity:1;border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.08)}
     #progress-section{display:none;margin-bottom:10px}
     #progress-section.visible{display:block}
@@ -94,9 +95,7 @@ export function getDashboardStyles(): string {
     .rec-list li:hover{border-color:var(--accent)}
     .rec-list li .rec-dot{width:6px;height:6px;border-radius:50%}
     .rec-list li .rec-text{flex:1;min-width:0}
-    .score-explainer-trigger{display:inline-flex;align-items:center;gap:6px;background:none;border:none;color:var(--fg);opacity:.6;font-size:11px;cursor:pointer;padding:8px 0;margin-bottom:10px;transition:opacity .15s}
-    .score-explainer-trigger:hover{opacity:.95}
-    .score-explainer-trigger svg{width:14px;height:14px;color:var(--accent)}
+    .score-explainer-trigger{display:inline-flex;font-size:0;opacity:.5}
     .score-explainer-scale{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
     .score-band{font-size:10px;padding:3px 8px;border-radius:999px;background:var(--bgc);color:var(--c);font-weight:600;display:flex;align-items:center;gap:4px;transition:transform .15s}
     .score-band:hover{transform:scale(1.05)}
@@ -109,7 +108,7 @@ export function getDashboardStyles(): string {
     #empty-state,#ext-empty,#history-empty{flex:1 1 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:0}
     .empty-state svg{width:36px;height:36px;margin-bottom:8px}
     .empty-state p{font-size:12px}
-    .last-scan{font-size:10px;opacity:.4;text-align:center;margin-top:8px;padding:6px 10px;border-radius:var(--radius);background:var(--card-bg);border:1px solid var(--border)}
+    .last-scan{font-size:10px;opacity:.4;text-align:center;margin-top:8px;padding:0}
     .last-scan:empty{display:none}
     .search-bar{margin-bottom:6px;position:relative}
     .search-bar input{width:100%;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 42px 6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
@@ -117,7 +116,9 @@ export function getDashboardStyles(): string {
     .search-bar input::placeholder{color:var(--input-ph)}
     .filter-bar{display:flex;gap:6px;align-items:center;justify-content:flex-end;margin-bottom:8px}
     .ext-count{position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:10px;opacity:.5;pointer-events:none}
-    .ext-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px}
+    .ext-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px;display:flex;align-items:center;gap:8px}
+    .ext-toolbar .search-bar{flex:1;margin-bottom:0}
+    .ext-toolbar-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
     .ext-list{display:flex;flex-direction:column;gap:4px;width:100%;padding:2px 0}
     .ext-item{background:linear-gradient(145deg, var(--card-bg), rgba(255,255,255,.01));border:1px solid var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);width:100%}
     .ext-item.risk-accent{border-left:4px solid var(--c,var(--border))}
@@ -249,6 +250,54 @@ export function getDashboardScript(dateFormattersScript: string): string {
       var inlineHistorySearch = {};
       var inlineHistoryFilter = {};
       var currentSettings = {};
+      var loadedScan = false;
+      var loadedHistory = false;
+      var loadedSettings = false;
+
+      function updateScanLoadedState(loaded) {
+        loadedScan = loaded;
+        var overviewSkel = $('overview-skeleton');
+        var overviewCont = $('overview-content');
+        var extSkel = $('extensions-skeleton');
+        var extCont = $('extensions-content');
+        if (loadedScan) {
+          if (overviewSkel) overviewSkel.style.display = 'none';
+          if (overviewCont) overviewCont.style.display = 'flex';
+          if (extSkel) extSkel.style.display = 'none';
+          if (extCont) extCont.style.display = 'flex';
+        } else {
+          if (overviewSkel) overviewSkel.style.display = 'flex';
+          if (overviewCont) overviewCont.style.display = 'none';
+          if (extSkel) extSkel.style.display = 'flex';
+          if (extCont) extCont.style.display = 'none';
+        }
+      }
+
+      function updateHistoryLoadedState(loaded) {
+        loadedHistory = loaded;
+        var histSkel = $('history-skeleton');
+        var histCont = $('history-content');
+        if (loadedHistory) {
+          if (histSkel) histSkel.style.display = 'none';
+          if (histCont) histCont.style.display = 'flex';
+        } else {
+          if (histSkel) histSkel.style.display = 'flex';
+          if (histCont) histCont.style.display = 'none';
+        }
+      }
+
+      function updateSettingsLoadedState(loaded) {
+        loadedSettings = loaded;
+        var setSkel = $('settings-skeleton');
+        var setCont = $('settings-content');
+        if (loadedSettings) {
+          if (setSkel) setSkel.style.display = 'none';
+          if (setCont) setCont.style.display = 'flex';
+        } else {
+          if (setSkel) setSkel.style.display = 'flex';
+          if (setCont) setCont.style.display = 'none';
+        }
+      }
 
       function $(id) { return document.getElementById(id); }
       function $$(sel) { return document.querySelectorAll(sel); }
@@ -316,18 +365,18 @@ export function getDashboardScript(dateFormattersScript: string): string {
 
       window.addEventListener('message', function(event) {
         var msg = event.data;
-        if (msg.type === 'scanResult') { scanData = msg.data; renderAll(); }
+        if (msg.type === 'scanResult') { scanData = msg.data; updateScanLoadedState(true); renderAll(); }
         else if (msg.type === 'scanProgress') { updateProgress(msg.percent, msg.text); }
         else if (msg.type === 'scanStart') { shouldAutoOpenLatestHistory = true; showProgress(true); }
         else if (msg.type === 'scanCancelled') { shouldAutoOpenLatestHistory = false; }
         else if (msg.type === 'scanEnd') { showProgress(false); if (shouldAutoOpenLatestHistory) openLatestHistoryEntry(); shouldAutoOpenLatestHistory = false; }
-        else if (msg.type === 'history') { scanHistory = msg.history || []; expandedHistoryEntryId = null; renderHistory(); }
-        else if (msg.type === 'scanCleared') { scanData = null; expandedHistoryEntryId = null; renderAll(); renderHistory(); }
+        else if (msg.type === 'history') { scanHistory = msg.history || []; expandedHistoryEntryId = null; updateHistoryLoadedState(true); renderHistory(); }
+        else if (msg.type === 'scanCleared') { scanData = null; expandedHistoryEntryId = null; updateScanLoadedState(true); renderAll(); renderHistory(); }
         else if (msg.type === 'historyEntryCleared') {
           if (expandedHistoryEntryId === msg.id) expandedHistoryEntryId = null;
           renderHistory();
         }
-        else if (msg.type === 'settingsData') { currentSettings = msg.settings || {}; applySettings(msg.settings); }
+        else if (msg.type === 'settingsData') { currentSettings = msg.settings || {}; updateSettingsLoadedState(true); applySettings(msg.settings); }
       });
 
       function switchTab(tab) {
@@ -360,9 +409,11 @@ export function getDashboardScript(dateFormattersScript: string): string {
       function updateHistoryDependentUi() {
         var hasHistory = !!(scanHistory && scanHistory.length > 0);
         var extToolbar = $('ext-toolbar');
+        var extSearch = extToolbar ? extToolbar.querySelector('.search-bar') : null;
         var scoreExplainer = $('score-explainer-trigger');
-        if (extToolbar) extToolbar.style.display = hasHistory ? '' : 'none';
-        if (scoreExplainer) scoreExplainer.style.display = hasHistory ? 'inline-flex' : 'none';
+        if (extToolbar) extToolbar.style.display = '';
+        if (extSearch) extSearch.style.display = hasHistory ? '' : 'none';
+        if (scoreExplainer) scoreExplainer.style.display = 'inline-flex';
       }
 
       function updateProgress(pct, text) {
