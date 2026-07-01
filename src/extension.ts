@@ -92,6 +92,11 @@ export async function activate(
     vscode.window.registerWebviewViewProvider(
       DashboardProvider.viewType,
       dashboardProvider,
+      {
+        webviewOptions: {
+          retainContextWhenHidden: true,
+        },
+      },
     ),
   );
 
@@ -778,8 +783,26 @@ async function pickHistorySummary(
   return picked?.summary;
 }
 
+function getShortScanId(id: string): string {
+  if (!id) return 'ShieldX-Scan';
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash << 5) - hash + id.charCodeAt(i);
+    hash |= 0;
+  }
+  let hex = Math.abs(hash).toString(16).substring(0, 6).toUpperCase();
+  while (hex.length < 6) {
+    hex = '0' + hex;
+  }
+  return `ShieldX-${hex}`;
+}
+
 function formatHistoryLabel(entry: ScanHistoryEntry): string {
-  return formatDateTime(entry.time);
+  const hash =
+    entry.id && entry.id.startsWith('ShieldX-')
+      ? entry.id
+      : getShortScanId(entry.id || entry.time);
+  return `${hash} (${formatDateTime(entry.time)})`;
 }
 
 async function loadPolicy(): Promise<ShieldXPolicy | null> {

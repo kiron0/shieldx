@@ -12,7 +12,20 @@ import { EXT_CONFIG } from '../config';
 
 const HISTORY_KEY = `${EXT_CONFIG.name.toLowerCase()}.scanHistory`;
 const CACHE_KEY = `${EXT_CONFIG.name.toLowerCase()}.lastScan`;
-const MAX_HISTORY_ITEMS = 30;
+
+function getShortScanId(id: string): string {
+  const str = String(id || 'ShieldX-Scan');
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  let hex = Math.abs(hash).toString(16).substring(0, 6).toUpperCase();
+  while (hex.length < 6) {
+    hex = '0' + hex;
+  }
+  return `ShieldX-${hex}`;
+}
 
 export class DashboardProvider implements WebviewViewProvider {
   public static readonly viewType = `${EXT_CONFIG.name.toLowerCase()}.dashboard`;
@@ -37,32 +50,10 @@ export class DashboardProvider implements WebviewViewProvider {
       localResourceRoots: [],
     };
 
-    webviewView.webview.html = generateDashboardHtml(
-      webviewView.webview.cspSource,
-    );
-
     webviewView.webview.onDidReceiveMessage((message) => {
       switch (message.type) {
         case 'ready': {
-          const history = this.getHistory();
-          this._view?.webview.postMessage({
-            type: 'history',
-            history,
-          });
-
-          this.sendSettings();
-
-          const cached =
-            this._lastSummary ||
-            this._context.globalState.get<SecuritySummary>(CACHE_KEY);
-          if (cached) {
-            this._view?.webview.postMessage({
-              type: 'scanResult',
-              data: cached,
-            });
-          } else if (history.length > 0 && history[0].summary) {
-            this.syncCurrentScanStateFromHistory(history);
-          }
+          this.syncAllWebviewState();
           break;
         }
         case 'scan':
@@ -128,8 +119,42 @@ export class DashboardProvider implements WebviewViewProvider {
               });
           }
           break;
+        case 'error':
+          console.error('Webview Client Error:', message.error);
+          break;
       }
     });
+
+    webviewView.webview.html = generateDashboardHtml(
+      webviewView.webview.cspSource,
+    );
+
+    this.syncAllWebviewState();
+  }
+
+  private syncAllWebviewState(): void {
+    if (!this._view) return;
+    const history = this.getHistory();
+    this._view.webview.postMessage({
+      type: 'history',
+      history,
+    });
+
+    this.sendSettings();
+
+    const cached =
+      this._lastSummary ||
+      this._context.globalState.get<SecuritySummary>(CACHE_KEY);
+    if (cached) {
+      this._view.webview.postMessage({
+        type: 'scanResult',
+        data: cached,
+      });
+    } else if (history.length > 0 && history[0].summary) {
+      this.syncCurrentScanStateFromHistory(history);
+    } else {
+      this.clearCurrentScanState();
+    }
   }
 
   updateResult(summary: SecuritySummary): void {
@@ -179,15 +204,25 @@ export class DashboardProvider implements WebviewViewProvider {
         scanNodeModules: config.get<boolean>('scanNodeModules', false),
         reportFormat: config.get<string>('reportFormat', 'markdown'),
         enableOsvScan: config.get<boolean>('enableOsvScan', true),
+        maxHistoryItems: config.get<number>('maxHistoryItems', 10),
       },
     });
   }
 
   addHistoryEntry(summary: SecuritySummary): void {
     const history = this.getHistory();
+
+    for (const entry of history) {
+      if (entry.id && !entry.id.startsWith('ShieldX-')) {
+        entry.id = getShortScanId(entry.id);
+      }
+    }
+
+    const scannedAt = summary.scannedAt || new Date().toISOString();
+    const newId = getShortScanId(scannedAt);
     history.unshift({
-      id: summary.scannedAt || new Date().toISOString(),
-      time: summary.scannedAt || new Date().toISOString(),
+      id: newId,
+      time: scannedAt,
       total: summary.totalExtensions,
       high: summary.highRisk,
       critical: summary.criticalRisk,
@@ -195,7 +230,10 @@ export class DashboardProvider implements WebviewViewProvider {
       low: summary.lowRisk,
       summary,
     });
-    this.setHistory(history.slice(0, MAX_HISTORY_ITEMS));
+
+    const config = workspace.getConfiguration(EXT_CONFIG.name.toLowerCase());
+    const maxHistoryItems = config.get<number>('maxHistoryItems', 10);
+    this.setHistory(history.slice(0, maxHistoryItems));
   }
 
   private getHistory(): ScanHistoryEntry[] {

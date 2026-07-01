@@ -479,6 +479,27 @@ export function generateDashboardHtml(cspSource: string): string {
                 </select>
               </label>
             </div>
+            <div class="settings-section">
+              <div class="settings-section-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Scan History</span>
+              </div>
+              <div class="setting-row">
+                <div class="setting-info">
+                  <span class="setting-label">Max scan history stored</span>
+                  <span class="setting-desc">Number of scan results to persist (5 to 100)</span>
+                </div>
+                <div class="number-stepper">
+                  <button type="button" class="stepper-btn" id="btn-history-dec" data-action="dec-history" aria-label="Decrease history limit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                  <input type="number" id="setting-maxHistory" data-setting="maxHistoryItems" min="5" max="100" readonly />
+                  <button type="button" class="stepper-btn" id="btn-history-inc" data-action="inc-history" aria-label="Increase history limit">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

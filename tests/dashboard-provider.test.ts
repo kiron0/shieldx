@@ -170,11 +170,12 @@ describe('DashboardProvider', () => {
         scanNodeModules: false,
         reportFormat: 'markdown',
         enableOsvScan: true,
+        maxHistoryItems: 10,
       },
     });
   });
 
-  it('sendSettings includes all six config keys', () => {
+  it('sendSettings includes all seven config keys', () => {
     const harness = createHarness();
 
     (harness.provider as any).sendSettings();
@@ -190,6 +191,7 @@ describe('DashboardProvider', () => {
     expect(settings).toHaveProperty('scanNodeModules');
     expect(settings).toHaveProperty('reportFormat');
     expect(settings).toHaveProperty('enableOsvScan');
+    expect(settings).toHaveProperty('maxHistoryItems');
   });
 
   it('sendSettings does nothing when view is not available', () => {

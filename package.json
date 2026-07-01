@@ -136,6 +136,13 @@
           "type": "boolean",
           "default": true,
           "description": "Enable runtime vulnerability scanning via OSV.dev API (requires network)"
+        },
+        "shieldx.maxHistoryItems": {
+          "type": "integer",
+          "default": 10,
+          "minimum": 5,
+          "maximum": 100,
+          "description": "Maximum number of history items to store"
         }
       }
     }

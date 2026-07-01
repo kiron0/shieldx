@@ -243,7 +243,7 @@ export function getDashboardStyles(): string {
     .confirm-box{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px;max-width:320px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.35);transform:scale(.95);transition:transform .2s}
     .confirm-overlay.visible .confirm-box{transform:scale(1)}
     .confirm-title{font-size:13px;font-weight:700;margin-bottom:8px}
-    .confirm-body{font-size:11px;opacity:.6;line-height:1.5;margin-bottom:14px}
+    .confirm-body{font-size:11px;opacity:.6;line-height:1.5;margin-bottom:14px;white-space:pre-wrap}
     .confirm-actions{display:flex;gap:8px;justify-content:flex-end}
     .confirm-cancel{background:var(--sec-bg);color:var(--sec-fg);border:none;padding:6px 14px;border-radius:6px;font-size:11px;cursor:pointer;font-weight:600;transition:all .15s}
     .confirm-cancel:hover{opacity:.85}
@@ -267,13 +267,19 @@ export function getDashboardStyles(): string {
     .toggle-switch input:checked + .toggle-slider::before{transform:translateX(14px);background:var(--accent-fg)}
     .setting-select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;outline:none;cursor:pointer;transition:border-color .2s;min-width:90px}
     .setting-select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
+    .number-stepper{display:flex;align-items:center;background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius);overflow:hidden;height:24px;width:78px}
+    .stepper-btn{width:24px;height:24px;border:none;background:transparent;color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;transition:all .2s;padding:0}
+    .stepper-btn:hover{opacity:1;background:rgba(255,255,255,.05)}
+    .stepper-btn:active{background:rgba(255,255,255,.1)}
+    .stepper-btn svg{width:10px;height:10px;stroke-width:3px}
   `;
 }
 
 export function getDashboardScript(dateFormattersScript: string): string {
   return `
     (function() {
-      var vscode = acquireVsCodeApi();
+      try {
+        var vscode = acquireVsCodeApi();
       var scanData = null;
       var scanHistory = [];
       var scanHistoryById = {};
@@ -282,6 +288,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
       var inlineHistorySearch = {};
       var inlineHistoryFilter = {};
       var currentSettings = {};
+      var settingsLoaded = false;
       var loadedScan = false;
       var loadedHistory = false;
       var loadedSettings = false;
@@ -355,6 +362,22 @@ export function getDashboardScript(dateFormattersScript: string): string {
         var act = el.getAttribute('data-action');
         if (act === 'scan') {
           showScanConfirm();
+        } else if (act === 'dec-history') {
+          var input = $('setting-maxHistory');
+          var val = parseInt(input.value, 10) || 10;
+          if (val > 5) {
+            var newVal = val - 1;
+            input.value = newVal;
+            vscode.postMessage({ type: 'updateSetting', key: 'maxHistoryItems', value: newVal });
+          }
+        } else if (act === 'inc-history') {
+          var input = $('setting-maxHistory');
+          var val = parseInt(input.value, 10) || 10;
+          if (val < 100) {
+            var newVal = val + 1;
+            input.value = newVal;
+            vscode.postMessage({ type: 'updateSetting', key: 'maxHistoryItems', value: newVal });
+          }
         } else if (act === 'cancel-scan') {
           showConfirm('Cancel Security Scan?', 'This will stop current extension scan before completion.', 'Stop Scan', function() {
             vscode.postMessage({ type: 'cancelScan' });
@@ -436,19 +459,24 @@ export function getDashboardScript(dateFormattersScript: string): string {
       });
 
       window.addEventListener('message', function(event) {
-        var msg = event.data;
-        if (msg.type === 'scanResult') { scanData = msg.data; updateScanLoadedState(true); renderAll(); }
-        else if (msg.type === 'scanProgress') { updateProgress(msg.percent, msg.text); }
-        else if (msg.type === 'scanStart') { shouldAutoOpenLatestHistory = true; showProgress(true); }
-        else if (msg.type === 'scanCancelled') { shouldAutoOpenLatestHistory = false; }
-        else if (msg.type === 'scanEnd') { showProgress(false); if (shouldAutoOpenLatestHistory) openLatestHistoryEntry(); shouldAutoOpenLatestHistory = false; }
-        else if (msg.type === 'history') { scanHistory = msg.history || []; rebuildHistoryIndex(); expandedHistoryEntryId = null; updateHistoryLoadedState(true); renderHistory(); }
-        else if (msg.type === 'scanCleared') { scanData = null; expandedHistoryEntryId = null; updateScanLoadedState(true); renderAll(); renderHistory(); }
-        else if (msg.type === 'historyEntryCleared') {
-          if (expandedHistoryEntryId === msg.id) expandedHistoryEntryId = null;
-          renderHistory();
+        try {
+          var msg = event.data;
+          if (msg.type === 'scanResult') { scanData = msg.data; updateScanLoadedState(true); renderAll(); }
+          else if (msg.type === 'scanProgress') { updateProgress(msg.percent, msg.text); }
+          else if (msg.type === 'scanStart') { shouldAutoOpenLatestHistory = true; showProgress(true); }
+          else if (msg.type === 'scanCancelled') { shouldAutoOpenLatestHistory = false; }
+          else if (msg.type === 'scanEnd') { showProgress(false); if (shouldAutoOpenLatestHistory) openLatestHistoryEntry(); shouldAutoOpenLatestHistory = false; }
+          else if (msg.type === 'history') { scanHistory = msg.history || []; rebuildHistoryIndex(); expandedHistoryEntryId = null; updateHistoryLoadedState(true); renderHistory(); }
+          else if (msg.type === 'scanCleared') { scanData = null; expandedHistoryEntryId = null; updateScanLoadedState(true); renderAll(); renderHistory(); }
+          else if (msg.type === 'historyEntryCleared') {
+            if (expandedHistoryEntryId === msg.id) expandedHistoryEntryId = null;
+            renderHistory();
+          }
+          else if (msg.type === 'settingsData') { currentSettings = msg.settings || {}; settingsLoaded = true; updateSettingsLoadedState(true); applySettings(msg.settings); }
+        } catch (err) {
+          console.error("Message handler error:", err);
+          vscode.postMessage({ type: 'error', error: "Message handler failed: " + (err.stack || err.message) });
         }
-        else if (msg.type === 'settingsData') { currentSettings = msg.settings || {}; updateSettingsLoadedState(true); applySettings(msg.settings); }
       });
 
       function switchTab(tab) {
@@ -593,7 +621,12 @@ export function getDashboardScript(dateFormattersScript: string): string {
           html.push('<div class="history-item-top">');
           html.push('<div class="history-item-main history-item-header-toggle" data-action="select-history" data-id="' + escAttr(historyId) + '">');
           html.push('<div class="h-card-head">');
-          html.push('<div class="h-time-wrap"><div class="h-time">' + formattedTime + '</div><div class="h-subtime">' + esc(relativeTime) + '</div></div>');
+          var scanLabel = (s.id && s.id.indexOf('ShieldX-') === 0) ? s.id : getShortScanId(historyId);
+          var subtimeText = formattedTime;
+          if (relativeTime !== formattedTime) {
+            subtimeText += ' \u2022 ' + relativeTime;
+          }
+          html.push('<div class="h-time-wrap"><div class="h-time">' + esc(scanLabel) + '</div><div class="h-subtime">' + esc(subtimeText) + '</div></div>');
           html.push('<span class="h-level-chip">' + esc(levelLabel) + '</span>');
           html.push('</div>');
           html.push('<div class="h-meta-row"><div class="h-stat-row">' + statsPills + '</div></div>');
@@ -624,7 +657,9 @@ export function getDashboardScript(dateFormattersScript: string): string {
       function clearHistoryEntry(id) {
         if (!id) return;
         var entry = getHistoryEntry(id);
-        var label = entry ? formatDateTime(entry.time) : 'this scan history';
+        var entryId = entry ? (entry.id || entry.time) : '';
+        var scanLabel = (entry && entry.id && entry.id.indexOf('ShieldX-') === 0) ? entry.id : getShortScanId(entryId);
+        var label = entry ? scanLabel + ' (' + formatDateTime(entry.time) + ')' : 'this scan history';
         showConfirm('Clear History Entry?', 'This will permanently remove the history entry for ' + label + '. This action cannot be undone.', 'Clear', function() {
           vscode.postMessage({ type: 'forceClearHistoryEntry', id: id });
         });
@@ -638,7 +673,8 @@ export function getDashboardScript(dateFormattersScript: string): string {
           for (var i = 0; i < scanHistory.length; i++) {
             var entry = scanHistory[i];
             var entryId = entry.id || entry.time;
-            var label = formatDateTime(entry.time) + ' (' + entry.total + ' total, ' + entry.high + ' high, ' + entry.critical + ' crit)';
+            var scanLabel = (entry.id && entry.id.indexOf('ShieldX-') === 0) ? entry.id : getShortScanId(entryId);
+            var label = scanLabel + ' - ' + formatDateTime(entry.time);
             optionsHtml += '<option value="' + escAttr(entryId) + '">' + esc(label) + '</option>';
           }
         }
@@ -899,7 +935,12 @@ export function getDashboardScript(dateFormattersScript: string): string {
       }
 
       function showScanConfirm() {
-        showConfirm('Start Security Scan?', 'This will analyze all installed extensions for security risks, suspicious behavior, and excessive permissions.', 'Scan Now', function() {
+        var limit = (currentSettings && currentSettings.maxHistoryItems) || 10;
+        var msg = 'This will analyze all installed extensions for security risks, suspicious behavior, and excessive permissions.';
+        if (scanHistory && scanHistory.length >= limit) {
+          msg += '\\n\\n⚠️ Warning: History limit of ' + limit + ' entries is reached. Running a new scan will overwrite your oldest history entry.';
+        }
+        showConfirm('Start Security Scan?', msg, 'Scan Now', function() {
           $('btn-scan').disabled = true;
           vscode.postMessage({ type: 'scan' });
         });
@@ -1042,6 +1083,17 @@ export function getDashboardScript(dateFormattersScript: string): string {
       function esc(s) { if (!s) return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
       function escAttr(s) { return esc(String(s)).replace(/'/g, '&#39;'); }
       function sanitizeId(s) { return String(s).replace(/[^a-zA-Z0-9]/g, '_'); }
+      function getShortScanId(id) {
+        var str = String(id || 'ShieldX-Scan');
+        var hash = 0;
+        for (var i = 0; i < str.length; i++) {
+          hash = (hash << 5) - hash + str.charCodeAt(i);
+          hash |= 0;
+        }
+        var hex = Math.abs(hash).toString(16).substring(0, 6).toUpperCase();
+        while (hex.length < 6) hex = '0' + hex;
+        return 'ShieldX-' + hex;
+      }
 
       function updateInlineHistoryResults(historyId) {
         var entry = getHistoryEntry(historyId);
@@ -1113,9 +1165,22 @@ ${dateFormattersScript}
         }
       }
 
+      var readyInterval = setInterval(function() {
+        if (settingsLoaded) {
+          clearInterval(readyInterval);
+        } else {
+          vscode.postMessage({ type: 'ready' });
+        }
+      }, 150);
       vscode.postMessage({ type: 'ready' });
       renderAll();
       renderHistory();
+      } catch (err) {
+        console.error("Webview initialization error:", err);
+        try {
+          acquireVsCodeApi().postMessage({ type: 'error', error: "Init failed: " + (err.stack || err.message) });
+        } catch (e) {}
+      }
     })();
   `;
 }
