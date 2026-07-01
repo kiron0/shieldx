@@ -146,6 +146,7 @@
     "compile": "npm run clean && tsc -p ./",
     "watch": "tsc -watch -p ./",
     "build": "npm run compile && vsce package --no-yarn",
+    "package": "vsce package --no-yarn",
     "lint": "eslint src --ext ts",
     "format": "prettier --write .",
     "test": "vitest run",

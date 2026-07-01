@@ -1,0 +1,178 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-if-missing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Resolve release metadata
+        id: meta
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          NAME=$(node -p "require('./package.json').displayName || require('./package.json').name")
+          DESCRIPTION=$(node -p "require('./package.json').description || ''")
+          TAG="v$VERSION"
+          TITLE="$TAG"
+
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+            echo "title=$TITLE"
+            echo "description<<EOF"
+            echo "$DESCRIPTION"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check if release already exists
+        id: check_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if gh release view "${{ steps.meta.outputs.tag }}" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Release already exists for ${{ steps.meta.outputs.tag }}."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "Release does not exist for ${{ steps.meta.outputs.tag }}. Creating one."
+          fi
+
+      - name: Install dependencies
+        if: steps.check_release.outputs.exists == 'false'
+        run: bun install --frozen-lockfile
+
+      - name: Lint
+        if: steps.check_release.outputs.exists == 'false'
+        run: bun run lint
+
+      - name: Compile
+        if: steps.check_release.outputs.exists == 'false'
+        run: bun run compile
+
+      - name: Test
+        if: steps.check_release.outputs.exists == 'false'
+        run: bun run test
+
+      - name: Package VSIX
+        if: steps.check_release.outputs.exists == 'false'
+        run: bun run package
+
+      - name: Ensure git tag exists
+        if: steps.check_release.outputs.exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          if git rev-parse "${{ steps.meta.outputs.tag }}" >/dev/null 2>&1; then
+            echo "Tag already exists locally."
+            exit 0
+          fi
+
+          if git ls-remote --tags origin "refs/tags/${{ steps.meta.outputs.tag }}" | grep -q "refs/tags/${{ steps.meta.outputs.tag }}"; then
+            echo "Tag already exists on origin. Fetching it locally."
+            git fetch origin "refs/tags/${{ steps.meta.outputs.tag }}:refs/tags/${{ steps.meta.outputs.tag }}"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.meta.outputs.tag }}" "${{ github.sha }}"
+          git push origin "refs/tags/${{ steps.meta.outputs.tag }}"
+
+      - name: Collect release context
+        if: steps.check_release.outputs.exists == 'false'
+        id: release_context
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          PREVIOUS_TAG=$(gh release list --repo "${{ github.repository }}" --exclude-drafts --exclude-pre-releases --limit 100 --json tagName --jq '.[0].tagName // ""')
+
+          {
+            echo "previous_tag=$PREVIOUS_TAG"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Generate release notes
+        if: steps.check_release.outputs.exists == 'false'
+        shell: bash
+        run: |
+          REPO_URL="https://github.com/${{ github.repository }}"
+          CURRENT_TAG="${{ steps.meta.outputs.tag }}"
+          PREVIOUS_TAG="${{ steps.release_context.outputs.previous_tag }}"
+          VERSION="${{ steps.meta.outputs.version }}"
+          TITLE="${{ steps.meta.outputs.title }}"
+          DESCRIPTION="${{ steps.meta.outputs.description }}"
+
+          if [ -n "$PREVIOUS_TAG" ]; then
+            RANGE="$PREVIOUS_TAG..${{ github.sha }}"
+            COMPARE_LINE="- Full Changelog: $REPO_URL/compare/$PREVIOUS_TAG...$CURRENT_TAG"
+          else
+            RANGE="${{ github.sha }}"
+            COMPARE_LINE="- Full Changelog: initial release"
+          fi
+
+          {
+            echo "### Release Info"
+            echo "- Version: $VERSION"
+            echo "- Tag: $CURRENT_TAG"
+            echo "- Commit: ${{ github.sha }}"
+            echo "$COMPARE_LINE"
+            echo
+            echo "### Changes"
+            if [ -n "$PREVIOUS_TAG" ]; then
+              git log "$RANGE" --pretty=format:'- %s (%h)'
+            else
+              echo "- Initial release"
+            fi
+            echo
+            echo "### Artifact"
+            echo "- VSIX package attached to this release"
+          } > RELEASE_NOTES.md
+
+      - name: Show release notes
+        if: steps.check_release.outputs.exists == 'false'
+        shell: bash
+        run: cat RELEASE_NOTES.md
+
+      - name: Create GitHub release
+        if: steps.check_release.outputs.exists == 'false'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          gh release create "${{ steps.meta.outputs.tag }}" \
+            --repo "${{ github.repository }}" \
+            --target "${{ github.sha }}" \
+            --title "${{ steps.meta.outputs.title }}" \
+            --verify-tag \
+            --notes-file RELEASE_NOTES.md \
+            ./*.vsix
