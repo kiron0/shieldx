@@ -135,9 +135,11 @@ export function getDashboardStyles(): string {
     .ext-toolbar .search-bar{flex:1;margin-bottom:0}
     .ext-toolbar-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
     .ext-list{display:flex;flex-direction:column;gap:4px;width:100%;padding:2px 0}
-    .ext-item{background:linear-gradient(145deg, var(--card-bg), rgba(255,255,255,.01));border:1px solid var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);width:100%}
+    .ext-item{background:linear-gradient(145deg, var(--card-bg), rgba(255,255,255,.01));border:1px solid var(--border);border-radius:var(--radius);padding:12px;cursor:default;transition:all .25s cubic-bezier(0.4, 0, 0.2, 1);width:100%}
     .ext-item.risk-accent{border-left:4px solid var(--c,var(--border))}
     .ext-item:hover{border-color:var(--c,var(--accent));transform:translateY(-2px);box-shadow:0 6px 16px rgba(0,0,0,.15), 0 2px 8px var(--glow, var(--accent-glow));background:linear-gradient(145deg, var(--card-bg), rgba(255,255,255,.03))}
+    .ext-item:has(.ext-detail.open):hover{transform:none;box-shadow:none}
+    .ext-item[data-action],.ext-item-header[data-action]{cursor:pointer}
     .ext-item-header{display:flex;align-items:center;gap:12px}
     .ext-icon-wrap{width:30px;height:30px;flex:0 0 30px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.06);transition:transform .2s}
     .ext-item:hover .ext-icon-wrap{transform:scale(1.05)}
@@ -167,8 +169,8 @@ export function getDashboardStyles(): string {
     .signal{padding:3px 0;font-size:10px;color:var(--low)}.signal::before{content:'+ ';opacity:.5;font-weight:700}
     .rec-box{margin-top:8px;padding:8px 10px;border-radius:6px;font-size:11px;background:#f4433610;border-left:3px solid var(--high);line-height:1.5}
     .rec-box.safe{background:#4caf5010;border-left-color:var(--low)}
-    .detail-actions{margin-top:10px;display:flex;gap:6px}
-    .detail-actions button{background:transparent;color:var(--fg);border:1px solid var(--border);padding:5px 12px;border-radius:var(--radius);font-size:11px;cursor:pointer;transition:all .2s;font-weight:600}
+    .detail-actions{margin-top:10px;display:flex;gap:6px;width:100%}
+    .detail-actions button{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;background:transparent;color:var(--fg);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius);font-size:11px;cursor:pointer;transition:all .2s;font-weight:600}
     .detail-actions button:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.06)}
     .history-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px}
     .history-toolbar .search-bar{display:flex;gap:6px;align-items:center;width:100%}
@@ -987,7 +989,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
           if (r.trustSignals && r.trustSignals.length) html.push(renderExpandableList('history-ts-' + safeId, 'Trust Signals', 'signal', r.trustSignals, 5));
           var recCls = (cls === 'low' || cls === 'moderate') ? ' safe' : '';
           html.push('<div class="rec-box' + recCls + '">' + esc(r.recommendation) + '</div>');
-          html.push('<div class="detail-actions"><button data-action="navigate" data-id="' + r.id + '">Open in Extensions</button></div>');
+          html.push('<div class="detail-actions"><button data-action="navigate" data-id="' + r.id + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg><span>Open in Extensions</span></button></div>');
           html.push('</div></div>');
         }
         html.push('</div>');
