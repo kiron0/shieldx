@@ -20,6 +20,7 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('id="ext-search"');
     expect(html).toContain('id="ext-toolbar"');
     expect(html).toContain('id="ext-count"');
+    expect(html).toContain('id="history-count"');
     expect(html).toContain('ext-toolbar-actions');
     expect(html).toContain('class="history-clear-btn"');
     expect(html).toContain('.history-toolbar.has-history .history-clear-btn');
@@ -98,6 +99,7 @@ describe('Dashboard HTML', () => {
     expect(html).toContain("header.style.display = 'none'");
     expect(html).toContain("empty.style.display = 'flex'");
     expect(html).toContain("c.style.display = 'none'");
+    expect(html).toContain('countEl.textContent = String(renderedCount)');
     expect(html).toContain("if (detail) detail.style.display = 'none'");
     expect(html).toContain('openLatestHistoryEntry()');
     expect(html).toContain("type: 'forceClearHistory'");

@@ -138,7 +138,9 @@ export function getDashboardStyles(): string {
     .filter-options input[type="radio"]:checked::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
     #ext-filter-btn:hover{transform:none !important}
     .icon-btn.active{opacity:1;border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,0.12)}
-    .ext-count{position:absolute;top:50%;right:10px;transform:translateY(-50%);font-size:10px;opacity:.5;pointer-events:none}
+    .ext-count,.history-count{position:absolute;top:50%;transform:translateY(-50%);font-size:10px;opacity:.5;pointer-events:none}
+    .ext-count{right:10px}
+    .history-count{right:40px}
     .ext-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px;display:flex;align-items:center;gap:8px}
     .ext-toolbar .search-bar{flex:1;margin-bottom:0}
     .ext-toolbar-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
@@ -182,7 +184,7 @@ export function getDashboardStyles(): string {
     .detail-actions button:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,122,204,.06)}
     .history-toolbar{position:sticky;top:0;z-index:3;background:var(--bg);padding-bottom:6px;margin-bottom:2px}
     .history-toolbar .search-bar{display:flex;gap:6px;align-items:center;width:100%}
-    .history-toolbar .search-bar input{flex:1;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
+    .history-toolbar .search-bar input{flex:1;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 42px 6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
     .history-toolbar .search-bar input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
     .history-clear-btn{display:none;align-items:center;justify-content:center;width:28px;height:28px;background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;color:var(--fg);opacity:.6;transition:all .2s;padding:0;flex:0 0 28px}
     .history-toolbar.has-history .history-clear-btn{display:inline-flex}
@@ -551,9 +553,10 @@ export function getDashboardScript(dateFormattersScript: string): string {
       }
 
       function renderHistory() {
-        var c = $('history-list'), empty = $('history-empty'), header = $('history-header'), detail = $('history-detail');
+        var c = $('history-list'), empty = $('history-empty'), header = $('history-header'), detail = $('history-detail'), countEl = $('history-count');
         updateHistoryDependentUi();
         if (!scanHistory || scanHistory.length === 0) {
+          if (countEl) countEl.textContent = '0';
           c.innerHTML = '';
           c.classList.remove('history-list-expanded');
           expandedHistoryEntryId = null;
@@ -649,6 +652,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
           if (expanded && s.summary) html.push(renderHistoryInlineDetail(s.summary, historyId));
           html.push('</div>');
         }
+        if (countEl) countEl.textContent = String(renderedCount);
         if (mainSearch && renderedCount === 0) {
           c.innerHTML = '<div style="text-align:center;padding:20px;opacity:0.5">No matching scans found</div>';
         } else {
