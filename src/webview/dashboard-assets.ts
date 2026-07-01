@@ -191,7 +191,7 @@ export function getDashboardStyles(): string {
     .h-stat-pill{font-size:9.5px;padding:2px 8px;border-radius:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.05);color:var(--fg);opacity:.8}
     .h-stat-pill.high{background:rgba(244,67,54,.1);border-color:rgba(244,67,54,.2);color:var(--high);opacity:1;font-weight:600}
     .h-stat-pill.crit{background:rgba(156,39,176,.1);border-color:rgba(156,39,176,.2);color:var(--critical);opacity:1;font-weight:600}
-    .h-mini-dist{display:flex;height:3px;border-radius:1.5px;overflow:hidden;background:var(--border);margin-top:4px;width:100%}
+    .h-mini-dist{display:flex;height:3px;border-radius:1.5px;overflow:hidden;background:var(--border);margin-top:8px;width:100%}
     .h-mini-seg{height:100%;background:var(--c)}
     .about-box{border-top:1px solid var(--border);padding:10px;margin-top:2px;background:var(--card-bg);border-radius:var(--radius);border:1px solid var(--border)}
     .about-header{display:flex;align-items:center;gap:8px;margin-bottom:6px}
