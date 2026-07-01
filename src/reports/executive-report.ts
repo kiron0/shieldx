@@ -84,7 +84,7 @@ export function generateExecutiveSummary(summary: {
     summary.criticalRisk > 0 ? 'fail' : summary.highRisk > 0 ? 'warn' : 'pass';
 
   return {
-    organization: 'VS Code Workspace',
+    organization: 'Workspace',
     reportDate: new Date(summary.scannedAt).toISOString(),
     totalExtensions: summary.totalExtensions,
     totalRiskScore: totalScore,

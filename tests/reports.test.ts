@@ -107,7 +107,7 @@ describe('Markdown Report', () => {
   it('generates valid markdown with header', () => {
     const md = generateMarkdownReport(mockSummary);
     expect(md).toContain('# ShieldX Security Report');
-    expect(md).toContain('VS Code Version');
+    expect(md).toContain('IDE Version');
     expect(md).toContain('1.85.0');
   });
 

@@ -357,7 +357,7 @@ export function generateDashboardHtml(cspSource: string): string {
                 <span>Scan &amp; Analysis</span>
               </div>
               <label class="setting-row" for="setting-autoScan">
-                <div class="setting-info"><span class="setting-label">Auto-scan on startup</span><span class="setting-desc">Automatically scan extensions when VS Code starts</span></div>
+                <div class="setting-info"><span class="setting-label">Auto-scan on startup</span><span class="setting-desc">Automatically scan extensions when the editor starts</span></div>
                 <div class="toggle-switch"><input type="checkbox" id="setting-autoScan" data-setting="autoScanOnStartup" /><span class="toggle-slider"></span></div>
               </label>
               <label class="setting-row" for="setting-scanNodeModules">

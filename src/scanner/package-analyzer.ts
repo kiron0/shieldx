@@ -132,7 +132,7 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
     trustSignals.push({
       id: 'known-publisher',
       title: 'Well-known publisher',
-      description: `Publisher "${ext.publisher}" is a recognized VS Code extension publisher.`,
+      description: `Publisher "${ext.publisher}" is a recognized extension publisher.`,
       points: -10,
     });
   }
@@ -153,8 +153,8 @@ export function analyzePackage(ext: InstalledExtension): PackageAnalysisResult {
   if (capabilityKeys.length > 10) {
     riskFactors.push({
       id: 'many-capabilities',
-      title: 'Many VS Code capabilities',
-      description: `Extension requests ${capabilityKeys.length} different VS Code capability types (${capabilityKeys.slice(0, 5).join(', ')}...).`,
+      title: 'Many extension capabilities',
+      description: `Extension requests ${capabilityKeys.length} different editor capability types (${capabilityKeys.slice(0, 5).join(', ')}...).`,
       severity: 'medium',
       points: 12,
       evidence: capabilityKeys,

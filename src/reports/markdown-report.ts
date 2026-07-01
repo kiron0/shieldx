@@ -42,7 +42,7 @@ export function generateMarkdownReport(summary: {
   let md = `# ${EXT_CONFIG.name} Security Report\n\n`;
   md += `**Generated:** ${date}\n`;
   if (summary.vscodeVersion)
-    md += `**VS Code Version:** ${summary.vscodeVersion}\n`;
+    md += `**IDE Version:** ${summary.vscodeVersion}\n`;
   md += `\n---\n\n`;
   md += `## Summary\n\n`;
   md += `| Metric | Count |\n`;
@@ -166,7 +166,7 @@ export function generateHtmlReport(summary: {
   <h1>${EXT_CONFIG.name} Security Report</h1>
   <div class="meta">
     <p><strong>Generated:</strong> ${date}</p>
-    ${summary.vscodeVersion ? `<p><strong>VS Code:</strong> ${summary.vscodeVersion}</p>` : ''}
+    ${summary.vscodeVersion ? `<p><strong>IDE Version:</strong> ${summary.vscodeVersion}</p>` : ''}
   </div>
 
   <div class="summary">

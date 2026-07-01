@@ -332,7 +332,7 @@ export function deactivate(): void {
 function showWelcomeMessage(): void {
   vscode.window
     .showInformationMessage(
-      `${EXT_CONFIG.name}: Welcome! ${EXT_CONFIG.name} helps you understand the security risks of your VS Code extensions.`,
+      `${EXT_CONFIG.name}: Welcome! ${EXT_CONFIG.name} helps you understand the security risks of your extensions.`,
       'Open Sidebar',
     )
     .then((action) => {

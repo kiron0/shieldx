@@ -5,7 +5,7 @@
 <h1 align="center">ShieldX - Extension Auditor</h1>
 
 <p align="center">
-  <strong>Scan extensions. Surface risk. Keep VS Code safer.</strong>
+  <strong>Scan extensions. Surface risk. Keep your IDE safer.</strong>
 </p>
 
 <p align="center">
@@ -15,13 +15,13 @@
 
 ---
 
-**ShieldX** is an extension auditor for Visual Studio Code. It scans installed extensions to detect supply chain risks, security vulnerabilities, excessive permissions, publisher trust signals, and suspicious AST patterns.
+**ShieldX** is an extension auditor for VS Code and compatible IDEs (like Cursor, Antigravity, etc.). It scans installed extensions to detect supply chain risks, security vulnerabilities, excessive permissions, publisher trust signals, and suspicious AST patterns.
 
 ---
 
 ## Key Features
 
-- **Interactive Security Dashboard:** A sidebar-first panel inside the VS Code Activity Bar for one-click scans and history management.
+- **Interactive Security Dashboard:** A sidebar-first panel inside the Activity Bar for one-click scans and history management.
 - **Static AST Pattern Scan:** Searches Javascript/Typescript source files for obfuscated code, telemetry evasion, hardcoded credentials, and arbitrary executions.
 - **Dependency Vulnerability audits:** Integrates with the [OSV.dev API](https://osv.dev) to check nested dependencies against open-source vulnerability databases.
 - **Capability & Manifest Scans:** Audits extension permissions, activation events, install scripts, and network capability signatures.
@@ -35,7 +35,7 @@
 
 ### Installation
 
-Install **ShieldX - Extension Auditor** (`thk.shieldx`) from the VS Code Marketplace or Extension Panel inside the IDE.
+Install **ShieldX - Extension Auditor** (`thk.shieldx`) from the Marketplace or Extension Panel inside the IDE.
 
 ### How to Use
 
@@ -48,11 +48,11 @@ Install **ShieldX - Extension Auditor** (`thk.shieldx`) from the VS Code Marketp
 
 ## Configuration Options
 
-Customize ShieldX behaviour by updating VS Code settings:
+Customize ShieldX behaviour by updating editor settings:
 
 | Setting                       | Type      | Default      | Description                                                                                |
 | :---------------------------- | :-------- | :----------- | :----------------------------------------------------------------------------------------- |
-| `shieldx.autoScanOnStartup`   | `boolean` | `false`      | Triggers a security scan automatically on VS Code startup.                                 |
+| `shieldx.autoScanOnStartup`   | `boolean` | `false`      | Triggers a security scan automatically on editor startup.                                  |
 | `shieldx.warnOnHighRisk`      | `boolean` | `true`       | Shows warning notifications when high/critical risk extensions are discovered.             |
 | `shieldx.minimumWarningLevel` | `string`  | `"high"`     | The minimum warning level needed to alert the user (`"moderate"`, `"high"`, `"critical"`). |
 | `shieldx.scanNodeModules`     | `boolean` | `false`      | Deep-scans nested `node_modules` inside extensions (slower).                               |

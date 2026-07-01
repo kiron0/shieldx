@@ -1,7 +1,7 @@
 {
   "name": "shieldx",
   "displayName": "ShieldX - Extension Auditor",
-  "description": "Scan installed VS Code extensions for security risks, suspicious behavior, and excessive permissions.",
+  "description": "Scan installed extensions for security risks, suspicious behavior, and excessive permissions.",
   "version": "0.1.2",
   "publisher": "thk",
   "license": "MIT",
@@ -92,7 +92,7 @@
         "shieldx.autoScanOnStartup": {
           "type": "boolean",
           "default": false,
-          "description": "Automatically scan extensions on VS Code startup"
+          "description": "Automatically scan extensions on editor startup"
         },
         "shieldx.warnOnHighRisk": {
           "type": "boolean",
