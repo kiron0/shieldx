@@ -1,6 +1,6 @@
 export const EXT_CONFIG = {
   name: 'ShieldX',
-  version: '0.1.2',
+  version: '0.1.3',
   author: 'Toufiq Hasan Kiron',
   authorUrl: 'https://kiron.dev',
   description:

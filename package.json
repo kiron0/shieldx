@@ -2,7 +2,7 @@
   "name": "shieldx",
   "displayName": "ShieldX - Extension Auditor",
   "description": "Scan installed extensions for security risks, suspicious behavior, and excessive permissions.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "thk",
   "license": "MIT",
   "icon": "assets/icon.png",
