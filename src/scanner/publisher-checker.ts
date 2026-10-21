@@ -33,13 +33,10 @@ const VERIFIED_EXT_REPOS: Record<string, string> = {
   'coenraads.bracket-pair-colorizer': 'CoenraadS/BracketPair',
   'christian-kohler.path-intellisense': 'ChristianKohler/PathIntellisense',
   'zignd.html-css-support': 'ecmel/vscode-html-css',
-
-  'test-malicious.test-malicious-extension': 'test/malicious',
-  'vscode.test-benign-extension': 'benign/safe-ext',
 };
 
 function getVerifiedRepo(ext: InstalledExtension): string | null {
-  const extId = `${ext.publisher}.${ext.name}`.toLowerCase();
+  const extId = `${ext.publisher ?? ''}.${ext.name ?? ''}`.toLowerCase();
   const verifiedRepo = VERIFIED_EXT_REPOS[extId];
   if (verifiedRepo) return verifiedRepo;
 

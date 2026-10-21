@@ -27,13 +27,17 @@ import {
   readJsonFileAsync,
   writeJsonFileAsync,
 } from './utils/file-utils';
-import { info, warn } from './utils/logger';
+import { info, warn, disposeLogger } from './utils/logger';
+import { getShortScanId } from './utils/scan-id';
+import { stripIcons } from './utils/summary-utils';
 import { EXT_CONFIG } from './config';
 
 let dashboardProvider: DashboardProvider;
 let previousExtensionIds: Set<string> = new Set();
 let activeScanCancellation: vscode.CancellationTokenSource | undefined;
 let extensionChangeTimeout: NodeJS.Timeout | undefined;
+let startupScanTimeout: NodeJS.Timeout | undefined;
+let cachedScan: StoredScan | null | undefined;
 
 function focusSidebar(): void {
   vscode.commands.executeCommand(
@@ -85,8 +89,18 @@ export async function activate(
     context.globalState.update(WELCOME_SHOWN_KEY, true);
   }
 
-  dashboardProvider = new DashboardProvider(context, () =>
-    clearPersistedScanState(context),
+  dashboardProvider = new DashboardProvider(
+    context,
+    () => clearPersistedScanState(context),
+    (summary) => {
+      cachedScan = summary
+        ? {
+            summary,
+            previousIds: [...previousExtensionIds],
+            version: CACHE_VERSION,
+          }
+        : null;
+    },
   );
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
@@ -297,23 +311,38 @@ export async function activate(
   );
 
   const cached = await loadFromCache(context);
-  if (cached) {
+  const currentExtensionIds = getInstalledExtensions().map((e) => e.id);
+
+  if (cached && cached.previousIds.length > 0) {
     previousExtensionIds = new Set(cached.previousIds);
+  } else {
+    previousExtensionIds = new Set(currentExtensionIds);
   }
 
   const autoScan = vscode.workspace
     .getConfiguration(EXT_CONFIG.name.toLowerCase())
     .get<boolean>('autoScanOnStartup', false);
   if (autoScan) {
-    setTimeout(async () => {
+    startupScanTimeout = setTimeout(async () => {
+      startupScanTimeout = undefined;
       await runScan(context);
       if (context.globalState.get<boolean>(FIRST_RUN_KEY, true)) {
         context.globalState.update(FIRST_RUN_KEY, false);
       }
     }, 2000);
+  } else if (cached) {
+    // Extensions can be installed while the editor is closed. The cached id
+    // list is the baseline, so an incremental scan can pick those up.
+    const changedWhileClosed =
+      currentExtensionIds.length !== previousExtensionIds.size ||
+      currentExtensionIds.some((id) => !previousExtensionIds.has(id));
+    if (changedWhileClosed) {
+      startupScanTimeout = setTimeout(() => {
+        startupScanTimeout = undefined;
+        void checkForNewExtensions(context);
+      }, 2000);
+    }
   }
-
-  previousExtensionIds = new Set(getInstalledExtensions().map((e) => e.id));
 
   context.subscriptions.push(
     vscode.extensions.onDidChange(() => {
@@ -336,7 +365,18 @@ export async function activate(
 }
 
 export function deactivate(): void {
+  if (extensionChangeTimeout) {
+    clearTimeout(extensionChangeTimeout);
+    extensionChangeTimeout = undefined;
+  }
+  if (startupScanTimeout) {
+    clearTimeout(startupScanTimeout);
+    startupScanTimeout = undefined;
+  }
+  activeScanCancellation?.dispose();
+  activeScanCancellation = undefined;
   info(`${EXT_CONFIG.name} deactivated`);
+  disposeLogger();
 }
 
 function showWelcomeMessage(): void {
@@ -392,6 +432,9 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
             dashboardProvider.sendProgress(pct, `Scanning ${name}...`);
           },
           scanToken,
+          {
+            osvEnabled: config.get<boolean>('enableOsvScan', true),
+          },
         );
 
         const diff = compareScans(prevSummary, summary);
@@ -408,8 +451,11 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
           checkPolicyCompliance(summary, policy);
         }
 
+        // Keep the id baseline in sync before persisting, otherwise the cached
+        // id list lags one scan behind and offline changes get missed.
+        previousExtensionIds = new Set(extensions.map((e) => e.id));
+
         await saveToCache(context, summary);
-        context.globalState.update(CACHE_KEY, summary);
         dashboardProvider.addHistoryEntry(summary);
 
         dashboardProvider.updateResult(summary);
@@ -447,8 +493,6 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
           }
         }
 
-        previousExtensionIds = new Set(extensions.map((e) => e.id));
-
         info(
           `Note: ${EXT_CONFIG.name} is a risk scanner, not a perfect malware detector. Some threats may not be detected.`,
         );
@@ -462,7 +506,11 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
         `${EXT_CONFIG.name}: Scan cancelled.`,
       );
     } else {
-      throw err;
+      const message = err instanceof Error ? err.message : String(err);
+      warn(`Scan failed: ${message}`);
+      vscode.window.showErrorMessage(
+        `${EXT_CONFIG.name}: Scan failed. ${message}`,
+      );
     }
   } finally {
     activeScanCancellation?.dispose();
@@ -512,6 +560,10 @@ async function checkForNewExtensions(
     if (summary) {
       let newReports: import('./types').ExtensionSecurityReport[] = [];
       if (newIds.length > 0) {
+        const newIdSet = new Set(newIds);
+        const osvEnabled = vscode.workspace
+          .getConfiguration(EXT_CONFIG.name.toLowerCase())
+          .get<boolean>('enableOsvScan', true);
         try {
           await vscode.window.withProgress(
             {
@@ -522,8 +574,8 @@ async function checkForNewExtensions(
             async (_progress, token) => {
               const scanPromise = Promise.all(
                 currentExtensions
-                  .filter((ext) => newIds.includes(ext.id))
-                  .map((ext) => scanExtension(ext, token)),
+                  .filter((ext) => newIdSet.has(ext.id))
+                  .map((ext) => scanExtension(ext, token, { osvEnabled })),
               );
               newReports = await scanPromise;
             },
@@ -533,13 +585,19 @@ async function checkForNewExtensions(
             info(`${EXT_CONFIG.name}: Incremental scan cancelled.`);
             return;
           }
-          throw err;
+          const message = err instanceof Error ? err.message : String(err);
+          warn(`Incremental scan failed: ${message}`);
+          vscode.window.showErrorMessage(
+            `${EXT_CONFIG.name}: Incremental scan failed. ${message}`,
+          );
+          return;
         }
       }
 
       if (removedIds.length > 0) {
+        const removedIdSet = new Set(removedIds);
         summary.reports = summary.reports.filter(
-          (r) => !removedIds.includes(r.id),
+          (r) => !removedIdSet.has(r.id),
         );
       }
 
@@ -552,18 +610,20 @@ async function checkForNewExtensions(
       }
 
       summary.totalExtensions = summary.reports.length;
-      summary.lowRisk = summary.reports.filter(
-        (r) => r.riskLevel === 'low',
-      ).length;
-      summary.moderateRisk = summary.reports.filter(
-        (r) => r.riskLevel === 'moderate',
-      ).length;
-      summary.highRisk = summary.reports.filter(
-        (r) => r.riskLevel === 'high',
-      ).length;
-      summary.criticalRisk = summary.reports.filter(
-        (r) => r.riskLevel === 'critical',
-      ).length;
+      let lowRisk = 0;
+      let moderateRisk = 0;
+      let highRisk = 0;
+      let criticalRisk = 0;
+      for (const report of summary.reports) {
+        if (report.riskLevel === 'critical') criticalRisk++;
+        else if (report.riskLevel === 'high') highRisk++;
+        else if (report.riskLevel === 'moderate') moderateRisk++;
+        else lowRisk++;
+      }
+      summary.lowRisk = lowRisk;
+      summary.moderateRisk = moderateRisk;
+      summary.highRisk = highRisk;
+      summary.criticalRisk = criticalRisk;
       summary.scannedAt = new Date().toISOString();
       summary.reports.sort((a, b) => b.riskScore - a.riskScore);
 
@@ -578,9 +638,15 @@ async function checkForNewExtensions(
         const riskyNew = newReports.filter(
           (r) => r.riskLevel === 'high' || r.riskLevel === 'critical',
         );
-        for (const ext of riskyNew) {
+        if (riskyNew.length > 0) {
+          const details = riskyNew
+            .map(
+              (ext) =>
+                `"${ext.displayName || ext.name}" (${toTitleCase(ext.riskLevel)}, score ${ext.riskScore})`,
+            )
+            .join(', ');
           const action = await vscode.window.showWarningMessage(
-            `${EXT_CONFIG.name}: New extension "${ext.displayName || ext.name}" is ${toTitleCase(ext.riskLevel)} risk (score: ${ext.riskScore}). ${ext.recommendation}`,
+            `${EXT_CONFIG.name}: ${riskyNew.length} new extension(s) flagged: ${details}.`,
             'Show in Sidebar',
             'Dismiss',
           );
@@ -694,7 +760,8 @@ async function exportReport(
     const metrics = getMetrics(context);
     updateMetrics(context, { reportsExported: metrics.reportsExported + 1 });
   } catch (err) {
-    vscode.window.showErrorMessage(`Failed to export report: ${err}`);
+    const message = err instanceof Error ? err.message : String(err);
+    vscode.window.showErrorMessage(`Failed to export report: ${message}`);
   }
 }
 
@@ -783,20 +850,6 @@ async function pickHistorySummary(
   return picked?.summary;
 }
 
-function getShortScanId(id: string): string {
-  if (!id) return 'ShieldX-Scan';
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = (hash << 5) - hash + id.charCodeAt(i);
-    hash |= 0;
-  }
-  let hex = Math.abs(hash).toString(16).substring(0, 6).toUpperCase();
-  while (hex.length < 6) {
-    hex = '0' + hex;
-  }
-  return `ShieldX-${hex}`;
-}
-
 function formatHistoryLabel(entry: ScanHistoryEntry): string {
   const hash =
     entry.id && entry.id.startsWith('ShieldX-')
@@ -860,17 +913,18 @@ function checkPolicyCompliance(
   const issues: string[] = [];
 
   if (policy.blockedExtensions) {
-    for (const blocked of policy.blockedExtensions) {
-      const found = summary.reports.find((r) => r.id === blocked);
-      if (found) {
-        issues.push(`BLOCKED extension installed: ${blocked}`);
+    const blocked = new Set(policy.blockedExtensions);
+    for (const report of summary.reports) {
+      if (blocked.has(report.id)) {
+        issues.push(`BLOCKED extension installed: ${report.id}`);
       }
     }
   }
 
-  if (policy.allowedExtensions) {
+  if (policy.allowedExtensions && policy.allowedExtensions.length > 0) {
+    const allowed = new Set(policy.allowedExtensions);
     for (const report of summary.reports) {
-      if (!policy.allowedExtensions.includes(report.id)) {
+      if (!allowed.has(report.id)) {
         issues.push(`Extension "${report.id}" is not in the allowlist`);
       }
     }
@@ -879,15 +933,17 @@ function checkPolicyCompliance(
   if (policy.maxRiskLevel) {
     const levels = ['low', 'moderate', 'high', 'critical'];
     const maxIdx = levels.indexOf(policy.maxRiskLevel);
-    const violating = summary.reports.filter((r) => {
-      const idx = levels.indexOf(r.riskLevel);
-      return idx > maxIdx;
-    });
+    if (maxIdx >= 0) {
+      const violating = summary.reports.filter((r) => {
+        const idx = levels.indexOf(r.riskLevel);
+        return idx > maxIdx;
+      });
 
-    if (violating.length > 0) {
-      issues.push(
-        `${violating.length} extension(s) exceed max risk level "${policy.maxRiskLevel}"`,
-      );
+      if (violating.length > 0) {
+        issues.push(
+          `${violating.length} extension(s) exceed max risk level "${policy.maxRiskLevel}"`,
+        );
+      }
     }
   }
 
@@ -921,17 +977,14 @@ async function checkWorkspaceTrust(
     'credentials.json',
     'secrets.json',
   ];
-  let hasSensitiveFiles = false;
 
-  for (const folder of workspaceFolders) {
-    for (const sf of sensitiveFiles) {
-      if (await fileExistsAsync(path.join(folder.uri.fsPath, sf))) {
-        hasSensitiveFiles = true;
-        break;
-      }
-    }
-    if (hasSensitiveFiles) break;
-  }
+  const checks = workspaceFolders.flatMap((folder) =>
+    sensitiveFiles.map((sf) =>
+      fileExistsAsync(path.join(folder.uri.fsPath, sf)),
+    ),
+  );
+  const results = await Promise.all(checks);
+  const hasSensitiveFiles = results.some(Boolean);
 
   if (hasSensitiveFiles) {
     const summary =
@@ -964,11 +1017,13 @@ async function saveToCache(
   summary: SecuritySummary,
 ): Promise<void> {
   const stored: StoredScan = {
-    summary,
+    summary: stripIcons(summary),
     previousIds: [...previousExtensionIds],
     version: CACHE_VERSION,
   };
-  await context.globalState.update(CACHE_KEY, summary);
+  cachedScan = stored;
+
+  await context.globalState.update(CACHE_KEY, stored.summary);
 
   try {
     const cachePath = path.join(
@@ -984,6 +1039,7 @@ async function saveToCache(
 async function clearPersistedScanState(
   context: vscode.ExtensionContext,
 ): Promise<void> {
+  cachedScan = null;
   await context.globalState.update(CACHE_KEY, undefined);
   try {
     const cachePath = path.join(
@@ -1005,6 +1061,10 @@ function toTitleCase(value: string): string {
 async function loadFromCache(
   context: vscode.ExtensionContext,
 ): Promise<StoredScan | null> {
+  if (cachedScan !== undefined) {
+    return cachedScan;
+  }
+
   try {
     const cachePath = path.join(
       context.globalStorageUri.fsPath,
@@ -1013,6 +1073,7 @@ async function loadFromCache(
     if (await fileExistsAsync(cachePath)) {
       const cached = await readJsonFileAsync<StoredScan>(cachePath);
       if (cached && cached.version === CACHE_VERSION) {
+        cachedScan = cached;
         return cached;
       }
     }
@@ -1022,7 +1083,10 @@ async function loadFromCache(
 
   const summary = context.globalState.get<SecuritySummary>(CACHE_KEY);
   if (summary) {
-    return { summary, previousIds: [], version: CACHE_VERSION };
+    cachedScan = { summary, previousIds: [], version: CACHE_VERSION };
+    return cachedScan;
   }
+
+  cachedScan = null;
   return null;
 }

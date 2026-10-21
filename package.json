@@ -154,23 +154,24 @@
     "watch": "tsc -watch -p ./",
     "build": "npm run compile && vsce package --no-yarn",
     "package": "vsce package --no-yarn",
-    "lint": "eslint src --ext ts",
+    "lint": "eslint src tests scripts",
+    "typecheck": "tsc -p ./ --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "test": "vitest run",
     "test:watch": "vitest watch",
-    "check-all": "bun run lint && bun run test && bun run build && bun run format"
+    "check-all": "bun run lint && bun run typecheck && bun run test && bun run build && bun run format"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^26.0.1",
-    "@types/vscode": "1.105.0",
-    "@vscode/vsce": "^3.9.2",
-    "eslint": "^10.6.0",
-    "globals": "^17.7.0",
+    "@types/node": "^26.6.5",
+    "@types/vscode": "~1.105.0",
+    "@vscode/vsce": "^4.0.0",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
     "jiti": "^2.7.0",
-    "prettier": "^3.9.4",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.1",
-    "vitest": "^4.1.9"
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2",
+    "typescript-eslint": "^8.72.0",
+    "vitest": "^5.0.5"
   }
 }

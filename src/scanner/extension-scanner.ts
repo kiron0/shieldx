@@ -11,12 +11,26 @@ import { analyzePackage } from './package-analyzer';
 import { checkPublisherReputation } from './publisher-checker';
 import { calculateRisk, generateRecommendation } from './risk-scorer';
 
+export interface ScanOptions {
+  osvEnabled?: boolean;
+  includeNodeModules?: boolean;
+}
+
 export async function scanExtension(
   ext: InstalledExtension,
   token?: vscode.CancellationToken,
+  options: ScanOptions = {},
 ): Promise<ExtensionSecurityReport> {
   info(`Scanning: ${ext.id}`);
   throwIfCancelled(token);
+
+  const config = vscode.workspace.getConfiguration(
+    EXT_CONFIG.name.toLowerCase(),
+  );
+  const osvEnabled =
+    options.osvEnabled ?? config.get<boolean>('enableOsvScan', true);
+  const includeNodeModules =
+    options.includeNodeModules ?? config.get<boolean>('scanNodeModules', false);
 
   const packageResult = await analyzePackage(ext);
   throwIfCancelled(token);
@@ -24,6 +38,7 @@ export async function scanExtension(
   const codeResult = await analyzeCode(
     ext.installPath,
     packageResult.detectedCapabilities,
+    { includeNodeModules },
   );
   throwIfCancelled(token);
 
@@ -33,16 +48,15 @@ export async function scanExtension(
   ]);
   throwIfCancelled(token);
 
-  const osvEnabled = vscode.workspace
-    .getConfiguration(EXT_CONFIG.name.toLowerCase())
-    .get<boolean>('enableOsvScan', true);
   const osvFactors: import('../types').RiskFactor[] = [];
-  if (osvEnabled && packageResult.extensionDependencies.length > 0) {
+  // Only shipped (runtime) dependencies matter: devDependencies are not
+  // installed with the extension and would only add noise.
+  const runtimeDeps = packageResult.extensionDependencies.filter(
+    (dep) => !dep.isDev,
+  );
+  if (osvEnabled && runtimeDeps.length > 0) {
     try {
-      const osvResults = await queryOsvVulnerabilities(
-        packageResult.extensionDependencies,
-        token,
-      );
+      const osvResults = await queryOsvVulnerabilities(runtimeDeps, token);
       osvFactors.push(...osvResults);
     } catch {
       void 0;
@@ -100,26 +114,62 @@ export async function scanExtension(
   return report;
 }
 
+const SCAN_CONCURRENCY = 4;
+
 export async function scanAllExtensions(
   extensions: InstalledExtension[],
   onProgress?: (current: number, total: number, name: string) => void,
   token?: vscode.CancellationToken,
+  options: ScanOptions = {},
 ): Promise<SecuritySummary> {
   const reports: ExtensionSecurityReport[] = [];
+  const total = extensions.length;
 
-  for (let i = 0; i < extensions.length; i++) {
-    if (token?.isCancellationRequested) {
-      throw new vscode.CancellationError();
+  if (total === 0) {
+    return {
+      totalExtensions: 0,
+      lowRisk: 0,
+      moderateRisk: 0,
+      highRisk: 0,
+      criticalRisk: 0,
+      reports,
+      scannedAt: new Date().toISOString(),
+      vscodeVersion: vscode.version,
+    };
+  }
+
+  let nextIndex = 0;
+  let completed = 0;
+
+  const worker = async (): Promise<void> => {
+    for (;;) {
+      if (token?.isCancellationRequested) {
+        throw new vscode.CancellationError();
+      }
+      const index = nextIndex++;
+      if (index >= total) return;
+
+      const ext = extensions[index];
+      const report = await scanExtension(ext, token, options);
+      reports.push(report);
+
+      completed++;
+      if (onProgress) {
+        onProgress(completed, total, ext.displayName || ext.name);
+      }
     }
-    const ext = extensions[i];
-    if (onProgress) {
-      onProgress(i + 1, extensions.length, ext.displayName || ext.name);
-    }
-    const report = await scanExtension(ext, token);
-    if (token?.isCancellationRequested) {
-      throw new vscode.CancellationError();
-    }
-    reports.push(report);
+  };
+
+  const workerCount = Math.min(SCAN_CONCURRENCY, total);
+  const workers = Array.from({ length: workerCount }, () => worker());
+  const settled = await Promise.allSettled(workers);
+
+  const failure = settled.find(
+    (result): result is PromiseRejectedResult =>
+      result.status === 'rejected',
+  );
+  if (failure) {
+    throw failure.reason;
   }
 
   reports.sort((a, b) => b.riskScore - a.riskScore);

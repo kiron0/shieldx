@@ -13,7 +13,17 @@ const SPACE_GROTESK_BOLD_FONT_PATH = path.resolve(
   '../../assets/fonts/SpaceGrotesk-Bold.ttf',
 );
 
-const SPACE_GROTESK_FONT_CSS = buildEmbeddedFontCss();
+let embeddedFontCss: string | undefined;
+
+/**
+ * Font payloads are read and base64-encoded lazily: the extension must not pay
+ * that cost on every activation when no HTML report is ever exported.
+ */
+function getEmbeddedFontCss(): string {
+  if (embeddedFontCss !== undefined) return embeddedFontCss;
+  embeddedFontCss = buildEmbeddedFontCss();
+  return embeddedFontCss;
+}
 
 export function generateMarkdownReport(summary: {
   totalExtensions: number;
@@ -41,6 +51,7 @@ export function generateMarkdownReport(summary: {
   const date = formatDateTime(summary.scannedAt);
   let md = `# ${EXT_CONFIG.name} Security Report\n\n`;
   md += `**Generated:** ${date}\n`;
+  md += `**Tool version:** ${EXT_CONFIG.version}\n`;
   if (summary.vscodeVersion)
     md += `**IDE Version:** ${summary.vscodeVersion}\n`;
   md += `\n---\n\n`;
@@ -81,7 +92,7 @@ export function generateMarkdownReport(summary: {
   md += `| Extension | Publisher | Version | Risk Score | Risk Level |\n`;
   md += `|-----------|-----------|---------|------------|------------|\n`;
   for (const ext of summary.reports) {
-    md += `| ${formatMarkdownExtensionLink(ext.name, ext.marketplaceId, ext.publisher)} | ${ext.publisher} | ${ext.version} | ${ext.riskScore} | ${ext.riskLevel} |\n`;
+    md += `| ${formatMarkdownExtensionLink(ext.name, ext.marketplaceId, ext.publisher)} | ${escapeMarkdownCell(ext.publisher)} | ${escapeMarkdownCell(ext.version)} | ${ext.riskScore} | ${ext.riskLevel} |\n`;
   }
 
   md += `\n---\n\n`;
@@ -132,7 +143,7 @@ export function generateHtmlReport(summary: {
   <meta charset="UTF-8">
   <title>${EXT_CONFIG.name} Security Report</title>
   <style>
-    ${SPACE_GROTESK_FONT_CSS}
+    ${getEmbeddedFontCss()}
     body { font-family: "Space Grotesk", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; color: #333; }
     h1 { border-bottom: 2px solid #007acc; padding-bottom: 10px; }
     .meta { color: #666; margin-bottom: 24px; }
@@ -166,6 +177,7 @@ export function generateHtmlReport(summary: {
   <h1>${EXT_CONFIG.name} Security Report</h1>
   <div class="meta">
     <p><strong>Generated:</strong> ${date}</p>
+    <p><strong>Tool version:</strong> ${EXT_CONFIG.version}</p>
     ${summary.vscodeVersion ? `<p><strong>IDE Version:</strong> ${summary.vscodeVersion}</p>` : ''}
   </div>
 
@@ -259,10 +271,19 @@ export function generateCsvReport(summary: {
 }
 
 function escapeCsv(val: string): string {
-  if (val.includes(',') || val.includes('"') || val.includes('\n')) {
-    return `"${val.replace(/"/g, '""')}"`;
+  let value = val;
+  // Neutralize spreadsheet formula injection.
+  if (/^[=+\-@\t\r]/.test(value)) {
+    value = `'${value}`;
   }
-  return val;
+  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
+    return `"${value.replace(/"/g, '""')}"`;
+  }
+  return value;
+}
+
+function escapeMarkdownCell(value: string): string {
+  return String(value ?? '').replace(/\|/g, '\\|');
 }
 
 function getMarketplaceUrl(
@@ -333,6 +354,8 @@ function normalizeExportSummary(summary: {
 }): Record<string, unknown> {
   const reports = Array.isArray(summary.reports) ? summary.reports : [];
   return {
+    tool: EXT_CONFIG.name,
+    toolVersion: EXT_CONFIG.version,
     totalExtensions: summary.totalExtensions ?? 0,
     lowRisk: summary.lowRisk ?? 0,
     moderateRisk: summary.moderateRisk ?? 0,
@@ -401,12 +424,14 @@ export function generateSarifReport(summary: {
 
   const rules: any[] = [];
   const results: any[] = [];
+  const knownRuleIds = new Set<string>();
 
   for (const ext of summary.reports) {
     for (const factor of ext.riskFactors) {
       const ruleId = factor.id;
 
-      if (!rules.find((r) => r.id === ruleId)) {
+      if (!knownRuleIds.has(ruleId)) {
+        knownRuleIds.add(ruleId);
         rules.push({
           id: ruleId,
           name: factor.title,
@@ -455,7 +480,7 @@ export function generateSarifReport(summary: {
         tool: {
           driver: {
             name: EXT_CONFIG.name,
-            version: '0.1.0',
+            version: EXT_CONFIG.version,
             informationUri: `https://github.com/kiron0/${EXT_CONFIG.name.toLowerCase()}`,
             rules,
           },

@@ -5,37 +5,30 @@ import type {
   WebviewView,
   WebviewViewResolveContext,
   CancellationToken,
+  Disposable,
 } from 'vscode';
 import { ScanHistoryEntry, SecuritySummary } from '../types';
 import { generateDashboardHtml } from './webview-html';
+import { getShortScanId } from '../utils/scan-id';
+import { stripIcons } from '../utils/summary-utils';
 import { EXT_CONFIG } from '../config';
 
 const HISTORY_KEY = `${EXT_CONFIG.name.toLowerCase()}.scanHistory`;
 const CACHE_KEY = `${EXT_CONFIG.name.toLowerCase()}.lastScan`;
-
-function getShortScanId(id: string): string {
-  const str = String(id || 'ShieldX-Scan');
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  let hex = Math.abs(hash).toString(16).substring(0, 6).toUpperCase();
-  while (hex.length < 6) {
-    hex = '0' + hex;
-  }
-  return `ShieldX-${hex}`;
-}
 
 export class DashboardProvider implements WebviewViewProvider {
   public static readonly viewType = `${EXT_CONFIG.name.toLowerCase()}.dashboard`;
 
   private _view?: WebviewView;
   private _lastSummary?: SecuritySummary;
+  private _messageDisposable?: Disposable;
 
   constructor(
     private readonly _context: ExtensionContext,
     private readonly _clearPersistedScanState?: () => Thenable<void> | void,
+    private readonly _onCacheStateChanged?: (
+      summary: SecuritySummary | undefined,
+    ) => void,
   ) {}
 
   resolveWebviewView(
@@ -50,86 +43,94 @@ export class DashboardProvider implements WebviewViewProvider {
       localResourceRoots: [],
     };
 
-    webviewView.webview.onDidReceiveMessage((message) => {
-      switch (message.type) {
-        case 'ready': {
-          this.syncAllWebviewState();
-          break;
-        }
-        case 'scan':
-          commands.executeCommand(
-            `${EXT_CONFIG.name.toLowerCase()}.scanExtensions`,
-          );
-          break;
-        case 'cancelScan':
-          commands.executeCommand(
-            `${EXT_CONFIG.name.toLowerCase()}.cancelScan`,
-          );
-          break;
-        case 'export':
-          commands.executeCommand(
-            `${EXT_CONFIG.name.toLowerCase()}.pickHistoryExport`,
-          );
-          break;
-        case 'navigate': {
-          const extId = message.extensionId;
-          if (extId) {
-            commands.executeCommand('extension.open', extId);
+    this._messageDisposable?.dispose();
+    this._messageDisposable = webviewView.webview.onDidReceiveMessage(
+      (message) => {
+        switch (message.type) {
+          case 'ready': {
+            this.syncAllWebviewState();
+            break;
           }
-          break;
-        }
-        case 'saveHistory':
-          this.setHistory(message.history);
-          break;
-        case 'requestClearHistory':
-          void this.executeClearHistory();
-          break;
-        case 'forceClearHistory':
-          void this.executeClearHistory();
-          break;
-        case 'requestClearHistoryEntry':
-          if (message.id) {
-            this.executeClearHistoryEntry(message.id);
-          }
-          break;
-        case 'forceClearHistoryEntry':
-          if (message.id) {
-            this.executeClearHistoryEntry(message.id);
-          }
-          break;
-        case 'directExport':
-          if (message.format) {
-            void commands.executeCommand(
-              `${EXT_CONFIG.name.toLowerCase()}.exportSpecificReport`,
-              message.historyId,
-              message.format,
+          case 'scan':
+            commands.executeCommand(
+              `${EXT_CONFIG.name.toLowerCase()}.scanExtensions`,
             );
+            break;
+          case 'cancelScan':
+            commands.executeCommand(
+              `${EXT_CONFIG.name.toLowerCase()}.cancelScan`,
+            );
+            break;
+          case 'export':
+            commands.executeCommand(
+              `${EXT_CONFIG.name.toLowerCase()}.pickHistoryExport`,
+            );
+            break;
+          case 'navigate': {
+            const extId = message.extensionId;
+            if (extId) {
+              commands.executeCommand('extension.open', extId);
+            }
+            break;
           }
-          break;
-        case 'requestSettings':
-          this.sendSettings();
-          break;
-        case 'updateSetting':
-          if (message.key) {
-            void workspace
-              .getConfiguration(EXT_CONFIG.name.toLowerCase())
-              .update(message.key, message.value, true)
-              .then(() => {
-                this.sendSettings();
-              });
-          }
-          break;
-        case 'error':
-          console.error('Webview Client Error:', message.error);
-          break;
-      }
-    });
+          case 'saveHistory':
+            this.setHistory(message.history);
+            break;
+          case 'requestClearHistory':
+            void this.executeClearHistory();
+            break;
+          case 'forceClearHistory':
+            void this.executeClearHistory();
+            break;
+          case 'requestClearHistoryEntry':
+            if (message.id) {
+              this.executeClearHistoryEntry(message.id);
+            }
+            break;
+          case 'forceClearHistoryEntry':
+            if (message.id) {
+              this.executeClearHistoryEntry(message.id);
+            }
+            break;
+          case 'directExport':
+            if (message.format) {
+              void commands.executeCommand(
+                `${EXT_CONFIG.name.toLowerCase()}.exportSpecificReport`,
+                message.historyId,
+                message.format,
+              );
+            }
+            break;
+          case 'requestSettings':
+            this.sendSettings();
+            break;
+          case 'updateSetting':
+            if (message.key) {
+              void workspace
+                .getConfiguration(EXT_CONFIG.name.toLowerCase())
+                .update(message.key, message.value, true)
+                .then(() => {
+                  this.sendSettings();
+                });
+            }
+            break;
+          case 'error':
+            console.error('Webview Client Error:', message.error);
+            break;
+        }
+      },
+    );
 
     webviewView.webview.html = generateDashboardHtml(
       webviewView.webview.cspSource,
     );
 
     this.syncAllWebviewState();
+  }
+
+  dispose(): void {
+    this._messageDisposable?.dispose();
+    this._messageDisposable = undefined;
   }
 
   private syncAllWebviewState(): void {
@@ -228,7 +229,9 @@ export class DashboardProvider implements WebviewViewProvider {
       critical: summary.criticalRisk,
       moderate: summary.moderateRisk,
       low: summary.lowRisk,
-      summary,
+      // Icons are base64 blobs; persisting them multiplies storage by the
+      // number of retained scans.
+      summary: stripIcons(summary),
     });
 
     const config = workspace.getConfiguration(EXT_CONFIG.name.toLowerCase());
@@ -241,10 +244,27 @@ export class DashboardProvider implements WebviewViewProvider {
   }
 
   private setHistory(history: ScanHistoryEntry[]): void {
-    this._context.globalState.update(HISTORY_KEY, history);
+    const sanitized = this.sanitizeHistory(history);
+    void this._context.globalState.update(HISTORY_KEY, sanitized);
     if (this._view) {
-      this._view.webview.postMessage({ type: 'history', history });
+      this._view.webview.postMessage({ type: 'history', history: sanitized });
     }
+  }
+
+  private sanitizeHistory(history: unknown): ScanHistoryEntry[] {
+    if (!Array.isArray(history)) return [];
+
+    const config = workspace.getConfiguration(EXT_CONFIG.name.toLowerCase());
+    const maxHistoryItems = config.get<number>('maxHistoryItems', 10);
+
+    return history
+      .filter(
+        (entry): entry is ScanHistoryEntry =>
+          !!entry &&
+          typeof entry === 'object' &&
+          !!(entry as ScanHistoryEntry).time,
+      )
+      .slice(0, maxHistoryItems);
   }
 
   private syncCurrentScanStateFromHistory(history: ScanHistoryEntry[]): void {
@@ -255,6 +275,7 @@ export class DashboardProvider implements WebviewViewProvider {
     }
     this._lastSummary = nextSummary;
     void this._context.globalState.update(CACHE_KEY, nextSummary);
+    this._onCacheStateChanged?.(nextSummary);
     if (this._view) {
       this._view.webview.postMessage({ type: 'scanResult', data: nextSummary });
     }
@@ -263,6 +284,7 @@ export class DashboardProvider implements WebviewViewProvider {
   private clearCurrentScanState(): void {
     this._lastSummary = undefined;
     void this._context.globalState.update(CACHE_KEY, undefined);
+    this._onCacheStateChanged?.(undefined);
     if (this._view) {
       this._view.webview.postMessage({ type: 'scanCleared' });
     }

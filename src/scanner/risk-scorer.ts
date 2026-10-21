@@ -150,6 +150,9 @@ export function generateRecommendation(
           reasons.push(factor.title.toLowerCase());
         }
       }
+      if (reasons.length === 0) {
+        return 'This extension reached a high risk score through several combined signals. Review the findings carefully before using it in sensitive workspaces.';
+      }
       return `This extension shows high-risk behavior (${reasons}). Review carefully before using in sensitive workspaces. Disable if not essential.`;
     }
 

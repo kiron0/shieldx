@@ -10,9 +10,12 @@ import {
   isWellKnownCategory,
   getExtensionDependencies,
 } from '../utils/extension-utils';
-import { readFileContentAsync } from '../utils/file-utils';
+import { readFileContentAsync, readFileHeadAsync } from '../utils/file-utils';
 import { hasLicenseMetadataOrFileAsync } from '../utils/scanner-helpers';
+import * as fs from 'fs';
 import * as path from 'path';
+
+const MAX_MAIN_FILE_READ = 256 * 1024;
 
 export interface PackageAnalysisResult {
   riskFactors: RiskFactor[];
@@ -78,7 +81,8 @@ export async function analyzePackage(
   }
 
   const commands = pkg?.contributes?.commands || [];
-  const suspicious = /upload|download|execute|shell|remote|token|secret|env/;
+  const suspicious =
+    /\b(upload|download|execute|shell|remote|token|secret|env|environment|credential|password)\b/;
   for (const cmd of commands) {
     const title = ((cmd.title || cmd.command || '') as string).toLowerCase();
     const match = title.match(suspicious);
@@ -192,26 +196,36 @@ async function checkMainFileSize(
   mainPath: string,
   riskFactors: RiskFactor[],
 ): Promise<void> {
-  const content = await readFileContentAsync(mainPath);
-  if (!content) return;
+  const stat = await fs.promises.stat(mainPath).catch(() => null);
+  if (!stat || !stat.isFile() || stat.size === 0) return;
+
+  // Bundled entry points can be tens of megabytes: only the head of the file
+  // is needed to tell minified code from readable source.
+  const head =
+    stat.size <= MAX_MAIN_FILE_READ
+      ? await readFileContentAsync(mainPath)
+      : await readFileHeadAsync(mainPath, MAX_MAIN_FILE_READ);
+  if (!head) return;
 
   let lineCount = 1;
   let currentLineLength = 0;
+  let maxLineLength = 0;
   let hasLongLines = false;
-  for (let i = 0; i < content.length; i++) {
-    const ch = content.charCodeAt(i);
+  for (let i = 0; i < head.length; i++) {
+    const ch = head.charCodeAt(i);
     if (ch === 10) {
       lineCount++;
       currentLineLength = 0;
       continue;
     }
     currentLineLength++;
+    if (currentLineLength > maxLineLength) maxLineLength = currentLineLength;
     if (currentLineLength > 800) {
       hasLongLines = true;
     }
   }
 
-  if (lineCount === 1 && content.length > 50000) {
+  if (lineCount === 1 && stat.size > 50000) {
     riskFactors.push({
       id: 'single-line-file',
       title: 'Minified single-line file',

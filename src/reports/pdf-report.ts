@@ -124,5 +124,11 @@ export async function renderHtmlToPdf(
 
 function pathToFileUrl(filePath: string): string {
   const normalized = path.resolve(filePath).split(path.sep).join('/');
-  return `file://${encodeURI(normalized.startsWith('/') ? normalized : `/${normalized}`)}`;
+  // Each segment is encoded separately: encodeURI leaves '#', '?' and '%'
+  // untouched, which truncates the URL for paths containing those characters.
+  const encoded = normalized
+    .split('/')
+    .map((segment) => encodeURIComponent(segment))
+    .join('/');
+  return `file://${encoded.startsWith('/') ? encoded : `/${encoded}`}`;
 }

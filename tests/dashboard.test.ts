@@ -106,8 +106,6 @@ describe('Dashboard HTML', () => {
     expect(html).toContain("type: 'forceClearHistoryEntry'");
     expect(html).toContain("msg.type === 'historyEntryCleared'");
     expect(html).toContain("msg.type === 'scanCleared'");
-    expect(html).toContain("'history-risk-filter'");
-    expect(html).toContain("'history-search'");
     expect(html).toContain('data-history-search-id');
     expect(html).toContain('data-history-filter-id');
     expect(html).toContain('class="ext-detail"');

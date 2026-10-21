@@ -539,12 +539,12 @@ export function getDashboardScript(dateFormattersScript: string): string {
       function buildExtItemHtml(r, opts) {
         var cls = r.riskLevel;
         var itemClass = 'ext-item' + (opts.riskAccent ? ' risk-accent' : '');
-        var h = '<div class="' + itemClass + '" ' + (opts.clickAction ? 'data-action="' + opts.clickAction + '" ' : '') + (opts.dataId ? 'data-id="' + opts.dataId + '" ' : '') + 'data-level="' + cls + '">';
-        h += '<div class="ext-item-header' + (opts.toggleAction ? ' history-item-header-toggle" data-action="' + opts.toggleAction + '" data-id="' + opts.toggleId + '"' : '"') + '>';
+        var h = '<div class="' + itemClass + '" ' + (opts.clickAction ? 'data-action="' + escAttr(opts.clickAction) + '" ' : '') + (opts.dataId ? 'data-id="' + escAttr(opts.dataId) + '" ' : '') + 'data-level="' + escAttr(cls) + '">';
+        h += '<div class="ext-item-header' + (opts.toggleAction ? ' history-item-header-toggle" data-action="' + escAttr(opts.toggleAction) + '" data-id="' + escAttr(opts.toggleId) + '"' : '"') + '>';
         h += renderExtensionIcon(r);
         h += '<div class="ext-item-info"><span class="ext-name">' + esc(r.displayName || r.name) + '</span><span class="ext-pub">' + esc(r.publisher) + '</span></div>';
         if (opts.showScore) {
-          h += '<div class="ext-meta"><span class="ext-score" style="color:var(--' + cls + ')">' + r.riskScore + '</span><span class="status-chip ' + cls + '">' + titleCase(cls) + '</span></div>';
+          h += '<div class="ext-meta"><span class="ext-score" style="color:var(--' + escAttr(cls) + ')">' + esc(r.riskScore) + '</span><span class="status-chip ' + escAttr(cls) + '">' + titleCase(cls) + '</span></div>';
         } else {
           h += '<span class="ext-version">' + esc(r.version) + '</span>';
         }
@@ -1073,7 +1073,7 @@ export function getDashboardScript(dateFormattersScript: string): string {
           if (r.trustSignals && r.trustSignals.length) html.push(renderExpandableList('history-ts-' + safeId, 'Trust Signals', 'signal', r.trustSignals, 5));
           var recCls = (cls === 'low' || cls === 'moderate') ? ' safe' : '';
           html.push('<div class="rec-box' + recCls + '">' + esc(r.recommendation) + '</div>');
-          html.push('<div class="detail-actions"><button data-action="navigate" data-id="' + r.id + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg><span>Open in Extensions</span></button></div>');
+          html.push('<div class="detail-actions"><button data-action="navigate" data-id="' + escAttr(r.id) + '"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg><span>Open in Extensions</span></button></div>');
           html.push('</div></div>');
         }
         html.push('</div>');
@@ -1092,8 +1092,8 @@ export function getDashboardScript(dateFormattersScript: string): string {
         return h;
       }
 
-      function esc(s) { if (!s) return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-      function escAttr(s) { return esc(String(s)).replace(/'/g, '&#39;'); }
+      function esc(s) { if (s === null || s === undefined) return ''; return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+      function escAttr(s) { return esc(s).replace(/'/g, '&#39;'); }
       function sanitizeId(s) { return String(s).replace(/[^a-zA-Z0-9]/g, '_'); }
       function getShortScanId(id) {
         var str = String(id || 'ShieldX-Scan');
@@ -1128,9 +1128,7 @@ ${dateFormattersScript}
           inlineHistorySearchTimers[historyId] = setTimeout(function() {
             updateInlineHistoryResults(historyId);
           }, 120);
-          return;
         }
-        if (e.target && e.target.id === 'history-search' && false) return;
       });
 
       document.addEventListener('change', function(e) {
@@ -1144,9 +1142,7 @@ ${dateFormattersScript}
           var key = e.target.getAttribute('data-setting');
           var val = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
           vscode.postMessage({ type: 'updateSetting', key: key, value: val });
-          return;
         }
-        if (e.target && e.target.id === 'history-risk-filter' && false) return;
       });
 
       function buildExportFormatOptions() {
@@ -1178,12 +1174,14 @@ ${dateFormattersScript}
         }
       }
 
+      var readyAttempts = 0;
       var readyInterval = setInterval(function() {
-        if (settingsLoaded) {
+        if (settingsLoaded || readyAttempts >= 20) {
           clearInterval(readyInterval);
-        } else {
-          vscode.postMessage({ type: 'ready' });
+          return;
         }
+        readyAttempts++;
+        vscode.postMessage({ type: 'ready' });
       }, 150);
       vscode.postMessage({ type: 'ready' });
       renderAll();

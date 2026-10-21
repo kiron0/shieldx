@@ -9,6 +9,16 @@ export interface SuspiciousPattern {
 
 const QUOTED_BASE64_PATTERN = /['"`][A-Za-z0-9+/]{200,}={0,2}['"`]/;
 const REPEATED_HEX_ESCAPE_PATTERN = /(?:\\x[0-9a-fA-F]{2}){8,}/;
+// Loopback, link-local and RFC1918 addresses are normal in extensions
+// (dev servers, proxies) and must not be treated as suspicious destinations.
+const PUBLIC_IP_URL_PATTERN =
+  /https?:\/\/(?!127\.|10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.|169\.254\.|0\.0\.0\.0)(?:\d{1,3}\.){3}\d{1,3}/;
+const SOURCE_FILE_EXTENSION =
+  '\\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs|py|rb|java|go|php|cs|kt|swift)';
+const SECRET_FILE_NAME =
+  '(?:\\.env(?:\\.[\\w-]+)?|credentials?|secrets?|api[-_]?keys?|access[-_]?tokens?|id_rsa|\\.pem|\\.key)';
+const SECRET_ENV_NAME =
+  '[A-Za-z_]*(?:KEY|TOKEN|SECRET|PASSWORD|PASSWD|CREDENTIAL|AUTH|API)[A-Za-z_]*';
 
 export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
   {
@@ -36,7 +46,7 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     patterns: [
       /require\s*\(\s*['"](?:https?|net|request|axios|got|node-fetch|undici)['"]\s*\)/,
       /from\s+['"](?:https?|net|request|axios|got|node-fetch|undici)['"]/,
-      /fetch\s*\(/,
+      /(?<![\w$.])fetch\s*\(/,
       /axios\s*[.(]/,
       /http\.request\s*\(/,
       /https\.request\s*\(/,
@@ -76,7 +86,7 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     severity: 'high',
     points: 25,
     patterns: [
-      /eval\s*\(/,
+      /(?<![\w$])eval\s*\(/,
       /new\s+Function\s*\(/,
       /setTimeout\s*\(\s*['"`]/,
       /setInterval\s*\(\s*['"`]/,
@@ -124,7 +134,7 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     severity: 'critical',
     points: 30,
     patterns: [
-      /https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/,
+      PUBLIC_IP_URL_PATTERN,
       /\.onion\b/,
       /requestbin\./,
       /webhook\.site/,
@@ -165,11 +175,23 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     severity: 'critical',
     points: 35,
     patterns: [
-      /fs\.readFile(?:Sync)?\s*\([^)]*\.(?:env|config|secret|credential|key|token|pem)/i,
-      /process\.env\b[\s\S]{0,300}?(?:fetch|axios|https?\.request|child_process)/,
-      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*(?:credential|secret|api.?key|token|\.env)/i,
+      new RegExp(
+        `fs\\.readFile(?:Sync)?\\s*\\(\\s*['"\`][^'"\`]*${SECRET_FILE_NAME}['"\`]`,
+        'i',
+      ),
+      new RegExp(
+        `process\\.env\\.${SECRET_ENV_NAME}\\b[\\s\\S]{0,200}?(?:fetch|axios|https?\\.request|child_process)`,
+        'i',
+      ),
+      new RegExp(
+        `readFile(?:Sync)?\\s*\\([^)]*['"\`][^'"\`]*${SECRET_FILE_NAME}`,
+        'i',
+      ),
       /atob\s*\(process\.env/,
-      /JSON\.parse\s*\(\s*fs\.readFile(?:Sync)?\s*\(/,
+      new RegExp(
+        `JSON\\.parse\\s*\\(\\s*fs\\.readFile(?:Sync)?\\s*\\(\\s*['"\`][^'"\`]*${SECRET_FILE_NAME}`,
+        'i',
+      ),
     ],
   },
   {
@@ -179,10 +201,16 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     severity: 'critical',
     points: 40,
     patterns: [
-      /readFile(?:Sync)?\s*\([\s\S]{0,200}?(?:fetch|axios|https?\.request|http\.request)/,
-      /readFile(?:Sync)?\s*[\s\S]{0,100}?\.(?:ts|js|tsx|jsx|py|rb|java|go)[\s\S]{0,200}?(?:fetch|axios|https?)/,
-      /readdir(?:Sync)?\s*[\s\S]{0,200}?(?:fetch|axios|post)/,
-      /glob\s*\([\s\S]{0,200}?(?:fetch|axios|post)/i,
+      new RegExp(
+        `readFile(?:Sync)?\\s*\\(\\s*['"\`][^'"\`]*${SOURCE_FILE_EXTENSION}['"\`][\\s\\S]{0,240}?(?:fetch|axios|https?\\.request|http\\.request)`,
+      ),
+      new RegExp(
+        `readdir(?:Sync)?\\s*\\(\\s*['"\`][^'"\`]*${SOURCE_FILE_EXTENSION}['"\`][\\s\\S]{0,240}?(?:fetch|axios|post)`,
+      ),
+      new RegExp(
+        `glob\\s*\\(\\s*['"\`][^'"\`]*${SOURCE_FILE_EXTENSION}['"\`][\\s\\S]{0,240}?(?:fetch|axios|post)`,
+        'i',
+      ),
     ],
   },
   {
@@ -193,10 +221,10 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     points: 20,
     patterns: [
       /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*\.env/i,
-      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*(?:credential|secret|config)\.(?:json|yaml|yml|ini|toml)/i,
+      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*(?:credentials?|secrets?)\.(?:json|yaml|yml|ini|toml)/i,
       /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*id_rsa/i,
       /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*\.pem/i,
-      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*token/i,
+      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*access[-_]?token/i,
     ],
   },
   {
@@ -206,9 +234,9 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     severity: 'medium',
     points: 8,
     patterns: [
-      /writeFile(?:Sync)?\s*\([^)]*\.[^)]{2,4}\s*,/,
-      /writeFile(?:Sync)?\s*\([^)]*(?:src|dist|build|lib|app)/i,
-      /appendFile\s*\(/,
+      /writeFile(?:Sync)?\s*\(\s*['"`][^'"`]*\.(?:ts|tsx|js|jsx|mjs|cjs|json|py|rb|sh|yml|yaml)['"`]/,
+      /writeFile(?:Sync)?\s*\(\s*['"`][^'"`]*(?:src|dist|build|lib|app)[/\\][^'"`]*['"`]/i,
+      /appendFile(?:Sync)?\s*\(/,
       /unlink(?:Sync)?\s*\(/,
     ],
   },

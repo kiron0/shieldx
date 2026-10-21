@@ -85,6 +85,7 @@ const WELL_KNOWN_PUBLISHERS = new Set([
   'ms-kubernetes-tools',
 ]);
 const CATEGORY_CACHE = new WeakMap<object, string>();
+const ICON_CACHE = new Map<string, string | undefined>();
 
 export function getInstalledExtensions(): InstalledExtension[] {
   return vscode.extensions.all
@@ -118,7 +119,10 @@ function getExtensionIconDataUrl(
   if (typeof icon !== 'string' || !icon.trim()) return undefined;
 
   const fullPath = path.resolve(extensionPath, icon);
-  if (!fs.existsSync(fullPath)) return undefined;
+  const cacheKey = `${fullPath}`;
+  if (ICON_CACHE.has(cacheKey)) {
+    return ICON_CACHE.get(cacheKey);
+  }
 
   const ext = path.extname(fullPath).toLowerCase();
   const mimeMap: Record<string, string> = {
@@ -129,12 +133,18 @@ function getExtensionIconDataUrl(
     '.webp': 'image/webp',
   };
   const mime = mimeMap[ext];
-  if (!mime) return undefined;
+  if (!mime || !fs.existsSync(fullPath)) {
+    ICON_CACHE.set(cacheKey, undefined);
+    return undefined;
+  }
 
   try {
     const data = fs.readFileSync(fullPath);
-    return `data:${mime};base64,${data.toString('base64')}`;
+    const dataUrl = `data:${mime};base64,${data.toString('base64')}`;
+    ICON_CACHE.set(cacheKey, dataUrl);
+    return dataUrl;
   } catch {
+    ICON_CACHE.set(cacheKey, undefined);
     return undefined;
   }
 }

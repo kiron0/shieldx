@@ -7,6 +7,8 @@ interface FetchOptions {
   token?: vscode.CancellationToken;
 }
 
+const MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
+
 export function fetchJson<T>(
   url: string,
   cache: Map<string, T | null>,
@@ -22,50 +24,66 @@ export function fetchJson<T>(
     }
 
     let settled = false;
-    const finish = (value: T | null) => {
+    const handles: { cancel?: vscode.Disposable } = {};
+
+    const finish = (value: T | null, cacheResult: boolean): void => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      cancelDisposable?.dispose();
+      handles.cancel?.dispose();
+      if (cacheResult) cache.set(cacheKey, value);
       resolve(value);
     };
+
     const timer = setTimeout(() => {
       req.destroy();
-      cache.set(cacheKey, null);
-      finish(null);
+      // Failures are not cached: a transient network error must not disable
+      // reputation lookups for the rest of the session.
+      finish(null, false);
     }, opts.timeout ?? 5000);
+
     const req = https.get(
       url,
       { headers: { Accept: 'application/json', ...opts.headers } },
       (res) => {
         if (res.statusCode !== 200) {
           res.resume();
-          cache.set(cacheKey, null);
           req.destroy();
-          finish(null);
+          finish(null, false);
           return;
         }
         let data = '';
-        res.on('data', (chunk) => (data += chunk));
+        let size = 0;
+        let aborted = false;
+        res.on('data', (chunk: Buffer) => {
+          size += chunk.length;
+          if (size > MAX_RESPONSE_BYTES) {
+            aborted = true;
+            req.destroy();
+            finish(null, false);
+            return;
+          }
+          data += chunk;
+        });
         res.on('end', () => {
+          if (aborted) return;
           try {
             const parsed = JSON.parse(data) as T;
-            cache.set(cacheKey, parsed);
-            finish(parsed);
+            finish(parsed, true);
           } catch {
-            cache.set(cacheKey, null);
-            finish(null);
+            finish(null, false);
           }
         });
       },
     );
+
     req.on('error', () => {
-      cache.set(cacheKey, null);
-      finish(null);
+      finish(null, false);
     });
-    const cancelDisposable = opts.token?.onCancellationRequested(() => {
+
+    handles.cancel = opts.token?.onCancellationRequested(() => {
       req.destroy();
-      finish(null);
+      finish(null, false);
     });
   });
 }
@@ -82,17 +100,21 @@ export function postJson<T>(
     }
 
     let settled = false;
-    const finish = (value: T | null) => {
+    const handles: { cancel?: vscode.Disposable } = {};
+
+    const finish = (value: T | null): void => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
-      cancelDisposable?.dispose();
+      handles.cancel?.dispose();
       resolve(value);
     };
+
     const timer = setTimeout(() => {
       req.destroy();
       finish(null);
     }, opts.timeout ?? 3000);
+
     const payload = JSON.stringify(body);
     const req = https.request(
       url,
@@ -112,7 +134,16 @@ export function postJson<T>(
           return;
         }
         let data = '';
-        res.on('data', (chunk) => (data += chunk));
+        let size = 0;
+        res.on('data', (chunk: Buffer) => {
+          size += chunk.length;
+          if (size > MAX_RESPONSE_BYTES) {
+            req.destroy();
+            finish(null);
+            return;
+          }
+          data += chunk;
+        });
         res.on('end', () => {
           if (!data.trim()) {
             finish(null);
@@ -126,11 +157,14 @@ export function postJson<T>(
         });
       },
     );
+
     req.on('error', () => finish(null));
-    const cancelDisposable = opts.token?.onCancellationRequested(() => {
+
+    handles.cancel = opts.token?.onCancellationRequested(() => {
       req.destroy();
       finish(null);
     });
+
     req.write(payload);
     req.end();
   });

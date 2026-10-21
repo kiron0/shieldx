@@ -12,6 +12,7 @@ import {
   isPdfExportAvailable,
   resolvePdfBrowser,
 } from '../src/reports/pdf-report';
+import { EXT_CONFIG } from '../src/config';
 
 const mockSummary = {
   totalExtensions: 3,
@@ -244,7 +245,7 @@ describe('SARIF Report', () => {
   it('has correct tool info', () => {
     const sarif = generateSarifReport(mockSummary as any);
     expect(sarif.runs[0].tool.driver.name).toBe('ShieldX');
-    expect(sarif.runs[0].tool.driver.version).toBe('0.1.0');
+    expect(sarif.runs[0].tool.driver.version).toBe(EXT_CONFIG.version);
   });
 
   it('maps risk factors to results', () => {

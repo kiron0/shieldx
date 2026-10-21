@@ -77,21 +77,29 @@ export async function readFileContentAsync(
   }
 }
 
+export interface FindFilesOptions {
+  includeNodeModules?: boolean;
+  maxDepth?: number;
+}
+
 export function findFiles(
   dir: string,
   extensions: string[],
   maxSizeBytes?: number,
+  options: FindFilesOptions = {},
 ): string[] {
   const results: string[] = [];
   const extensionSet = new Set(extensions.map((ext) => ext.toLowerCase()));
+  const maxDepth = options.maxDepth ?? 15;
 
   function walk(currentDir: string, depth: number = 0): void {
-    if (depth > 15) return;
+    if (depth > maxDepth) return;
     try {
       const entries = fs.readdirSync(currentDir, { withFileTypes: true });
       for (const entry of entries) {
         if (entry.name.startsWith('.')) continue;
-        if (entry.name === 'node_modules') continue;
+        if (entry.name === 'node_modules' && !options.includeNodeModules)
+          continue;
 
         const fullPath = path.join(currentDir, entry.name);
         if (entry.isDirectory()) {
@@ -120,19 +128,22 @@ export async function findFilesAsync(
   dir: string,
   extensions: string[],
   maxSizeBytes?: number,
+  options: FindFilesOptions = {},
 ): Promise<string[]> {
   const results: string[] = [];
   const extensionSet = new Set(extensions.map((ext) => ext.toLowerCase()));
+  const maxDepth = options.maxDepth ?? 15;
 
   async function walk(currentDir: string, depth: number = 0): Promise<void> {
-    if (depth > 15) return;
+    if (depth > maxDepth) return;
     try {
       const entries = await fs.promises.readdir(currentDir, {
         withFileTypes: true,
       });
       for (const entry of entries) {
         if (entry.name.startsWith('.')) continue;
-        if (entry.name === 'node_modules') continue;
+        if (entry.name === 'node_modules' && !options.includeNodeModules)
+          continue;
 
         const fullPath = path.join(currentDir, entry.name);
         if (entry.isDirectory()) {
@@ -154,4 +165,25 @@ export async function findFilesAsync(
 
   await walk(dir);
   return results;
+}
+
+/**
+ * Reads at most `maxBytes` from the start of a file. Used to inspect large
+ * bundles without loading them fully into memory.
+ */
+export async function readFileHeadAsync(
+  filePath: string,
+  maxBytes: number,
+): Promise<string | null> {
+  let handle: fs.promises.FileHandle | undefined;
+  try {
+    handle = await fs.promises.open(filePath, 'r');
+    const buffer = Buffer.alloc(maxBytes);
+    const { bytesRead } = await handle.read(buffer, 0, maxBytes, 0);
+    return buffer.subarray(0, bytesRead).toString('utf-8');
+  } catch {
+    return null;
+  } finally {
+    await handle?.close().catch(() => undefined);
+  }
 }

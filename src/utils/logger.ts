@@ -20,3 +20,7 @@ export function error(message: string): void {
 export function showChannel(): void {
   channel.show();
 }
+
+export function disposeLogger(): void {
+  channel.dispose();
+}
