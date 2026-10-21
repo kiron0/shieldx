@@ -165,8 +165,7 @@ export async function scanAllExtensions(
   const settled = await Promise.allSettled(workers);
 
   const failure = settled.find(
-    (result): result is PromiseRejectedResult =>
-      result.status === 'rejected',
+    (result): result is PromiseRejectedResult => result.status === 'rejected',
   );
   if (failure) {
     throw failure.reason;

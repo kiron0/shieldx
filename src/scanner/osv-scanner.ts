@@ -92,7 +92,10 @@ export async function queryOsvVulnerabilities(
  */
 export function normalizeVersion(version: string): string | null {
   if (!version) return null;
-  const cleaned = version.trim().replace(/^[\^~>=<\s]+/, '').trim();
+  const cleaned = version
+    .trim()
+    .replace(/^[\^~>=<\s]+/, '')
+    .trim();
   if (!cleaned) return null;
   if (!/^\d+(\.\d+)*([-+.][\w.-]+)?$/.test(cleaned)) return null;
   return cleaned;
@@ -101,12 +104,10 @@ export function normalizeVersion(version: string): string | null {
 async function queryBatch(
   deps: Array<{ name: string; version: string; resolved: string }>,
   token?: vscode.CancellationToken,
-): Promise<
-  Array<{
-    dep: { name: string; version: string };
-    factors: RiskFactor[];
-  }> | null
-> {
+): Promise<Array<{
+  dep: { name: string; version: string };
+  factors: RiskFactor[];
+}> | null> {
   throwIfCancelled(token);
 
   const queries = deps.map((dep) => ({
@@ -162,7 +163,10 @@ function toRiskFactor(
   return {
     id: `osv-${vuln.id}`,
     title: `Known vulnerability: ${vuln.id}`,
-    description: (vuln.summary || vuln.details || 'No description').slice(0, 200),
+    description: (vuln.summary || vuln.details || 'No description').slice(
+      0,
+      200,
+    ),
     severity: sev as 'low' | 'medium' | 'high' | 'critical',
     points,
     evidence: [`${dep.name}@${dep.version}`, `OSV: ${vuln.id}`],

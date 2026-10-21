@@ -34,11 +34,7 @@ export async function analyzeDependencies(
       description: `${vuln.description} (installed: ${dep.version}, fixed: ${vuln.versionRange})`,
       severity: vuln.severity,
       points:
-        vuln.severity === 'critical'
-          ? 25
-          : vuln.severity === 'high'
-            ? 15
-            : 8,
+        vuln.severity === 'critical' ? 25 : vuln.severity === 'high' ? 15 : 8,
       evidence: [`${dep.name}@${dep.version}`],
     });
   }
