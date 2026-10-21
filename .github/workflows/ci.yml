@@ -10,7 +10,7 @@ on:
       - 'package.json'
       - 'bun.lock'
       - 'tsconfig.json'
-      - 'vitest.config.ts'
+      - 'vitest.config.mts'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
@@ -21,7 +21,7 @@ on:
       - 'package.json'
       - 'bun.lock'
       - 'tsconfig.json'
-      - 'vitest.config.ts'
+      - 'vitest.config.mts'
       - '.github/workflows/ci.yml'
   workflow_dispatch:
 
