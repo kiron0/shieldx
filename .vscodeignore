@@ -1,7 +1,6 @@
 .vscode/**
 src/**
 tsconfig.json
-eslint.config.ts
 vitest.config.ts
 tests/**
 node_modules/**

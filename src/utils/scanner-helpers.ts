@@ -171,6 +171,9 @@ export function parseVersion(version: string): ParsedVersion | null {
   if (!match) return null;
 
   const prereleaseRaw = match[4] || '';
+  // Wildcard ranges ("1.x", "*") do not describe a concrete version.
+  if (/[xX*]/.test(prereleaseRaw)) return null;
+
   const prerelease = prereleaseRaw
     .replace(/^[-+]/, '')
     .split('.')

@@ -113,6 +113,7 @@ export async function activate(
       },
     ),
   );
+  context.subscriptions.push({ dispose: () => dashboardProvider.dispose() });
 
   context.subscriptions.push(
     vscode.commands.registerCommand(
@@ -350,18 +351,18 @@ export async function activate(
         clearTimeout(extensionChangeTimeout);
       }
       extensionChangeTimeout = setTimeout(() => {
-        checkForNewExtensions(context);
+        void checkForNewExtensions(context);
       }, 1000);
     }),
   );
 
   context.subscriptions.push(
     vscode.workspace.onDidChangeWorkspaceFolders(() => {
-      checkWorkspaceTrust(context);
+      void checkWorkspaceTrust(context);
     }),
   );
 
-  checkWorkspaceTrust(context);
+  void checkWorkspaceTrust(context);
 }
 
 export function deactivate(): void {

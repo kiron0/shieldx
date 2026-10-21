@@ -22,10 +22,10 @@
 ## Key Features
 
 - **Interactive Security Dashboard:** A sidebar-first panel inside the Activity Bar for one-click scans and history management.
-- **Static AST Pattern Scan:** Searches Javascript/Typescript source files for obfuscated code, telemetry evasion, hardcoded credentials, and arbitrary executions.
-- **Dependency Vulnerability audits:** Integrates with the [OSV.dev API](https://osv.dev) to check nested dependencies against open-source vulnerability databases.
+- **Static Pattern Scan:** Searches JavaScript/TypeScript sources for obfuscated code, shell execution, credential access, and dynamic execution patterns.
+- **Dependency Vulnerability audits:** Integrates with the [OSV.dev API](https://osv.dev) to check declared runtime dependencies against open-source vulnerability databases.
 - **Capability & Manifest Scans:** Audits extension permissions, activation events, install scripts, and network capability signatures.
-- **Publisher Trust Engine:** Performs reputational analysis based on account age, ratings, total downloads, and verified publisher attributes.
+- **Publisher Trust Engine:** Checks repository activity for verified or well-known publishers (stars, open issues, last push).
 - **Multi-format Report Exports:** Export security summaries in Markdown, JSON, HTML, PDF, CSV, and SARIF formats.
 - **Audit History Tracking:** Track, compare, and clear past scan logs to understand changes in workspace risk level.
 
@@ -55,10 +55,11 @@ Customize ShieldX behaviour by updating editor settings:
 | `shieldx.autoScanOnStartup`   | `boolean` | `false`      | Triggers a security scan automatically on editor startup.                                  |
 | `shieldx.warnOnHighRisk`      | `boolean` | `true`       | Shows warning notifications when high/critical risk extensions are discovered.             |
 | `shieldx.minimumWarningLevel` | `string`  | `"high"`     | The minimum warning level needed to alert the user (`"moderate"`, `"high"`, `"critical"`). |
-| `shieldx.scanNodeModules`     | `boolean` | `false`      | Deep-scans nested `node_modules` inside extensions (slower).                               |
+| `shieldx.scanNodeModules`     | `boolean` | `false`      | Lets the code analyzer recurse into `node_modules` inside extensions (much slower).        |
 | `shieldx.reportFormat`        | `string`  | `"markdown"` | Default output file type for exported reports.                                             |
 | `shieldx.enableOsvScan`       | `boolean` | `true`       | Performs online dependency checking via the OSV API.                                       |
 | `shieldx.pdfBrowserPath`      | `string`  | `""`         | Chrome/Edge binary path used for rendering exact PDF reports.                              |
+| `shieldx.maxHistoryItems`     | `integer` | `10`         | How many completed scans to keep in local history (5–100).                                 |
 
 ---
 
@@ -67,9 +68,18 @@ Customize ShieldX behaviour by updating editor settings:
 - `ShieldX: Scan Installed Extensions` — Run audit on workspace extensions.
 - `ShieldX: Open Security Dashboard` — Display the sidebar dashboard.
 - `ShieldX: Export Security Report` — Save current scan logs to disk.
+- `ShieldX: Scan for OSV Vulnerabilities` — Re-run the scan with dependency advisories.
 - `ShieldX: Add Extension to Allowlist` — Set a trusted extension bypass.
 - `ShieldX: Block Extension` — Explicitly mark an extension as untrusted.
 - `ShieldX: Show Current Policy` — View and edit active allowlists/blocklists.
+
+---
+
+## Privacy
+
+- No telemetry. Usage counters stay on your machine.
+- Outbound requests only go to `api.osv.dev` (dependency advisories) and `api.github.com` (repository stats for verified publishers).
+- Scan results and history live in the editor's local extension storage.
 
 ---
 

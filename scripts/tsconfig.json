@@ -4,7 +4,10 @@
     "rootDir": ".",
     "outDir": "../out-scripts",
     "lib": ["ES2022"],
-    "types": ["node"]
+    "types": ["node"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "target": "es2022"
   },
   "include": ["./**/*.ts"]
 }

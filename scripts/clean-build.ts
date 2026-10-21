@@ -5,7 +5,7 @@ import { syncPackageConfig } from './sync-package-config';
 const root = process.cwd();
 const outDir = join(root, 'out');
 
-syncPackageConfig(root);
+await syncPackageConfig(root);
 
 if (existsSync(outDir)) {
   rmSync(outDir, { recursive: true, force: true });

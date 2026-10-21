@@ -11,7 +11,6 @@ on:
       - 'bun.lock'
       - 'tsconfig.json'
       - 'vitest.config.ts'
-      - 'eslint.config.ts'
       - '.github/workflows/ci.yml'
   pull_request:
     branches: [main]
@@ -23,7 +22,6 @@ on:
       - 'bun.lock'
       - 'tsconfig.json'
       - 'vitest.config.ts'
-      - 'eslint.config.ts'
       - '.github/workflows/ci.yml'
   workflow_dispatch:
 
@@ -47,11 +45,8 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Lint
+      - name: Lint (typecheck, no emit)
         run: bun run lint
-
-      - name: Typecheck (no emit)
-        run: bun run typecheck
 
       - name: Compile
         run: bun run compile

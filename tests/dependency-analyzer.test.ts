@@ -1,59 +1,75 @@
-import { describe, expect, it } from 'vitest';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { afterEach, describe, expect, it } from 'vitest';
+import { analyzeDependencies } from '../src/scanner/dependency-analyzer';
 
-function isVersionVulnerable(version: string, range: string): boolean {
-  const cleaned = version.replace(/^[\^~>=<]+/, '');
-  const rangeCleaned = range.replace(/^[\^~>=<]+/, '');
+const tempDirs: string[] = [];
 
-  const vParts = cleaned.split('.').map(Number);
-  const rParts = rangeCleaned.split('.').map(Number);
-
-  for (let i = 0; i < Math.max(vParts.length, rParts.length); i++) {
-    const v = vParts[i] || 0;
-    const r = rParts[i] || 0;
-    if (v < r) return true;
-    if (v > r) return false;
+afterEach(() => {
+  for (const dir of tempDirs.splice(0)) {
+    fs.rmSync(dir, { recursive: true, force: true });
   }
-  return false;
+});
+
+function makeTempDir(): string {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shieldx-deps-'));
+  tempDirs.push(dir);
+  return dir;
 }
 
-describe('Dependency Version Comparison', () => {
-  it('detects vulnerable lodash version', () => {
-    expect(isVersionVulnerable('4.17.20', '<4.17.21')).toBe(true);
+describe('dependency analyzer', () => {
+  it('flags vulnerable runtime dependencies', async () => {
+    const dir = makeTempDir();
+
+    const result = await analyzeDependencies(dir, [
+      { name: 'lodash', version: '4.17.19', isDev: false },
+    ]);
+
+    expect(result.riskFactors.some((f) => f.id === 'vuln-lodash')).toBe(true);
   });
 
-  it('detects safe lodash version', () => {
-    expect(isVersionVulnerable('4.17.21', '<4.17.21')).toBe(false);
+  it('ignores vulnerable dev dependencies', async () => {
+    const dir = makeTempDir();
+
+    const result = await analyzeDependencies(dir, [
+      { name: 'lodash', version: '4.17.19', isDev: true },
+    ]);
+
+    expect(result.riskFactors.some((f) => f.id === 'vuln-lodash')).toBe(false);
   });
 
-  it('detects vulnerable axios', () => {
-    expect(isVersionVulnerable('0.18.0', '<0.21.2')).toBe(true);
+  it('does not flag safe runtime dependencies', async () => {
+    const dir = makeTempDir();
+
+    const result = await analyzeDependencies(dir, [
+      { name: 'lodash', version: '4.17.21', isDev: false },
+    ]);
+
+    expect(result.riskFactors.some((f) => f.id === 'vuln-lodash')).toBe(false);
   });
 
-  it('detects safe axios', () => {
-    expect(isVersionVulnerable('0.21.3', '<0.21.2')).toBe(false);
+  it('reports a lock file as a trust signal', async () => {
+    const dir = makeTempDir();
+    fs.writeFileSync(path.join(dir, 'package-lock.json'), '{}', 'utf8');
+
+    const result = await analyzeDependencies(dir, []);
+
+    expect(result.trustSignals.some((s) => s.id === 'has-lock-file')).toBe(
+      true,
+    );
   });
 
-  it('handles caret prefix', () => {
-    expect(isVersionVulnerable('^4.17.19', '<4.17.21')).toBe(true);
-  });
+  it('does not report lock files that are absent', async () => {
+    const dir = makeTempDir();
 
-  it('handles tilde prefix', () => {
-    expect(isVersionVulnerable('~4.17.18', '<4.17.21')).toBe(true);
-  });
+    const result = await analyzeDependencies(dir, []);
 
-  it('handles semver with missing patch', () => {
-    expect(isVersionVulnerable('4.17', '<4.17.21')).toBe(true);
-  });
-
-  it('handles equal versions', () => {
-    expect(isVersionVulnerable('4.17.21', '<4.17.21')).toBe(false);
-  });
-
-  it('detects very old version', () => {
-    expect(isVersionVulnerable('1.0.0', '<4.17.21')).toBe(true);
-  });
-
-  it('detects newer major version', () => {
-    expect(isVersionVulnerable('5.0.0', '<4.17.21')).toBe(false);
+    expect(result.trustSignals.some((s) => s.id === 'has-lock-file')).toBe(
+      false,
+    );
+    expect(result.trustSignals.some((s) => s.id === 'yarn-lock-parsed')).toBe(
+      false,
+    );
   });
 });

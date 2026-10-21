@@ -97,6 +97,8 @@ export function normalizeVersion(version: string): string | null {
     .replace(/^[\^~>=<\s]+/, '')
     .trim();
   if (!cleaned) return null;
+  // Wildcards and multi-range expressions do not identify a concrete version.
+  if (/[xX*]/.test(cleaned)) return null;
   if (!/^\d+(\.\d+)*([-+.][\w.-]+)?$/.test(cleaned)) return null;
   return cleaned;
 }

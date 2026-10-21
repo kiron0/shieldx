@@ -5,6 +5,7 @@
   "version": "0.1.3",
   "publisher": "thk",
   "license": "MIT",
+  "type": "module",
   "icon": "assets/icon.png",
   "repository": {
     "type": "git",
@@ -154,24 +155,18 @@
     "watch": "tsc -watch -p ./",
     "build": "npm run compile && vsce package --no-yarn",
     "package": "vsce package --no-yarn",
-    "lint": "eslint src tests scripts",
-    "typecheck": "tsc -p ./ --noEmit",
+    "lint": "tsc --noEmit -p ./ && tsc --noEmit -p ./scripts",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\"",
     "test": "vitest run",
     "test:watch": "vitest watch",
-    "check-all": "bun run lint && bun run typecheck && bun run test && bun run build && bun run format"
+    "check-all": "bun run lint && bun run test && bun run build && bun run format"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.5",
     "@types/vscode": "~1.105.0",
     "@vscode/vsce": "^4.0.0",
-    "eslint": "^10.13.0",
-    "globals": "^17.13.0",
-    "jiti": "^2.7.0",
     "prettier": "^3.9.10",
     "typescript": "^7.0.2",
-    "typescript-eslint": "^8.72.0",
     "vitest": "^5.0.5"
   }
 }

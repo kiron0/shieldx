@@ -75,14 +75,16 @@ function buildConfig(
   };
 }
 
-export function syncPackageConfig(root: string): void {
+export async function syncPackageConfig(root: string): Promise<void> {
   const packageJsonPath = join(root, 'package.json');
   const configPath = join(root, 'src', 'config.ts');
   const packageJson = JSON.parse(
     readFileSync(packageJsonPath, 'utf8'),
   ) as ExtensionPackageJson;
   const config = buildConfig(packageJson);
-  const nextSource = `export const EXT_CONFIG = ${toLiteral(config)} as const;\n`;
+  const nextSource = await formatSource(
+    `export const EXT_CONFIG = ${toLiteral(config)} as const;\n`,
+  );
 
   mkdirSync(dirname(configPath), { recursive: true });
 
@@ -96,5 +98,24 @@ export function syncPackageConfig(root: string): void {
 
   if (currentSource !== nextSource) {
     writeFileSync(configPath, nextSource);
+  }
+}
+
+/**
+ * Formats the generated file with the project prettier config so the build
+ * does not leave the working tree dirty. Falls back to the raw source when
+ * prettier is unavailable.
+ */
+async function formatSource(source: string): Promise<string> {
+  try {
+    const prettier = await import('prettier');
+    return await prettier.format(source, {
+      parser: 'typescript',
+      singleQuote: true,
+      semi: true,
+      trailingComma: 'all',
+    });
+  } catch {
+    return source;
   }
 }
