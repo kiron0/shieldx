@@ -280,4 +280,42 @@ describe('Risk Scoring', () => {
     const result = calculateRisk([], signals);
     expect(result.riskScore).toBe(0);
   });
+
+  it('caps the contribution of low severity signals', () => {
+    const factors: RiskFactor[] = Array.from({ length: 20 }, () => ({
+      id: 'network-access',
+      title: '',
+      description: '',
+      severity: 'low' as const,
+      points: 10,
+    }));
+
+    const result = calculateRisk(factors, []);
+
+    // 20 x 10 = 200 points would be critical without the cap.
+    expect(result.riskScore).toBe(25);
+    expect(result.riskLevel).toBe('low');
+  });
+
+  it('does not let a low severity pile hide a critical finding', () => {
+    const factors: RiskFactor[] = [
+      ...Array.from({ length: 20 }, (_, i) => ({
+        id: `low-${i}`,
+        title: '',
+        description: '',
+        severity: 'low' as const,
+        points: 10,
+      })),
+      {
+        id: 'suspicious-domains',
+        title: '',
+        description: '',
+        severity: 'critical' as const,
+        points: 30,
+      },
+    ];
+
+    const result = calculateRisk(factors, []);
+    expect(result.riskLevel).toBe('critical');
+  });
 });

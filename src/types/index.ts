@@ -54,6 +54,8 @@ export interface ExtensionSecurityReport {
   extensionDependencies: ExtensionDependency[];
   recommendation: string;
   scannedAt: string;
+  /** Files that look like regex collections and were not pattern matched. */
+  patternCollectionFilesSkipped?: number;
 }
 
 export interface SecuritySummary {
@@ -94,3 +96,54 @@ export interface StoredScan {
   previousIds: string[];
   version: number;
 }
+
+export type ExcludePresetId =
+  | 'conventionalCommits'
+  | 'testSnapshots'
+  | 'lintSummaries'
+  | 'packageManagerAdvisories';
+
+export type PatternMode = 'override' | 'append';
+export type DiagnosticsSeverityMode = 'error' | 'warningAndError';
+export type TerminalDetectionMode = 'either' | 'output' | 'exitCode';
+
+export type StoredSettings = {
+  enabled: boolean;
+  monitorTerminal: boolean;
+  monitorDiagnostics: boolean;
+  diagnosticsSeverity: DiagnosticsSeverityMode;
+  terminalDetectionMode: TerminalDetectionMode;
+  cooldownMs: number;
+  terminalCooldownMs: number;
+  diagnosticsCooldownMs: number;
+  patternMode: PatternMode;
+  volumePercent: number;
+  showVisualNotifications: boolean;
+  customSoundPath: string;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  excludePresetIds: ExcludePresetId[];
+  patterns: string[];
+  excludePatterns: string[];
+};
+
+export type RuntimeSettings = {
+  enabled: boolean;
+  monitorTerminal: boolean;
+  monitorDiagnostics: boolean;
+  diagnosticsSeverity: DiagnosticsSeverityMode;
+  terminalDetectionMode: TerminalDetectionMode;
+  cooldownMs: number;
+  terminalCooldownMs: number;
+  diagnosticsCooldownMs: number;
+  volumePercent: number;
+  showVisualNotifications: boolean;
+  customSoundPath: string;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string;
+  quietHoursEnd: string;
+  excludePresetIds: ExcludePresetId[];
+  patterns: RegExp[];
+  excludePatterns: RegExp[];
+};

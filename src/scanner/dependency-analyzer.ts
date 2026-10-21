@@ -93,8 +93,8 @@ export async function analyzeDependencies(
       title: 'Native modules detected',
       description:
         'Extension contains native Node.js modules (.node files or node-gyp build), which can execute arbitrary code.',
-      severity: 'medium',
-      points: 12,
+      severity: 'low',
+      points: 5,
       evidence: ['Native .node binaries found'],
     });
   }

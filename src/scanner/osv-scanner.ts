@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import type { CancellableToken } from '../utils/cancellation';
 import { info } from '../utils/logger';
 import { RiskFactor } from '../types';
 import { throwIfCancelled } from '../utils/cancellation';
@@ -26,7 +26,7 @@ const cache = new Map<string, RiskFactor[]>();
 
 export async function queryOsvVulnerabilities(
   deps: Array<{ name: string; version: string }>,
-  token?: vscode.CancellationToken,
+  token?: CancellableToken,
 ): Promise<RiskFactor[]> {
   const allFactors: RiskFactor[] = [];
   if (!deps || deps.length === 0) return allFactors;
@@ -105,7 +105,7 @@ export function normalizeVersion(version: string): string | null {
 
 async function queryBatch(
   deps: Array<{ name: string; version: string; resolved: string }>,
-  token?: vscode.CancellationToken,
+  token?: CancellableToken,
 ): Promise<Array<{
   dep: { name: string; version: string };
   factors: RiskFactor[];
@@ -136,7 +136,7 @@ async function queryBatch(
 
 async function querySingleDep(
   dep: { name: string; version: string; resolved: string },
-  token?: vscode.CancellationToken,
+  token?: CancellableToken,
 ): Promise<RiskFactor[]> {
   try {
     throwIfCancelled(token);

@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import type { CancellableToken } from '../utils/cancellation';
 import { RiskFactor, TrustSignal } from '../types';
 import {
   InstalledExtension,
@@ -59,7 +59,7 @@ function getVerifiedRepo(ext: InstalledExtension): string | null {
 
 export async function checkPublisherReputation(
   ext: InstalledExtension,
-  token?: vscode.CancellationToken,
+  token?: CancellableToken,
 ): Promise<{ trustSignals: TrustSignal[]; riskFactors: RiskFactor[] }> {
   const trustSignals: TrustSignal[] = [];
   const riskFactors: RiskFactor[] = [];
@@ -121,7 +121,7 @@ export async function checkPublisherReputation(
           title: 'Inactive repository',
           description: `GitHub repo not pushed to for ${Math.floor(months)} months.`,
           severity: 'low',
-          points: 5,
+          points: 4,
           evidence: [`Last push: ${formatDateStamp(lastPush)}`],
         });
       }

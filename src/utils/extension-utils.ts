@@ -1,4 +1,3 @@
-import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { ExtensionDependency } from '../types';
@@ -87,72 +86,6 @@ const WELL_KNOWN_PUBLISHERS = new Set([
 const CATEGORY_CACHE = new WeakMap<object, string>();
 const ICON_CACHE = new Map<string, string | undefined>();
 
-export function getInstalledExtensions(): InstalledExtension[] {
-  return vscode.extensions.all
-    .filter((ext) => !ext.id.startsWith('vscode.'))
-    .map((ext) => {
-      const pkg = ext.packageJSON || {};
-      const [publisherFromId = '', nameFromId = ''] = ext.id.split('.');
-      const publisher = pkg.publisher || publisherFromId;
-      const name = pkg.name || nameFromId;
-      return {
-        id: ext.id,
-        name,
-        publisher,
-        version: pkg.version || 'unknown',
-        displayName: pkg.displayName,
-        description: pkg.description,
-        marketplaceId: `${publisher}.${name}`,
-        category: detectCategory(pkg),
-        installPath: ext.extensionPath,
-        iconDataUrl: getExtensionIconDataUrl(ext.extensionPath, pkg),
-        packageJSON: pkg,
-      };
-    });
-}
-
-function getExtensionIconDataUrl(
-  extensionPath: string,
-  pkg: any,
-): string | undefined {
-  const icon = pkg?.icon;
-  if (typeof icon !== 'string' || !icon.trim()) return undefined;
-
-  const fullPath = path.resolve(extensionPath, icon);
-  const cacheKey = `${fullPath}`;
-  if (ICON_CACHE.has(cacheKey)) {
-    return ICON_CACHE.get(cacheKey);
-  }
-
-  const ext = path.extname(fullPath).toLowerCase();
-  const mimeMap: Record<string, string> = {
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.svg': 'image/svg+xml',
-    '.webp': 'image/webp',
-  };
-  const mime = mimeMap[ext];
-  if (!mime || !fs.existsSync(fullPath)) {
-    ICON_CACHE.set(cacheKey, undefined);
-    return undefined;
-  }
-
-  try {
-    const data = fs.readFileSync(fullPath);
-    const dataUrl = `data:${mime};base64,${data.toString('base64')}`;
-    ICON_CACHE.set(cacheKey, dataUrl);
-    return dataUrl;
-  } catch {
-    ICON_CACHE.set(cacheKey, undefined);
-    return undefined;
-  }
-}
-
-export function getExtensionDir(ext: InstalledExtension): string {
-  return ext.installPath;
-}
-
 export function detectCategory(pkg: any): string {
   if (pkg && typeof pkg === 'object') {
     const cached = CATEGORY_CACHE.get(pkg);
@@ -226,6 +159,67 @@ export function isWellKnownCategory(category: string): boolean {
   return category !== 'other';
 }
 
-export function getVSCodeVersion(): string {
-  return vscode.version;
+/**
+ * Reads an extension icon into a data URL. Results are cached per path so
+ * repeated scans do not re-read and re-encode the same file.
+ */
+export function getExtensionIconDataUrl(
+  extensionPath: string,
+  pkg: any,
+): string | undefined {
+  const icon = pkg?.icon;
+  if (typeof icon !== 'string' || !icon.trim()) return undefined;
+
+  const fullPath = path.resolve(extensionPath, icon);
+  const cacheKey = `${fullPath}`;
+  if (ICON_CACHE.has(cacheKey)) {
+    return ICON_CACHE.get(cacheKey);
+  }
+
+  const ext = path.extname(fullPath).toLowerCase();
+  const mimeMap: Record<string, string> = {
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.svg': 'image/svg+xml',
+    '.webp': 'image/webp',
+  };
+  const mime = mimeMap[ext];
+  if (!mime || !fs.existsSync(fullPath)) {
+    ICON_CACHE.set(cacheKey, undefined);
+    return undefined;
+  }
+
+  try {
+    const data = fs.readFileSync(fullPath);
+    const dataUrl = `data:${mime};base64,${data.toString('base64')}`;
+    ICON_CACHE.set(cacheKey, dataUrl);
+    return dataUrl;
+  } catch {
+    ICON_CACHE.set(cacheKey, undefined);
+    return undefined;
+  }
+}
+
+export function buildInstalledExtension(
+  id: string,
+  installPath: string,
+  pkg: any,
+): InstalledExtension {
+  const [publisherFromId = '', nameFromId = ''] = id.split('.');
+  const publisher = pkg?.publisher || publisherFromId;
+  const name = pkg?.name || nameFromId;
+  return {
+    id,
+    name,
+    publisher,
+    version: pkg?.version || 'unknown',
+    displayName: pkg?.displayName,
+    description: pkg?.description,
+    marketplaceId: `${publisher}.${name}`,
+    category: detectCategory(pkg),
+    installPath,
+    iconDataUrl: getExtensionIconDataUrl(installPath, pkg),
+    packageJSON: pkg || {},
+  };
 }

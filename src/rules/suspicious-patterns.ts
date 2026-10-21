@@ -5,6 +5,12 @@ export interface SuspiciousPattern {
   severity: 'low' | 'medium' | 'high' | 'critical';
   points: number;
   patterns: RegExp[];
+  /**
+   * Cheap lower case literals that must be present for the pattern to have any
+   * chance of matching. Used to skip the expensive regex scan for files that
+   * cannot contain the pattern at all.
+   */
+  hints?: string[];
 }
 
 const QUOTED_BASE64_PATTERN = /['"`][A-Za-z0-9+/]{200,}={0,2}['"`]/;
@@ -25,8 +31,8 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     id: 'child-process',
     name: 'Shell execution',
     description: 'Uses child_process to execute shell commands.',
-    severity: 'high',
-    points: 20,
+    severity: 'low',
+    points: 6,
     patterns: [
       /require\s*\(\s*['"]child_process['"]\s*\)/,
       /from\s+['"]child_process['"]/,
@@ -36,13 +42,14 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
       /child_process\.execFile\s*\(/,
       /\.exec\s*\(\s*['"`][^'"`]*[|;&]/,
     ],
+    hints: ['child_process', '.exec(', '.spawn(', '.execsync(', '.execfile('],
   },
   {
     id: 'network-access',
     name: 'Network requests',
     description: 'Makes external network requests.',
     severity: 'low',
-    points: 6,
+    points: 3,
     patterns: [
       /require\s*\(\s*['"](?:https?|net|request|axios|got|node-fetch|undici)['"]\s*\)/,
       /from\s+['"](?:https?|net|request|axios|got|node-fetch|undici)['"]/,
@@ -53,21 +60,30 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
       /net\.connect\s*\(/,
       /net\.createConnection\s*\(/,
     ],
+    hints: [
+      'fetch(',
+      'axios',
+      'http',
+      'net.connect',
+      'createconnection',
+      'request(',
+    ],
   },
   {
     id: 'env-access',
     name: 'Environment variable access',
     description: 'Reads environment variables.',
     severity: 'low',
-    points: 5,
+    points: 2,
     patterns: [/process\.env/],
+    hints: ['process.env'],
   },
   {
     id: 'filesystem-access',
     name: 'File system access',
     description: 'Reads or writes files on disk.',
     severity: 'low',
-    points: 4,
+    points: 2,
     patterns: [
       /require\s*\(\s*['"]fs['"]\s*\)/,
       /from\s+['"]fs['"]/,
@@ -78,13 +94,21 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
       /fs\.writeFileSync/,
       /workspace\.fs/,
     ],
+    hints: [
+      'fs.read',
+      'fs.write',
+      'fs.readdir',
+      'require("fs"',
+      "'fs'",
+      'workspace.fs',
+    ],
   },
   {
     id: 'dynamic-exec',
     name: 'Dynamic code execution',
     description: 'Uses eval() or new Function().',
-    severity: 'high',
-    points: 25,
+    severity: 'low',
+    points: 6,
     patterns: [
       /(?<![\w$])eval\s*\(/,
       /new\s+Function\s*\(/,
@@ -92,13 +116,14 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
       /setInterval\s*\(\s*['"`]/,
       /\bFunction\s*\(\s*['"`]return/,
     ],
+    hints: ['eval(', 'new function', 'settimeout(', 'setinterval('],
   },
   {
     id: 'obfuscation',
     name: 'Obfuscation indicators',
     description: 'Contains obfuscated or encoded content.',
-    severity: 'high',
-    points: 25,
+    severity: 'medium',
+    points: 12,
     patterns: [
       QUOTED_BASE64_PATTERN,
       REPEATED_HEX_ESCAPE_PATTERN,
@@ -110,18 +135,19 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
     name: 'Packed JavaScript',
     description: 'Contains packed/encoded JavaScript patterns.',
     severity: 'high',
-    points: 25,
+    points: 18,
     patterns: [
       /eval\s*\(\s*function\s*\(\s*p\s*,\s*a\s*,\s*c\s*,\s*k\s*,\s*e\s*,\s*d\s*\)/,
       /}\s*\(\s*'[^']*'\s*\.split\s*\(\s*'[|,]'\s*\)\s*,\s*\d+\s*,\s*\d+\s*,\s*'[^']*'\s*\.split\s*\(\s*'[|,]'\s*\)/,
     ],
+    hints: ['split(', 'function('],
   },
   {
     id: 'string-decode',
     name: 'String array decoding',
     description: 'Uses string array decoding to hide strings.',
     severity: 'medium',
-    points: 15,
+    points: 10,
     patterns: [
       /var\s+_\w+\s*=\s*\[[\s\S]*?\];\s*function\s+_\w+\s*\(/,
       /_0x[a-f0-9]{4,6}\s*=\s*function\s*\(/,
@@ -130,76 +156,88 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
   {
     id: 'suspicious-domains',
     name: 'Suspicious domains',
-    description: 'Contains references to suspicious or known bad domains.',
+    description: 'Contains references to known bad or disposable domains.',
     severity: 'critical',
-    points: 30,
+    points: 28,
     patterns: [
-      PUBLIC_IP_URL_PATTERN,
-      /\.onion\b/,
-      /requestbin\./,
-      /webhook\.site/,
-      /canarytokens\./,
-      /interact\.sh\b/,
-      /burpcollaborator/,
+      // The negative lookahead keeps the literal pattern sources of security
+      // scanners from matching themselves.
+      /(?<!\\)\.onion(?![(\w\\])/,
+      /(?<!\\)requestbin\.(?![(\w\\])/,
+      /(?<!\\)webhook\.site(?![(\w\\])/,
+      /(?<!\\)canarytokens\.(?![(\w\\])/,
+      /(?<!\\)interact\.sh(?![(\w\\])/,
+      /(?<!\\)burpcollaborator(?![(\w\\])/,
     ],
+    hints: [
+      '.onion',
+      'requestbin',
+      'webhook.site',
+      'canarytokens',
+      'interact.sh',
+      'burpcollaborator',
+    ],
+  },
+  {
+    id: 'public-ip-endpoint',
+    name: 'Hardcoded public IP endpoint',
+    description: 'Contains a hardcoded public IP address.',
+    severity: 'low',
+    points: 4,
+    patterns: [PUBLIC_IP_URL_PATTERN],
   },
   {
     id: 'download-exec',
     name: 'Downloads remote executable',
     description: 'Downloads and potentially executes remote files.',
     severity: 'critical',
-    points: 40,
+    points: 32,
     patterns: [
       /\.download\s*\(\s*['"]https?:\/\/[^'"]*\.(?:exe|bin|sh|bat|ps1|dmg|app)['"]/,
       /wget\s+/,
       /curl\s+.*-o\b/,
       /curl\s+.*--output\b/,
     ],
+    hints: ['wget', 'curl', '.download('],
   },
   {
     id: 'encoded-payload',
     name: 'Encoded payload',
     description: 'Contains hex-encoded or XOR-encoded payloads.',
     severity: 'critical',
-    points: 30,
+    points: 28,
     patterns: [
       /['"]\\x[0-9a-fA-F]{50,}['"]/,
       /String\.fromCharCode\s*\(\s*0x[0-9a-fA-F]{2}/,
     ],
+    hints: ['\\\\x', 'fromcharcode'],
   },
   {
     id: 'api-key-steal',
     name: 'API key theft risk',
     description:
-      'Reads credentials/config files and may exfiltrate via network.',
+      'Reads credentials or secrets and appears to send them over the network.',
     severity: 'critical',
-    points: 35,
+    points: 30,
     patterns: [
       new RegExp(
-        `fs\\.readFile(?:Sync)?\\s*\\(\\s*['"\`][^'"\`]*${SECRET_FILE_NAME}['"\`]`,
+        `process\\.env\\.${SECRET_ENV_NAME}\\b[\\s\\S]{0,240}?(?:fetch|axios|https?\\.request|child_process)`,
         'i',
       ),
+      /atob\s*\(\s*process\.env/,
       new RegExp(
-        `process\\.env\\.${SECRET_ENV_NAME}\\b[\\s\\S]{0,200}?(?:fetch|axios|https?\\.request|child_process)`,
-        'i',
-      ),
-      new RegExp(
-        `readFile(?:Sync)?\\s*\\([^)]*['"\`][^'"\`]*${SECRET_FILE_NAME}`,
-        'i',
-      ),
-      /atob\s*\(process\.env/,
-      new RegExp(
-        `JSON\\.parse\\s*\\(\\s*fs\\.readFile(?:Sync)?\\s*\\(\\s*['"\`][^'"\`]*${SECRET_FILE_NAME}`,
+        `readFile(?:Sync)?\\s*\\([^)]*['"\`]([^'"\`]*${SECRET_FILE_NAME})[^'"\`]*['"\`][\\s\\S]{0,300}?(?:fetch|axios|https?\\.request|http\\.request)`,
         'i',
       ),
     ],
+    hints: ['readfile', 'process.env', 'fetch', 'axios', 'http', 'atob('],
   },
   {
     id: 'code-exfil',
     name: 'Source code exfiltration',
     description: 'Reads source files and sends them over network.',
     severity: 'critical',
-    points: 40,
+    points: 32,
     patterns: [
       new RegExp(
         `readFile(?:Sync)?\\s*\\(\\s*['"\`][^'"\`]*${SOURCE_FILE_EXTENSION}['"\`][\\s\\S]{0,240}?(?:fetch|axios|https?\\.request|http\\.request)`,
@@ -212,44 +250,55 @@ export const SUSPICIOUS_PATTERNS: SuspiciousPattern[] = [
         'i',
       ),
     ],
+    hints: ['readfile', 'readdir', 'glob', 'fetch', 'axios', 'http', 'post'],
   },
   {
     id: 'config-exfil',
-    name: 'Configuration file reading',
-    description: 'Reads sensitive config files like .env, credentials.json.',
-    severity: 'high',
-    points: 20,
+    name: 'Sensitive file access',
+    description: 'Reads credential, secret or key files.',
+    severity: 'medium',
+    points: 10,
     patterns: [
-      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*\.env/i,
-      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*(?:credentials?|secrets?)\.(?:json|yaml|yml|ini|toml)/i,
-      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*id_rsa/i,
-      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*\.pem/i,
-      /readFile(?:Sync)?\s*\([^)]*['"`][^'"`]*access[-_]?token/i,
+      new RegExp(
+        `fs\\.readFile(?:Sync)?\\s*\\(\\s*['"\`][^'"\`]*${SECRET_FILE_NAME}`,
+        'i',
+      ),
+      new RegExp(
+        `readFile(?:Sync)?\\s*\\([^)]*['"\`][^'"\`]*${SECRET_FILE_NAME}`,
+        'i',
+      ),
+      new RegExp(
+        `JSON\\.parse\\s*\\(\\s*fs\\.readFile(?:Sync)?\\s*\\(\\s*['"\`][^'"\`]*${SECRET_FILE_NAME}`,
+        'i',
+      ),
     ],
+    hints: ['readfile', 'json.parse'],
   },
   {
     id: 'file-mod',
     name: 'File modification without user action',
     description: 'Modifies project files silently during activation.',
-    severity: 'medium',
-    points: 8,
+    severity: 'low',
+    points: 4,
     patterns: [
       /writeFile(?:Sync)?\s*\(\s*['"`][^'"`]*\.(?:ts|tsx|js|jsx|mjs|cjs|json|py|rb|sh|yml|yaml)['"`]/,
       /writeFile(?:Sync)?\s*\(\s*['"`][^'"`]*(?:src|dist|build|lib|app)[/\\][^'"`]*['"`]/i,
       /appendFile(?:Sync)?\s*\(/,
       /unlink(?:Sync)?\s*\(/,
     ],
+    hints: ['writefile', 'appendfile', 'unlink'],
   },
   {
     id: 'suspicious-version-jump',
     name: 'Suspicious version pattern',
     description:
       'Extension version looks suspicious (e.g., major jump, unexpected patch).',
-    severity: 'medium',
-    points: 12,
+    severity: 'low',
+    points: 4,
     patterns: [
       /\b(?:version|ver)\s*[:=]\s*['"`]v?(?:99|666|999)\.\d+\.\d+['"`]/i,
       /\b(?:version|ver)\s*[:=]\s*['"`]\d{4,}\.\d+\.\d+['"`]/i,
     ],
+    hints: ['version'],
   },
 ];

@@ -1,10 +1,12 @@
 import * as https from 'https';
-import * as vscode from 'vscode';
+import type { Disposable } from 'vscode';
+
+import type { CancellableToken } from './cancellation';
 
 interface FetchOptions {
   headers?: Record<string, string>;
   timeout?: number;
-  token?: vscode.CancellationToken;
+  token?: CancellableToken;
 }
 
 const MAX_RESPONSE_BYTES = 4 * 1024 * 1024;
@@ -24,7 +26,7 @@ export function fetchJson<T>(
     }
 
     let settled = false;
-    const handles: { cancel?: vscode.Disposable } = {};
+    const handles: { cancel?: Disposable } = {};
 
     const finish = (value: T | null, cacheResult: boolean): void => {
       if (settled) return;
@@ -81,7 +83,7 @@ export function fetchJson<T>(
       finish(null, false);
     });
 
-    handles.cancel = opts.token?.onCancellationRequested(() => {
+    handles.cancel = opts.token?.onCancellationRequested?.(() => {
       req.destroy();
       finish(null, false);
     });
@@ -100,7 +102,7 @@ export function postJson<T>(
     }
 
     let settled = false;
-    const handles: { cancel?: vscode.Disposable } = {};
+    const handles: { cancel?: Disposable } = {};
 
     const finish = (value: T | null): void => {
       if (settled) return;
@@ -160,7 +162,7 @@ export function postJson<T>(
 
     req.on('error', () => finish(null));
 
-    handles.cancel = opts.token?.onCancellationRequested(() => {
+    handles.cancel = opts.token?.onCancellationRequested?.(() => {
       req.destroy();
       finish(null);
     });

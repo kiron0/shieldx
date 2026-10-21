@@ -2,6 +2,10 @@ import { RiskFactor, TrustSignal, RiskLevel } from '../types';
 
 const MAX_SCORE = 100;
 const TRUST_DISCOUNT_LIMIT = 0.25;
+// Low severity signals are expected for most extensions (file access, network
+// calls, env reads). Capping them keeps a long list of normal capabilities
+// from escalating an extension into the high risk band on its own.
+const LOW_SEVERITY_POINTS_CAP = 25;
 const CATEGORY_BONUS_BY_SIZE: Array<[number, number]> = [
   [4, 3],
   [6, 4],
@@ -60,12 +64,17 @@ export function calculateRisk(
   trustSignals: TrustSignal[],
 ): { riskScore: number; riskLevel: RiskLevel } {
   let score = 0;
+  let lowSeverityPoints = 0;
   let highCritCount = 0;
   let severityFloor = 0;
   let maxSeverityRank = 0;
   const categories = new Set<string>();
   for (const factor of riskFactors) {
-    score += factor.points;
+    if (factor.severity === 'low') {
+      lowSeverityPoints += factor.points;
+    } else {
+      score += factor.points;
+    }
     categories.add(getRiskCategory(factor.id));
     severityFloor = Math.max(severityFloor, SEVERITY_FLOOR[factor.severity]);
     maxSeverityRank = Math.max(maxSeverityRank, SEVERITY_RANK[factor.severity]);
@@ -73,6 +82,7 @@ export function calculateRisk(
       highCritCount++;
     }
   }
+  score += Math.min(lowSeverityPoints, LOW_SEVERITY_POINTS_CAP);
 
   score += highestApplicableBonus(categories.size, CATEGORY_BONUS_BY_SIZE);
   score += highestApplicableBonus(highCritCount, HIGH_CRIT_BONUS_BY_COUNT);

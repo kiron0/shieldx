@@ -10,6 +10,7 @@ import {
 } from './reports/markdown-report';
 import { isPdfExportAvailable, renderHtmlToPdf } from './reports/pdf-report';
 import { scanAllExtensions, scanExtension } from './scanner/extension-scanner';
+import { resolveUserPatterns } from './rules/default-patterns';
 import { compareScans } from './scanner/history-comparison';
 import {
   ScanHistoryEntry,
@@ -17,10 +18,8 @@ import {
   ShieldXPolicy,
   StoredScan,
 } from './types';
-import {
-  getInstalledExtensions,
-  InstalledExtension,
-} from './utils/extension-utils';
+import { InstalledExtension } from './utils/extension-utils';
+import { getInstalledExtensions } from './utils/vscode-extension-list';
 import { formatDateStamp, formatDateTime } from './utils/date-format';
 import {
   fileExistsAsync,
@@ -28,6 +27,7 @@ import {
   writeJsonFileAsync,
 } from './utils/file-utils';
 import { info, warn, disposeLogger } from './utils/logger';
+import { isCancellationError } from './utils/cancellation';
 import { getShortScanId } from './utils/scan-id';
 import { stripIcons } from './utils/summary-utils';
 import { EXT_CONFIG } from './config';
@@ -393,6 +393,34 @@ function showWelcomeMessage(): void {
     });
 }
 
+/**
+ * Resolves the user configured detection patterns. Without this the
+ * `shieldx.patterns` settings would never reach the scanner.
+ */
+function getUserPatternOptions(): {
+  patterns: RegExp[];
+  excludePatterns: RegExp[];
+  useBuiltInPatterns: boolean;
+} {
+  const patternConfig = vscode.workspace.getConfiguration(
+    EXT_CONFIG.name.toLowerCase(),
+  );
+  const resolved = resolveUserPatterns({
+    patternMode:
+      patternConfig.get<'override' | 'append'>('patternMode', 'override') ??
+      'override',
+    patterns: patternConfig.get<string[]>('patterns', []) ?? [],
+    excludePatterns: patternConfig.get<string[]>('excludePatterns', []) ?? [],
+    excludePresetIds: (patternConfig.get<string[]>('excludePresetIds', []) ??
+      []) as never,
+  });
+  return {
+    patterns: resolved.patterns,
+    excludePatterns: resolved.excludePatterns,
+    useBuiltInPatterns: resolved.useBuiltInPatterns,
+  };
+}
+
 async function runScan(context: vscode.ExtensionContext): Promise<void> {
   const config = vscode.workspace.getConfiguration(
     EXT_CONFIG.name.toLowerCase(),
@@ -435,6 +463,7 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
           scanToken,
           {
             osvEnabled: config.get<boolean>('enableOsvScan', true),
+            ...getUserPatternOptions(),
           },
         );
 
@@ -500,7 +529,7 @@ async function runScan(context: vscode.ExtensionContext): Promise<void> {
       },
     );
   } catch (err) {
-    if (err instanceof vscode.CancellationError) {
+    if (isCancellationError(err) || err instanceof vscode.CancellationError) {
       dashboardProvider.sendScanCancelled();
       info(`${EXT_CONFIG.name} scan cancelled.`);
       vscode.window.showInformationMessage(
@@ -582,7 +611,10 @@ async function checkForNewExtensions(
             },
           );
         } catch (err) {
-          if (err instanceof vscode.CancellationError) {
+          if (
+            isCancellationError(err) ||
+            err instanceof vscode.CancellationError
+          ) {
             info(`${EXT_CONFIG.name}: Incremental scan cancelled.`);
             return;
           }

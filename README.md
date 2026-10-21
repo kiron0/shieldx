@@ -27,6 +27,8 @@
 - **Capability & Manifest Scans:** Audits extension permissions, activation events, install scripts, and network capability signatures.
 - **Publisher Trust Engine:** Checks repository activity for verified or well-known publishers (stars, open issues, last push).
 - **Multi-format Report Exports:** Export security summaries in Markdown, JSON, HTML, PDF, CSV, and SARIF formats.
+- **Manifest signals:** outdated engine requirements, workspace trust handling, security setting defaults, extension packs and known compromised packages.
+- **Fast rescans:** results are cached per extension version, so only changed extensions are analyzed again.
 - **Audit History Tracking:** Track, compare, and clear past scan logs to understand changes in workspace risk level.
 
 ---

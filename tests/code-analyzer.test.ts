@@ -127,4 +127,39 @@ describe('Code Analyzer Pattern Detection', () => {
       expect(matchesAny('const version = "100.0.0";', patterns)).toBe(false);
     });
   });
+
+  it('skips files that are collections of regular expressions', async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'shieldx-code-'));
+    const rulesFile = path.join(dir, 'rules.js');
+    fs.writeFileSync(
+      rulesFile,
+      [
+        'const p1 = /(?<!\\w)abc\\d+/;',
+        'const p2 = /(?<!\\w)def\\d+/;',
+        'const p3 = /(?<!\\w)ghi\\d+/;',
+        'const p4 = /[a-z]\\s*\\w+/;',
+        'const p5 = new RegExp("[a-z]\\\\d+");',
+        'const p6 = /burpcollaborator/;',
+      ].join('\n'),
+      'utf8',
+    );
+
+    const result = await analyzeCode(dir, {
+      usesChildProcess: false,
+      usesNetworkRequests: false,
+      readsEnvironmentVariables: false,
+      accessesWorkspaceFiles: false,
+      hasInstallScripts: false,
+      hasObfuscatedCode: false,
+      declaresBroadActivationEvents: false,
+      usesDynamicExecution: false,
+      downloadsRemoteExecutables: false,
+      usesSuspiciousDomains: false,
+    });
+
+    expect(result.patternCollectionFilesSkipped).toBe(1);
+    expect(
+      result.riskFactors.find((entry) => entry.id === 'suspicious-domains'),
+    ).toBeUndefined();
+  });
 });
