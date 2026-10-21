@@ -204,11 +204,15 @@ export function getDashboardStyles(): string {
     .history-item.history-item-expanded{display:flex;flex-direction:column;flex:1 1 auto;min-height:0;overflow:hidden}
     .history-inline-detail{margin-top:10px;display:flex;flex-direction:column;flex:1 1 auto;min-height:0;width:100%;overflow:hidden;border-top:1px solid var(--border);padding-top:12px}
     .history-detail{display:none}.history-detail.visible{display:block}
+    select{appearance:none;-webkit-appearance:none;-moz-appearance:none;background-color:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 28px 6px 10px;font-size:12px;font-family:inherit;outline:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px 12px;transition:border-color .2s,box-shadow .2s,background-image .2s}
+    select:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--input-border))}
+    select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23007acc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")}
+    select option{background:var(--card-bg);color:var(--fg)}
     .history-tools{display:flex;gap:6px;align-items:center;margin:8px 0;margin-bottom:12px}
-    .history-tools input,.history-tools select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
-    .history-tools input:focus,.history-tools select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
+    .history-tools input{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px 10px;font-size:12px;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s;flex:1}
+    .history-tools input:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
     .history-tools input::placeholder{color:var(--input-ph)}
-    .history-tools input{flex:1}
+    .history-tools select{flex:0 0 auto;min-width:110px}
     .history-inline-detail .history-tools{position:sticky;top:0;z-index:2;margin-top:0;padding-bottom:8px;margin-bottom:12px;background:var(--card-bg)}
     .history-inline-results{overflow-y:auto;flex:1 1 auto;min-height:0;width:100%;padding-right:2px}
     .history-item-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;width:100%}
@@ -274,8 +278,9 @@ export function getDashboardStyles(): string {
     .toggle-slider::before{content:'';position:absolute;left:2px;bottom:2px;width:14px;height:14px;background:var(--fg);border-radius:50%;transition:all .2s}
     .toggle-switch input:checked + .toggle-slider{background:var(--accent)}
     .toggle-switch input:checked + .toggle-slider::before{transform:translateX(14px);background:var(--accent-fg)}
-    .setting-select{background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:6px;padding:4px 8px;font-size:11px;font-family:inherit;outline:none;cursor:pointer;transition:border-color .2s;min-width:90px}
-    .setting-select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow)}
+    .setting-select{background-color:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:6px;padding:4px 28px 4px 8px;font-size:11px;font-family:inherit;outline:none;cursor:pointer;appearance:none;-webkit-appearance:none;-moz-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;background-size:11px 11px;transition:border-color .2s,box-shadow .2s,background-image .2s;min-width:105px}
+    .setting-select:hover{border-color:color-mix(in srgb,var(--accent) 50%,var(--input-border))}
+    .setting-select:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%23007acc' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")}
     .number-stepper{display:flex;align-items:center;background:var(--input-bg);border:1px solid var(--input-border);border-radius:var(--radius);overflow:hidden;height:24px;width:88px}
     .stepper-btn{width:24px;height:24px;border:none;background:transparent;color:var(--fg);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.6;transition:all .2s;padding:0}
     .stepper-btn:hover{opacity:1;background:rgba(255,255,255,.05)}
@@ -695,11 +700,11 @@ export function getDashboardScript(dateFormattersScript: string): string {
           '<div class="confirm-body" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;opacity:1">' +
             '<div style="display:flex;flex-direction:column;gap:4px">' +
               '<span style="font-size:10px;opacity:.65;font-weight:600">Select Scan</span>' +
-              '<select id="export-scan-select" style="width:100%;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px;font-size:11px;outline:none">' + optionsHtml + '</select>' +
+              '<select id="export-scan-select" style="width:100%">' + optionsHtml + '</select>' +
             '</div>' +
             '<div style="display:flex;flex-direction:column;gap:4px">' +
               '<span style="font-size:10px;opacity:.65;font-weight:600">Format</span>' +
-               '<select id="export-format-select" style="width:100%;background:var(--input-bg);color:var(--input-fg);border:1px solid var(--input-border);border-radius:var(--radius);padding:6px;font-size:11px;outline:none">' +
+               '<select id="export-format-select" style="width:100%">' +
                 buildExportFormatOptions() +
               '</select>' +
             '</div>' +

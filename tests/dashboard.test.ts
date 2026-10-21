@@ -278,6 +278,7 @@ describe('Dashboard HTML', () => {
     expect(html).toContain('.toggle-switch');
     expect(html).toContain('.toggle-slider');
     expect(html).toContain('.setting-select');
+    expect(html).toContain('select{appearance:none');
     expect(html).toContain('.icon-btn');
     expect(html).toContain('.settings-btn');
     expect(html).toContain('.settings-btn.active');
