@@ -7,14 +7,19 @@ import type {
   CancellationToken,
   Disposable,
 } from 'vscode';
-import { ScanHistoryEntry, SecuritySummary } from '../types';
+import {
+  ExtensionSecurityReport,
+  ScanHistoryEntry,
+  SecuritySummary,
+} from '../types';
 import { generateDashboardHtml } from './webview-html';
 import { getShortScanId } from '../utils/scan-id';
+import { resolveIconDataUrl } from '../utils/icon-resolver';
+import { readScanState, writeScanState } from '../utils/scan-state';
 import { stripIcons } from '../utils/summary-utils';
 import { EXT_CONFIG } from '../config';
 
 const HISTORY_KEY = `${EXT_CONFIG.name.toLowerCase()}.scanHistory`;
-const CACHE_KEY = `${EXT_CONFIG.name.toLowerCase()}.lastScan`;
 
 export class DashboardProvider implements WebviewViewProvider {
   public static readonly viewType = `${EXT_CONFIG.name.toLowerCase()}.dashboard`;
@@ -71,6 +76,22 @@ export class DashboardProvider implements WebviewViewProvider {
             if (extId) {
               commands.executeCommand('extension.open', extId);
             }
+            break;
+          }
+          case 'requestIcon': {
+            const extId = message.extensionId;
+            if (extId) {
+              this.sendIcon(extId);
+            }
+            break;
+          }
+          case 'requestIcons': {
+            const ids = Array.isArray(message.extensionIds)
+              ? message.extensionIds.filter(
+                  (id: unknown): id is string => typeof id === 'string',
+                )
+              : [];
+            this.sendIcons(ids);
             break;
           }
           case 'saveHistory':
@@ -133,6 +154,53 @@ export class DashboardProvider implements WebviewViewProvider {
     this._messageDisposable = undefined;
   }
 
+  /**
+   * Sends the icon of an extension to the webview. Persisted reports keep the
+   * icon path instead of the base64 payload, so the file is read on demand.
+   */
+  private sendIcon(extensionId: string): void {
+    const report = this.findReport(extensionId);
+    if (!report) return;
+    const dataUrl = resolveIconDataUrl(report);
+    if (!dataUrl) return;
+    void this._view?.webview.postMessage({
+      type: 'icon',
+      extensionId,
+      dataUrl,
+    });
+  }
+
+  /**
+   * Sends the icons of several extensions in one message.
+   */
+  private sendIcons(extensionIds: string[]): void {
+    if (extensionIds.length === 0) return;
+    const icons: Record<string, string> = {};
+    for (const extensionId of extensionIds) {
+      const report = this.findReport(extensionId);
+      if (!report) continue;
+      const dataUrl = resolveIconDataUrl(report);
+      if (dataUrl) icons[extensionId] = dataUrl;
+    }
+    if (Object.keys(icons).length === 0) return;
+    void this._view?.webview.postMessage({ type: 'icons', icons });
+  }
+
+  private findReport(extensionId: string): ExtensionSecurityReport | undefined {
+    const fromSummary = this._lastSummary?.reports.find(
+      (report) => report.id === extensionId,
+    );
+    if (fromSummary) return fromSummary;
+
+    for (const entry of this.getHistory()) {
+      const found = entry.summary?.reports?.find(
+        (report) => report.id === extensionId,
+      );
+      if (found) return found;
+    }
+    return undefined;
+  }
+
   private syncAllWebviewState(): void {
     if (!this._view) return;
     const history = this.getHistory();
@@ -143,10 +211,10 @@ export class DashboardProvider implements WebviewViewProvider {
 
     this.sendSettings();
 
-    const cached =
-      this._lastSummary ||
-      this._context.globalState.get<SecuritySummary>(CACHE_KEY);
+    const cached = this._lastSummary || readScanState(this._context);
     if (cached) {
+      // Remember the restored summary so icon lookups can find the report.
+      this._lastSummary = cached;
       this._view.webview.postMessage({
         type: 'scanResult',
         data: cached,
@@ -274,7 +342,7 @@ export class DashboardProvider implements WebviewViewProvider {
       return;
     }
     this._lastSummary = nextSummary;
-    void this._context.globalState.update(CACHE_KEY, nextSummary);
+    void writeScanState(this._context, nextSummary);
     this._onCacheStateChanged?.(nextSummary);
     if (this._view) {
       this._view.webview.postMessage({ type: 'scanResult', data: nextSummary });
@@ -283,7 +351,7 @@ export class DashboardProvider implements WebviewViewProvider {
 
   private clearCurrentScanState(): void {
     this._lastSummary = undefined;
-    void this._context.globalState.update(CACHE_KEY, undefined);
+    void writeScanState(this._context, undefined);
     this._onCacheStateChanged?.(undefined);
     if (this._view) {
       this._view.webview.postMessage({ type: 'scanCleared' });

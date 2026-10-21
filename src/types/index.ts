@@ -46,6 +46,8 @@ export interface ExtensionSecurityReport {
   category?: string;
   installPath: string;
   iconDataUrl?: string;
+  /** Path of the icon inside the extension folder (relative). */
+  iconPath?: string;
   riskScore: number;
   riskLevel: RiskLevel;
   riskFactors: RiskFactor[];

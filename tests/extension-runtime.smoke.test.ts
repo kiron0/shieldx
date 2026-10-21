@@ -28,6 +28,7 @@ function createExtensionDir(name: string, publisher: string): string {
       license: 'MIT',
       repository: { type: 'git', url: 'https://github.com/test/example' },
       main: './extension.js',
+      icon: 'images/icon.png',
       activationEvents: ['onCommand:test.run'],
     }),
     'utf8',
@@ -36,6 +37,11 @@ function createExtensionDir(name: string, publisher: string): string {
     path.join(dir, 'extension.js'),
     'exports.activate = function () {};\n',
     'utf8',
+  );
+  fs.mkdirSync(path.join(dir, 'images'), { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'images', 'icon.png'),
+    Buffer.from([0x89, 0x50, 0x4e, 0x47]),
   );
   return dir;
 }
@@ -269,5 +275,56 @@ describe('extension runtime smoke', () => {
     };
     expect(summary.totalExtensions).toBe(1);
     expect(summary.reports[0].id).toBe('test-publisher.scan-ext');
+  });
+
+  it('serves extension icons to the webview on demand', async () => {
+    const dir = createExtensionDir('icon-ext', 'test-publisher');
+    const harness = await loadExtensionRuntime({
+      extensions: [
+        {
+          id: 'test-publisher.icon-ext',
+          extensionPath: dir,
+          packageJSON: JSON.parse(
+            fs.readFileSync(path.join(dir, 'package.json'), 'utf8'),
+          ),
+        },
+      ],
+    });
+
+    const received: Message[] = [];
+    let send: ((message: Message) => void) | undefined;
+    const webview = {
+      options: {},
+      html: '',
+      cspSource: 'vscode-resource:',
+      asWebviewUri: (uri: unknown) => uri,
+      postMessage: vi.fn((message: Message) => {
+        received.push(message);
+        return Promise.resolve(true);
+      }),
+      onDidReceiveMessage: vi.fn((cb: (message: Message) => void) => {
+        send = cb;
+        return { dispose: () => undefined };
+      }),
+    };
+    harness.viewProvider?.resolveWebviewView(
+      { webview, visible: true, onDidDispose: vi.fn() },
+      {},
+      {},
+    );
+
+    const scan = harness.registeredCommands.get('shieldx.scanExtensions');
+    await scan!();
+
+    send?.({ type: 'requestIcons', extensionIds: ['test-publisher.icon-ext'] });
+
+    const icons = received.find((m) => m.type === 'icons');
+    expect(icons).toBeDefined();
+    const map = icons?.icons as Record<string, string>;
+    expect(
+      String(map['test-publisher.icon-ext']).startsWith(
+        'data:image/png;base64,',
+      ),
+    ).toBe(true);
   });
 });

@@ -89,6 +89,7 @@ function buildReport(
     category: ext.category,
     installPath: ext.installPath,
     iconDataUrl: ext.iconDataUrl,
+    iconPath: ext.iconPath,
     riskScore,
     riskLevel,
     riskFactors: allRiskFactors,

@@ -149,7 +149,9 @@ describe('DashboardProvider', () => {
     (harness.provider as any).executeClearHistoryEntry('scan-2');
 
     expect(harness.state.history).toEqual([older]);
-    expect(harness.state.cache).toEqual(older.summary);
+    expect(harness.state.cache?.summary ?? harness.state.cache).toEqual(
+      older.summary,
+    );
     expect(harness.postMessage).toHaveBeenCalledWith({
       type: 'scanResult',
       data: older.summary,

@@ -309,6 +309,9 @@ export function getDashboardScript(dateFormattersScript: string): string {
       var loadedSettings = false;
       var historyMainSearchTimer = null;
       var inlineHistorySearchTimers = {};
+      var iconCache = {};
+      var pendingIconRequests = {};
+      var iconRequestTimer = null;
 
       function updateScanLoadedState(loaded) {
         loadedScan = loaded;
@@ -476,6 +479,8 @@ export function getDashboardScript(dateFormattersScript: string): string {
       window.addEventListener('message', function(event) {
         try {
           var msg = event.data;
+          if (msg.type === 'icon') { applyIcon(msg.extensionId, msg.dataUrl); return; }
+          if (msg.type === 'icons') { applyIcons(msg.icons); return; }
           if (msg.type === 'scanResult') { scanData = msg.data; updateScanLoadedState(true); renderAll(); }
           else if (msg.type === 'scanProgress') { updateProgress(msg.percent, msg.text); }
           else if (msg.type === 'scanStart') { shouldAutoOpenLatestHistory = true; showProgress(true); }
@@ -907,8 +912,57 @@ export function getDashboardScript(dateFormattersScript: string): string {
       function renderExtensionIcon(report) {
         var label = (report.displayName || report.name || '?').trim();
         var fallback = esc(label.slice(0, 2).toUpperCase());
-        if (report.iconDataUrl) return '<div class="ext-icon-wrap"><img class="ext-icon" src="' + escAttr(report.iconDataUrl) + '" alt="" /></div>';
-        return '<div class="ext-icon-wrap"><span class="ext-icon-fallback">' + fallback + '</span></div>';
+        var known = report.iconDataUrl || iconCache[report.id];
+        if (known) {
+          return '<div class="ext-icon-wrap"><img class="ext-icon" src="' + escAttr(known) + '" alt="" /></div>';
+        }
+        requestIcon(report.id);
+        return '<div class="ext-icon-wrap"><span class="ext-icon-fallback" data-icon-id="' + escAttr(report.id) + '">' + fallback + '</span></div>';
+      }
+
+      function requestIcon(extensionId) {
+        if (!extensionId || iconCache[extensionId] || pendingIconRequests[extensionId]) return;
+        pendingIconRequests[extensionId] = true;
+        if (iconRequestTimer) clearTimeout(iconRequestTimer);
+        iconRequestTimer = setTimeout(flushIconRequests, 40);
+      }
+
+      // Icons are requested in one batch instead of one round trip per entry.
+      function flushIconRequests() {
+        iconRequestTimer = null;
+        var ids = Object.keys(pendingIconRequests);
+        if (ids.length === 0) return;
+        pendingIconRequests = {};
+        vscode.postMessage({ type: 'requestIcons', extensionIds: ids });
+      }
+
+      function applyIcon(extensionId, dataUrl) {
+        if (!extensionId || !dataUrl) return;
+        iconCache[extensionId] = dataUrl;
+        var placeholders = document.querySelectorAll('[data-icon-id="' + cssEscape(extensionId) + '"]');
+        for (var i = 0; i < placeholders.length; i++) {
+          var holder = placeholders[i];
+          var wrap = holder.parentNode;
+          if (!wrap) continue;
+          var img = document.createElement('img');
+          img.className = 'ext-icon';
+          img.setAttribute('alt', '');
+          img.src = dataUrl;
+          wrap.replaceChild(img, holder);
+        }
+      }
+
+      function applyIcons(icons) {
+        if (!icons) return;
+        for (var id in icons) {
+          if (Object.prototype.hasOwnProperty.call(icons, id)) {
+            applyIcon(id, icons[id]);
+          }
+        }
+      }
+
+      function cssEscape(value) {
+        return String(value).replace(/["\\\\]/g, '\\\\$&');
       }
 
       function resetHistoryDetail() {

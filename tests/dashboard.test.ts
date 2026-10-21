@@ -287,4 +287,12 @@ describe('Dashboard HTML', () => {
       '.score-explainer-trigger{display:inline-flex;font-size:0;opacity:.5}',
     );
   });
+
+  it('requests extension icons in one batch and applies them', () => {
+    const html = generateDashboardHtml();
+    expect(html).toContain("type: 'requestIcons'");
+    expect(html).toContain("msg.type === 'icons'");
+    expect(html).toContain('applyIcons');
+    expect(html).toContain('data-icon-id');
+  });
 });

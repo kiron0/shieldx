@@ -13,6 +13,8 @@ export interface InstalledExtension {
   category?: string;
   installPath: string;
   iconDataUrl?: string;
+  /** Path of the icon inside the extension folder (relative). */
+  iconPath?: string;
   packageJSON: any;
 }
 
@@ -201,6 +203,12 @@ export function getExtensionIconDataUrl(
   }
 }
 
+export function getExtensionIconPath(pkg: any): string | undefined {
+  const icon = pkg?.icon;
+  if (typeof icon !== 'string' || !icon.trim()) return undefined;
+  return icon;
+}
+
 export function buildInstalledExtension(
   id: string,
   installPath: string,
@@ -220,6 +228,7 @@ export function buildInstalledExtension(
     category: detectCategory(pkg),
     installPath,
     iconDataUrl: getExtensionIconDataUrl(installPath, pkg),
+    iconPath: getExtensionIconPath(pkg),
     packageJSON: pkg || {},
   };
 }

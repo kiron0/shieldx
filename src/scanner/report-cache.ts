@@ -4,7 +4,7 @@ import * as path from 'path';
 import { ExtensionSecurityReport } from '../types';
 import { InstalledExtension } from '../utils/extension-utils';
 
-const CACHE_VERSION = 2;
+const CACHE_VERSION = 4;
 
 type CacheFile = {
   version: number;

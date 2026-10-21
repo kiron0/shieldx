@@ -11,6 +11,7 @@ import {
 import { isPdfExportAvailable, renderHtmlToPdf } from './reports/pdf-report';
 import { scanAllExtensions, scanExtension } from './scanner/extension-scanner';
 import { resolveUserPatterns } from './rules/default-patterns';
+import { withResolvedIcons } from './utils/icon-resolver';
 import { compareScans } from './scanner/history-comparison';
 import {
   ScanHistoryEntry,
@@ -30,6 +31,12 @@ import { info, warn, disposeLogger } from './utils/logger';
 import { isCancellationError } from './utils/cancellation';
 import { getShortScanId } from './utils/scan-id';
 import { stripIcons } from './utils/summary-utils';
+import {
+  CACHE_KEY,
+  CACHE_VERSION,
+  readScanState,
+  writeScanState,
+} from './utils/scan-state';
 import { EXT_CONFIG } from './config';
 
 let dashboardProvider: DashboardProvider;
@@ -45,12 +52,10 @@ function focusSidebar(): void {
   );
 }
 
-const CACHE_KEY = `${EXT_CONFIG.name.toLowerCase()}.lastScan`;
 const HISTORY_KEY = `${EXT_CONFIG.name.toLowerCase()}.scanHistory`;
 const FIRST_RUN_KEY = `${EXT_CONFIG.name.toLowerCase()}.firstRun`;
 const WELCOME_SHOWN_KEY = `${EXT_CONFIG.name.toLowerCase()}.welcomeShown`;
 const METRICS_KEY = `${EXT_CONFIG.name.toLowerCase()}.metrics`;
-const CACHE_VERSION = 1;
 
 interface Metrics {
   scansRun: number;
@@ -141,7 +146,7 @@ export async function activate(
       async (format?: string) => {
         const summary = (await loadFromCache(context))?.summary;
         if (!summary) {
-          const fallback = context.globalState.get<SecuritySummary>(CACHE_KEY);
+          const fallback = readScanState(context);
           if (!fallback) {
             vscode.window.showWarningMessage(
               'No scan results available. Run a scan first.',
@@ -189,7 +194,7 @@ export async function activate(
       async (historyId: string, format: string) => {
         let summary: SecuritySummary | undefined;
         if (historyId === 'latest') {
-          summary = context.globalState.get<SecuritySummary>(CACHE_KEY);
+          summary = readScanState(context);
         } else {
           const history = context.globalState.get<ScanHistoryEntry[]>(
             HISTORY_KEY,
@@ -708,6 +713,13 @@ async function exportReport(
   const configuredPdfBrowserPath =
     config.get<string>('pdfBrowserPath')?.trim() || undefined;
 
+  // Reports restored from history or the cache keep the icon path but not the
+  // payload: resolve the icons so exports look the same as a live scan.
+  const exportSummary: SecuritySummary = {
+    ...summary,
+    reports: summary.reports.map((report) => withResolvedIcons(report)),
+  };
+
   const extMap: Record<string, string> = {
     markdown: 'md',
     json: 'json',
@@ -750,34 +762,34 @@ async function exportReport(
     switch (actualFormat) {
       case 'json':
         content = generateJsonReport(
-          summary as unknown as Record<string, unknown>,
+          exportSummary as unknown as Record<string, unknown>,
         );
         break;
       case 'html':
-        content = generateHtmlReport(summary);
+        content = generateHtmlReport(exportSummary);
         break;
       case 'pdf':
         await renderHtmlToPdf(
-          generateHtmlReport(summary),
+          generateHtmlReport(exportSummary),
           uri.fsPath,
           configuredPdfBrowserPath,
         );
         content = '';
         break;
       case 'csv':
-        content = generateCsvReport(summary);
+        content = generateCsvReport(exportSummary);
         break;
       case 'sarif':
         content = JSON.stringify(
           generateSarifReport(
-            summary as unknown as { reports: any[]; scannedAt: string },
+            exportSummary as unknown as { reports: any[]; scannedAt: string },
           ),
           null,
           2,
         );
         break;
       default:
-        content = generateMarkdownReport(summary);
+        content = generateMarkdownReport(exportSummary);
     }
 
     if (actualFormat !== 'pdf') {
@@ -861,10 +873,7 @@ async function pickHistorySummary(
 ): Promise<SecuritySummary | undefined> {
   const history = context.globalState.get<ScanHistoryEntry[]>(HISTORY_KEY, []);
   if (history.length === 0) {
-    return (
-      (await loadFromCache(context))?.summary ||
-      context.globalState.get<SecuritySummary>(CACHE_KEY)
-    );
+    return (await loadFromCache(context))?.summary || readScanState(context);
   }
 
   const items = history.map((entry) => ({
@@ -1021,8 +1030,7 @@ async function checkWorkspaceTrust(
 
   if (hasSensitiveFiles) {
     const summary =
-      (await loadFromCache(context))?.summary ||
-      context.globalState.get<SecuritySummary>(CACHE_KEY);
+      (await loadFromCache(context))?.summary || readScanState(context);
 
     if (summary) {
       const riskyCount = summary.reports.filter(
@@ -1056,7 +1064,7 @@ async function saveToCache(
   };
   cachedScan = stored;
 
-  await context.globalState.update(CACHE_KEY, stored.summary);
+  await writeScanState(context, stored.summary);
 
   try {
     const cachePath = path.join(
@@ -1114,7 +1122,7 @@ async function loadFromCache(
     void 0;
   }
 
-  const summary = context.globalState.get<SecuritySummary>(CACHE_KEY);
+  const summary = readScanState(context);
   if (summary) {
     cachedScan = { summary, previousIds: [], version: CACHE_VERSION };
     return cachedScan;
